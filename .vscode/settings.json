@@ -1,0 +1,15 @@
+{
+    "protoc": {
+        "path": "../protobuf",
+        "compile_on_save": false,
+        "options": [
+            "--go_out=../generated/proto/go",
+            "--go_opt=paths=source_relative",
+            "--go-grpc_out=../generated/proto/go",
+            "--go-grpc_opt=paths=source_relative",
+            "--proto_path=${workspaceRoot}/protobuf",
+            // "--proto_path=${env.GOPATH}/src",
+        ]
+    }
+}
+// protoc -I proto proto/sso/sso.proto --go_out=./gen/go/ --go_opt=paths=source_relative --go-grpc_out=./gen/go/ --go-grpc_opt=paths=source_relative
