@@ -45,8 +45,13 @@
   "dependencies": {
     "@grpc/grpc-js": "^1.10.0",
     "@grpc/proto-loader": "^0.7.10",
+    "@radix-ui/react-form": "^0.0.3",
+    "@radix-ui/react-switch": "^1.0.3",
+    "@radix-ui/themes": "^2.0.3",
     "electron-squirrel-startup": "^1.0.0",
+    "file-system-cache": "^2.4.4",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.22.0"
   }
 }
