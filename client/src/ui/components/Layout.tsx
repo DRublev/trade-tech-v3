@@ -1,7 +1,11 @@
 import { Container, Theme } from "@radix-ui/themes"
-import React from "react"
+import React, { FC } from "react"
 
-export const Layout = ({ children }) => {
+type Props = {
+    children?: React.ReactNode
+};
+
+export const Layout: FC<Props> = ({ children }) => {
     return <>
         <Theme appearance='dark'>
             <Container shrink="1" grow="1">

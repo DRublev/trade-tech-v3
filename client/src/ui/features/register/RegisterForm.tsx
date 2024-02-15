@@ -39,10 +39,12 @@ export const RegisterForm = () => {
                     </Form.Field>
 
                     <Form.Field name="isSandbox">
-                        <Form.Label htmlFor="is-sandbox">Песочница</Form.Label>
-                        <Form.Control asChild type="checkbox">
-                            <Switch defaultChecked id="is-sandbox" role="checkbox" />
-                        </Form.Control>
+                        <Flex align="center" gap="3">
+                            <Form.Control asChild type="checkbox">
+                                <Switch defaultChecked id="is-sandbox" role="checkbox" />
+                            </Form.Control>
+                            <Form.Label htmlFor="is-sandbox">Песочница</Form.Label>
+                        </Flex>
                     </Form.Field>
 
                     <Form.Submit asChild><Button>Запомнить</Button></Form.Submit>
