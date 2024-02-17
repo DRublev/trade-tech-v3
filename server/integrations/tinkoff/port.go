@@ -18,8 +18,8 @@ import (
 
 const ENDPOINT = "sandbox-invest-public-api.tinkoff.ru:443"
 
-type TinkoffBrokerPort struct {
-}
+// TODO: Хорошо бы явно наследовать types.Broker (чтоб были подсказки при имплементации метода)
+type TinkoffBrokerPort struct{}
 
 func (c *TinkoffBrokerPort) GetAccounts(ctx context.Context) ([]types.Account, error) {
 	s, err := c.getSdk(ctx)
@@ -41,9 +41,9 @@ func (c *TinkoffBrokerPort) GetAccounts(ctx context.Context) ([]types.Account, e
 		isOpen := acc.Status == investapi.AccountStatus_ACCOUNT_STATUS_OPEN
 		hasAccess := acc.AccessLevel == investapi.AccessLevel_ACCOUNT_ACCESS_LEVEL_FULL_ACCESS
 		isValidType := acc.Type == investapi.AccountType_ACCOUNT_TYPE_TINKOFF
-		fmt.Println(acc)
+
 		if isOpen && hasAccess && isValidType {
-			accounts = append(accounts, types.Account{Id: acc.Id, Name: acc.GetName()})
+			accounts = append(accounts, types.Account{Id: acc.Id, Name: acc.Name})
 		}
 	}
 
@@ -55,14 +55,16 @@ func (c *TinkoffBrokerPort) SetAccount(ctx context.Context, accountId string) er
 }
 
 func (c *TinkoffBrokerPort) getSdk(ctx context.Context) (*investgo.Client, error) {
+	// TODO: Придумать как нормально брать токен
 	token, ok := os.LookupEnv("TINKOFF_TOKEN_RO")
 	if !ok {
-		return nil, errors.New("no token provided!")
+		return nil, errors.New("no token provided")
 	}
 	config := &investgo.Config{
 		EndPoint: ENDPOINT,
 		Token:    token,
-		AppName:  "trade-tech-dev",
+		// TODO: Для прод енвы кидать другое название
+		AppName: "trade-tech-dev",
 	}
 
 	zapConfig := zap.NewDevelopmentConfig()
