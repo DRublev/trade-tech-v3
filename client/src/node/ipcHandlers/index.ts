@@ -24,5 +24,4 @@ ipcMain.handle(ipcEvents.REGISTER, async (e, data: Payload) => {
     const encryptedToken = safeStorage.encryptString(token);
     await storage.save('isSandbox', isSandbox ? 1 : 0);
     await storage.save('token', encryptedToken);
-
 });

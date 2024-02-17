@@ -6,6 +6,7 @@ const root = createRoot(document.body);
 window.addEventListener('load', () => {
     window.ipc.invoke('TEST_HELLO', { asda: 'asd' })
 })
+
 root.render(<React.StrictMode>
     <Router />
 </React.StrictMode>);
