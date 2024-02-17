@@ -12,6 +12,7 @@ require (
 	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/iancoleman/strcase v0.1.2 // indirect
 	github.com/imdario/mergo v0.3.11 // indirect
+	github.com/joho/godotenv v1.5.1
 	github.com/mitchellh/copystructure v1.0.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
