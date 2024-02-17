@@ -16,6 +16,9 @@ var (
 	port = flag.Int("port", 50051, "The server port")
 )
 
+// TODO: Заюзать нормальный логгер (в сдк его же прокидывать)
+// TODO: Еще подумать над структурой папок и пакетов
+
 func main() {
 	flag.Parse()
 

@@ -13,6 +13,7 @@ if (require('electron-squirrel-startup')) {
 }
 
 const createWindow = (): void => {
+  // TODO: Подумать над тем, чтобы вынести общение с сервером (стриминговые запросы) в воркер или отдельное спрятанное окно
   // Create the browser window.
   const mainWindow = new BrowserWindow({
     height: 600,

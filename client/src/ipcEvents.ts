@@ -2,5 +2,6 @@ export const ipcEvents = {
     TEST_HELLO: "TEST_HELLO",
     REGISTER: 'REGISTER',
     GET_AUTH_INFO: 'GET_AUTH_INFO',
+    GET_ACCOUNTS: 'GET_ACCOUNTS',
     INIT_SDK: 'INIT_SDK',
 }

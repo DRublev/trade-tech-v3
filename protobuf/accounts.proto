@@ -9,9 +9,13 @@ service Accounts {
     rpc SetAccount(SetAccountRequest) returns (SetAccountResponse);
 }
 
+message Account {
+    string Id = 1;
+    string Name = 2;
+}
 message GetAccountsRequest {}
 message GetAccountsResponse {
-    repeated string AccountId = 1;
+    repeated Account Accounts = 1;
 }
 
 message SetAccountRequest {
