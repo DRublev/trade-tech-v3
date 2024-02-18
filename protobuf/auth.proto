@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package auth;
+
+option go_package = "grpcGW.auth";
+
+service Auth {
+    rpc SetToken(SetTokenRequest) returns (SetTokenResponse);
+    rpc ClearToken(ClearTokenRequest) returns (ClearTokenResponse);
+}
+
+message SetTokenRequest {
+    string Token = 1;
+    bool IsSandbox = 2;
+}
+message SetTokenResponse {}
+
+message ClearTokenRequest {
+    bool ForSandbox = 1;
+}
+message ClearTokenResponse {}

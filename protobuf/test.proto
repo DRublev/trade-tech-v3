@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package test;
 
-option go_package = "proto.test";
+option go_package = "grpcGW.test";
 
 service Test {
     rpc Ping (PingRequest) returns (PingResponse);

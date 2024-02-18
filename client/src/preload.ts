@@ -3,10 +3,10 @@
 
 import { ipcRenderer, contextBridge } from "electron";
 import { ipcEvents } from "./ipcEvents";
+import { ValidChannel } from "./types";
 
 const validChannels = Object.values(ipcEvents);
 
-type ValidChannel = keyof typeof ipcEvents;
 
 export interface IIpcRenderer {
     on: (channel: ValidChannel, listener: (event: any, ...args: any[]) => void) => void;

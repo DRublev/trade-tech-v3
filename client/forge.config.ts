@@ -19,6 +19,9 @@ const config: ForgeConfig = {
     new AutoUnpackNativesPlugin({}),
     new WebpackPlugin({
       mainConfig,
+      devServer: {
+        open: false,
+      },
       renderer: {
         config: rendererConfig,
         entryPoints: [
