@@ -3,6 +3,7 @@
 ## Подготовка к запуску
 
 Скачать [Go](https://go.dev/doc/install)
+
 Скачать [Node.js](https://nodejs.org/en/download)
 
 Выпустить [токен для Тинькофф Инвестиций](https://tinkoff.github.io/investAPI/token/) (для тестирования без торговли достаточно с доступом только для чтения)
