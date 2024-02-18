@@ -18,9 +18,11 @@ ipcMain.handle(ipcEvents.GET_AUTH_INFO, async (e) => {
     try {
         const token = await storage.get('token');
         const isSandbox = await storage.get('isSandbox');
-        const accountId = await storage.get('accountId');
+        const account = await storage.get('accountId');
+        console.log("22 index", account);
 
-        return { isAuthorised: !!token, isSandbox, accountId };
+
+        return { isAuthorised: !!token, isSandbox, account };
     } catch (err) {
         return Promise.reject('Не удалось получить данные из сторы: ' + err)
     }
@@ -34,7 +36,7 @@ ipcMain.handle(ipcEvents.REGISTER, async (e, data: Payload) => {
     if (!safeStorage.isEncryptionAvailable()) return Promise.reject("Шифрование не доступно");
 
     const { token, isSandbox } = data;
-    if (!token) return Promise.reject("Токен является обязательным параметром");
+    if (!token) return Promise.reject("token является обязательным параметром");
 
     // TODO: Шифровать и хранить в go
     const encryptedToken = safeStorage.encryptString(token);
@@ -43,15 +45,26 @@ ipcMain.handle(ipcEvents.REGISTER, async (e, data: Payload) => {
 });
 
 ipcMain.handle(ipcEvents.GET_ACCOUNTS, async (e) => {
-    console.log("31 index");
-
-    const res = await new Promise(resolve => {
+    const res = await new Promise((resolve, reject) => {
         accountsService.getAccounts({}, (e, accs) => {
-            console.log("32 index", e, accs);
+            if (e) return reject(e);
             resolve(accs)
         });
     });
-    console.log("39 index", res);
+    return res;
+});
 
-    return [];
+ipcMain.handle(ipcEvents.SET_ACCOUNT, async (e, data) => {
+    console.log("56 index", data);
+
+    if (!data.id) return Promise.reject('id является обязательным параметром')
+    storage.save('accountId', data.id);
+    // return new Promise((resolve, reject) => {
+    //     accountsService.setAccount({ AccountId: data.id }, (e, accs) => {
+    //         console.log("32 index", e, accs);
+    //         if (e) return reject(e);
+    //         resolve(null);
+    //     });
+    // });
+    return storage.save('accountId', data.id);
 });

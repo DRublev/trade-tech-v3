@@ -15,9 +15,12 @@ func (s *Server) GetAccounts(ctx context.Context, in *accounts.GetAccountsReques
 		return &accounts.GetAccountsResponse{Accounts: []*accounts.Account{}}, nil
 	}
 
-	accs, err := bot.Broker.GetAccounts(ctx)
+	var res []*accounts.Account = {}
 
-	var res []*accounts.Account
+	accs, err := bot.Broker.GetAccounts(ctx)
+	if err != nil {
+		return res, errors.New('error getting accounts' + err.Error())
+	}
 
 	for _, a := range accs {
 		res = append(res, &accounts.Account{Id: a.Id, Name: a.Name})

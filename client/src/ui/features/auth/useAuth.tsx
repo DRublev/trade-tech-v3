@@ -46,7 +46,9 @@ export const useAuth = () => {
     }
 
     useEffect(() => {
-        updateAuthInfo()
+        if (!authState.state.isLoaded) {
+            updateAuthInfo()
+        }
     }, []);
 
     return atuhInfo;

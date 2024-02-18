@@ -1,26 +1,23 @@
 import React, { FormEventHandler, useCallback } from "react";
 import * as Form from '@radix-ui/react-form';
 import { Button, Card, Flex, Switch, TextField } from "@radix-ui/themes";
-import { ValidChannel } from "../../../types";
+import { useNavigate } from "react-router-dom";
+import { useRegister } from "./hooks";
 
-
-const useIpcInoke = (channel: ValidChannel) => {
-    const invoke = useCallback((payload: unknown) => window.ipc ? window.ipc.invoke(channel, payload) : Promise.reject, []);
-
-    return invoke;
-};
 
 export const RegisterForm = () => {
-    const regitster = useIpcInoke("REGISTER");
+    const regitster = useRegister();
+    const navigate = useNavigate();
 
     const handleSubmit: FormEventHandler<HTMLFormElement> = useCallback(async (event) => {
         try {
+            event.preventDefault();
+            event.stopPropagation();
             const data = Object.fromEntries(new FormData(event.currentTarget));
-            console.log("9 RegisterForm", data);
             await regitster(data);
+            navigate('select-account');
         } catch (e) {
             console.log("22 RegisterForm", e);
-            alert('Error')
         }
     }, []);
 
@@ -41,7 +38,7 @@ export const RegisterForm = () => {
                     <Form.Field name="isSandbox">
                         <Flex align="center" gap="3">
                             <Form.Control asChild type="checkbox">
-                                <Switch defaultChecked id="is-sandbox" role="checkbox" />
+                                <Switch defaultChecked id="is-sandbox" role="checkbox" onChange={e => { e.preventDefault(); e.stopPropagation() }} />
                             </Form.Control>
                             <Form.Label htmlFor="is-sandbox">Песочница</Form.Label>
                         </Flex>
