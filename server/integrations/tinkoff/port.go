@@ -32,6 +32,7 @@ func (c *TinkoffBrokerPort) GetAccounts(ctx context.Context) ([]types.Account, e
 	accountsRes, err := us.GetAccounts()
 
 	if err != nil {
+		fmt.Println(err)
 		fmt.Println("Cannot get accounts ", err)
 		return []types.Account{}, nil
 	}
@@ -55,6 +56,9 @@ func (c *TinkoffBrokerPort) SetAccount(ctx context.Context, accountId string) er
 }
 
 func (c *TinkoffBrokerPort) getSdk(ctx context.Context) (*investgo.Client, error) {
+	if sdk.IsInited() {
+		return sdk.GetInstance(), nil
+	}
 	// TODO: Придумать как нормально брать токен
 	token, ok := os.LookupEnv("TINKOFF_TOKEN_RO")
 	if !ok {
@@ -83,7 +87,7 @@ func (c *TinkoffBrokerPort) getSdk(ctx context.Context) (*investgo.Client, error
 	}
 
 	s := sdk.Init(ctx, *config, logger)
-	fmt.Println("Tinkoff sdk inited!")
+	fmt.Println("Tinkoff sdk inited")
 
 	return s, nil
 }

@@ -21,8 +21,16 @@ func Init(ctx context.Context, config investgo.Config, l investgo.Logger) *inves
 			return
 		}
 		instance = inst
-		fmt.Println("Instance created", inst)
+		fmt.Println("Instance created", inst != nil)
 	})
 
+	return instance
+}
+
+func IsInited() bool {
+	return instance != nil
+}
+
+func GetInstance() *investgo.Client {
 	return instance
 }

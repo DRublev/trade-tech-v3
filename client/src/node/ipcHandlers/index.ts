@@ -12,8 +12,18 @@ ipcMain.handle(ipcEvents.TEST_HELLO, async (e, data) => {
     });
 });
 
-ipcMain.handle(ipcEvents.GET_AUTH_INFO, async (e, data) => {
-    return null;
+ipcMain.handle(ipcEvents.GET_AUTH_INFO, async (e) => {
+    if (!safeStorage.isEncryptionAvailable()) return Promise.reject("Шифрование не доступно");
+
+    try {
+        const token = await storage.get('token');
+        const isSandbox = await storage.get('isSandbox');
+        const accountId = await storage.get('accountId');
+
+        return { isAuthorised: !!token, isSandbox, accountId };
+    } catch (err) {
+        return Promise.reject('Не удалось получить данные из сторы: ' + err)
+    }
 });
 
 type Payload = {
@@ -24,8 +34,9 @@ ipcMain.handle(ipcEvents.REGISTER, async (e, data: Payload) => {
     if (!safeStorage.isEncryptionAvailable()) return Promise.reject("Шифрование не доступно");
 
     const { token, isSandbox } = data;
-    if (!token) return Promise.reject("Token is required!");
+    if (!token) return Promise.reject("Токен является обязательным параметром");
 
+    // TODO: Шифровать и хранить в go
     const encryptedToken = safeStorage.encryptString(token);
     await storage.save('isSandbox', isSandbox ? 1 : 0);
     await storage.save('token', encryptedToken);

@@ -11,9 +11,20 @@ class CacheAccessor {
         });
     }
 
-    public get(id: string) {
+    public getSync(id: string) {
         try {
             const content = this.cache.getSync(this.accessKey);
+            const items = JSON.parse(content || '{}');
+            return items[id];
+        } catch (e) {
+            console.error(this.accessKey, 'Ошибка получения из кэша', e);
+            return null;
+        }
+    }
+
+    public async get(id: string) {
+        try {
+            const content = await this.cache.get(this.accessKey);
             const items = JSON.parse(content || '{}');
             return items[id];
         } catch (e) {
