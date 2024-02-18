@@ -3,6 +3,7 @@
 ## Подготовка к запуску
 
 Скачать [Go](https://go.dev/doc/install)
+
 Скачать [Node.js](https://nodejs.org/en/download)
 
 Выпустить [токен для Тинькофф Инвестиций](https://tinkoff.github.io/investAPI/token/) (для тестирования без торговли достаточно с доступом только для чтения)
@@ -30,7 +31,11 @@
 TODO: Докинуть установку плагинов для go и ts (прям командами)
 Запустить команды
 GO
-`protoc -I protobuf protobuf/*.proto --go_out=./server/grpcGW/ --go_opt=paths=import --go-grpc_out=./server/grpcGW/ --go-grpc_opt=paths=import`
+```sh
+protoc -I protobuf protobuf/*.proto --go_out=./server/grpcGW/ --go_opt=paths=import --go-grpc_out=./server/grpcGW/ --go-grpc_opt=paths=import
+```
 
 TS
-`protoc --plugin=protoc-gen-ts_proto=".\\client\\node_modules\\.bin\\protoc-gen-ts_proto.cmd" --ts_proto_out=./client/grpcGW --ts_proto_opt=outputServices=grpc-js --ts_proto_opt=esModuleInterop=true -I ./protobuf ./protobuf/*.proto`
+```sh
+protoc --plugin=protoc-gen-ts_proto=".\\client\\node_modules\\.bin\\protoc-gen-ts_proto.cmd" --ts_proto_out=./client/grpcGW --ts_proto_opt=outputServices=grpc-js --ts_proto_opt=esModuleInterop=true -I ./protobuf ./protobuf/*.proto
+```
