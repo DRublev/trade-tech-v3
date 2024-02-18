@@ -22,7 +22,7 @@ const ENDPOINT = "sandbox-invest-public-api.tinkoff.ru:443"
 type TinkoffBrokerPort struct{}
 
 func (c *TinkoffBrokerPort) GetAccounts(ctx context.Context) ([]types.Account, error) {
-	s, err := c.getSdk(ctx)
+	s, err := c.getSdk()
 	if err != nil {
 		fmt.Println("Cannot init sdk! ", err)
 		return []types.Account{}, nil
@@ -55,7 +55,7 @@ func (c *TinkoffBrokerPort) SetAccount(ctx context.Context, accountId string) er
 	return nil
 }
 
-func (c *TinkoffBrokerPort) getSdk(ctx context.Context) (*investgo.Client, error) {
+func (c *TinkoffBrokerPort) getSdk() (*investgo.Client, error) {
 	if sdk.IsInited() {
 		return sdk.GetInstance(), nil
 	}
@@ -85,6 +85,8 @@ func (c *TinkoffBrokerPort) getSdk(ctx context.Context) (*investgo.Client, error
 	if err != nil {
 		log.Fatalf("logger creating error %v", err)
 	}
+
+	ctx := context.Background()
 
 	s := sdk.Init(ctx, *config, logger)
 	fmt.Println("Tinkoff sdk inited")
