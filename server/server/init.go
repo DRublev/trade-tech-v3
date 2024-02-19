@@ -6,14 +6,12 @@ import (
 	"log"
 	accounts "main/grpcGW/grpcGW.accounts"
 	auth "main/grpcGW/grpcGW.auth"
-	test "main/grpcGW/grpcGW.test"
 	"net"
 
 	"google.golang.org/grpc"
 )
 
 type Server struct {
-	test.UnimplementedTestServer
 	accounts.UnimplementedAccountsServer
 	auth.UnimplementedAuthServer
 }
@@ -31,7 +29,6 @@ func Start(ctx context.Context, port int) {
 
 	srv := &Server{}
 
-	test.RegisterTestServer(s, srv)
 	accounts.RegisterAccountsServer(s, srv)
 	auth.RegisterAuthServer(s, srv)
 
