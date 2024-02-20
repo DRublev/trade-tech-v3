@@ -52,7 +52,7 @@
         }
     }
 
-    func (c *TinkoffBrokerPort) GetCandles(ctx context.Context, instrumentId string, interval types.Interval, start time.Time, end time.Time) ([]types.OHLC, error) {
+    func (c *TinkoffBrokerPort) GetCandles(instrumentId string, interval types.Interval, start time.Time, end time.Time) ([]types.OHLC, error) {
         // Инициализируем investgo sdk
         sdk, err := c.getSdk()
         if err != nil {
