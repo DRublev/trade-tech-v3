@@ -2,18 +2,10 @@ package tinkoff
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"log"
-	sdk "main/integrations/tinkoff/sdk"
 	"main/types"
-	"os"
-	"time"
 
-	"github.com/tinkoff/invest-api-go-sdk/investgo"
 	investapi "github.com/tinkoff/invest-api-go-sdk/proto"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 )
 
 const ENDPOINT = "sandbox-invest-public-api.tinkoff.ru:443"
@@ -55,41 +47,10 @@ func (c *TinkoffBrokerPort) SetAccount(ctx context.Context, accountId string) er
 	return nil
 }
 
-func (c *TinkoffBrokerPort) getSdk() (*investgo.Client, error) {
-	if sdk.IsInited() {
-		return sdk.GetInstance(), nil
-	}
-	// TODO: Придумать как нормально брать токен
-	token, ok := os.LookupEnv("TINKOFF_TOKEN_RO")
-	if !ok {
-		return nil, errors.New("no token provided")
-	}
-	config := &investgo.Config{
-		EndPoint: ENDPOINT,
-		Token:    token,
-		// TODO: Для прод енвы кидать другое название
-		AppName: "trade-tech-dev",
-	}
-
-	zapConfig := zap.NewDevelopmentConfig()
-	zapConfig.EncoderConfig.EncodeTime = zapcore.TimeEncoderOfLayout(time.DateTime)
-	zapConfig.EncoderConfig.TimeKey = "time"
-	l, err := zapConfig.Build()
-	logger := l.Sugar()
-	defer func() {
-		err := logger.Sync()
-		if err != nil {
-			log.Printf(err.Error())
-		}
-	}()
-	if err != nil {
-		log.Fatalf("logger creating error %v", err)
-	}
-
-	ctx := context.Background()
-
-	s := sdk.Init(ctx, *config, logger)
-	fmt.Println("Tinkoff sdk inited")
-
-	return s, nil
-}
+// func (c *TinkoffBrokerPort) GetCandles() {
+// 	s, err := c.getSdk()
+// 	if err != nil {
+// 		fmt.Println("Cannot init sdk! ", err)
+// 		return []types.Account{}, nil
+// 	}
+// }
