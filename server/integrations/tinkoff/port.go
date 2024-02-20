@@ -1,9 +1,11 @@
 package tinkoff
 
 import (
-	"context"
 	"fmt"
 	"main/types"
+	"time"
+
+	investapi "github.com/russianinvestments/invest-api-go-sdk/proto"
 )
 
 const ENDPOINT = "sandbox-invest-public-api.tinkoff.ru:443"
@@ -12,20 +14,20 @@ const ENDPOINT = "sandbox-invest-public-api.tinkoff.ru:443"
 // TODO: Хорошо бы явно наследовать types.Broker (чтоб были подсказки при имплементации метода)
 type TinkoffBrokerPort struct{}
 
-func (c *TinkoffBrokerPort) GetAccounts(ctx context.Context) ([]types.Account, error) {
-	s, err := c.getSdk()
+func (c *TinkoffBrokerPort) GetAccounts() ([]types.Account, error) {
+	sdk, err := c.getSdk()
 	if err != nil {
 		fmt.Println("Cannot init sdk! ", err)
-		return []types.Account{}, nil
+		return []types.Account{}, err
 	}
 
-	us := s.NewUsersServiceClient()
+	us := sdk.NewUsersServiceClient()
 	accountsRes, err := us.GetAccounts()
 
 	if err != nil {
 		fmt.Println(err)
 		fmt.Println("Cannot get accounts ", err)
-		return []types.Account{}, nil
+		return []types.Account{}, err
 	}
 	accounts := []types.Account{}
 
@@ -43,6 +45,46 @@ func (c *TinkoffBrokerPort) GetAccounts(ctx context.Context) ([]types.Account, e
 	return accounts, nil
 }
 
-func (c *TinkoffBrokerPort) SetAccount(ctx context.Context, accountId string) error {
+func (c *TinkoffBrokerPort) SetAccount(accountId string) error {
 	return nil
+}
+
+func toQuant(iq *investapi.Quotation) types.Quant {
+	return types.Quant{
+		Units: int(iq.Units),
+		Nano:  int(iq.Nano),
+	}
+}
+
+func (c *TinkoffBrokerPort) GetCandles(instrumentId string, interval types.Interval, start time.Time, end time.Time) ([]types.OHLC, error) {
+	// Инициализируем investgo sdk
+	sdk, err := c.getSdk()
+	if err != nil {
+		fmt.Println("Cannot init sdk! ", err)
+		return []types.OHLC{}, err
+	}
+
+	// Сервис для работы с катировками
+	candlesService := sdk.NewMarketDataServiceClient()
+
+	// Получаем свечи по инструменту за определенный промежуток времени и интервал (переодичность)
+	candlesRes, err := candlesService.GetCandles(instrumentId, investapi.CandleInterval(interval), start, end)
+	if err != nil {
+		fmt.Println("Cannot get candles", err)
+		return []types.OHLC{}, err
+	}
+
+	candles := []types.OHLC{}
+
+	// Конвертируем в нужный тип
+	for _, candle := range candlesRes.Candles {
+		candles = append(candles, types.OHLC{
+			Time:  candle.Time.AsTime(),
+			Open:  toQuant(candle.Open),
+			Close: toQuant(candle.Close),
+			Low:   toQuant(candle.Low),
+			High:  toQuant(candle.High),
+		})
+	}
+	return candles, nil
 }
