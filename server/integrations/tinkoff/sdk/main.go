@@ -6,9 +6,8 @@ import (
 	"log"
 	"sync"
 
-	"github.com/tinkoff/invest-api-go-sdk/investgo"
+	"github.com/russianinvestments/invest-api-go-sdk/investgo"
 )
-
 
 var instance *investgo.Client = nil
 var once sync.Once

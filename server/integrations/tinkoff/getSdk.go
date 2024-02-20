@@ -5,11 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	sdk "main/integrations/tinkoff/sdk"
 	"os"
 	"time"
-	sdk "main/integrations/tinkoff/sdk"
 
-	"github.com/tinkoff/invest-api-go-sdk/investgo"
+	"github.com/russianinvestments/invest-api-go-sdk/investgo"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )

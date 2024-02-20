@@ -4,7 +4,10 @@ go 1.21.6
 
 require github.com/joho/godotenv v1.5.1
 
-require go.uber.org/multierr v1.11.0 // indirect
+require (
+	github.com/russianinvestments/invest-api-go-sdk v1.10.0 // indirect
+	go.uber.org/multierr v1.11.0 // indirect
+)
 
 require (
 	cloud.google.com/go/compute v1.23.3 // indirect
