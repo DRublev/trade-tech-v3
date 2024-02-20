@@ -24,13 +24,6 @@ export interface GetAccountsResponse {
   Accounts: Account[];
 }
 
-export interface SetAccountRequest {
-  AccountId: string;
-}
-
-export interface SetAccountResponse {
-}
-
 function createBaseAccount(): Account {
   return { Id: "", Name: "" };
 }
@@ -207,106 +200,6 @@ export const GetAccountsResponse = {
   },
 };
 
-function createBaseSetAccountRequest(): SetAccountRequest {
-  return { AccountId: "" };
-}
-
-export const SetAccountRequest = {
-  encode(message: SetAccountRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-    if (message.AccountId !== "") {
-      writer.uint32(10).string(message.AccountId);
-    }
-    return writer;
-  },
-
-  decode(input: _m0.Reader | Uint8Array, length?: number): SetAccountRequest {
-    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-    let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseSetAccountRequest();
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1:
-          if (tag !== 10) {
-            break;
-          }
-
-          message.AccountId = reader.string();
-          continue;
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skipType(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): SetAccountRequest {
-    return { AccountId: isSet(object.AccountId) ? globalThis.String(object.AccountId) : "" };
-  },
-
-  toJSON(message: SetAccountRequest): unknown {
-    const obj: any = {};
-    if (message.AccountId !== "") {
-      obj.AccountId = message.AccountId;
-    }
-    return obj;
-  },
-
-  create<I extends Exact<DeepPartial<SetAccountRequest>, I>>(base?: I): SetAccountRequest {
-    return SetAccountRequest.fromPartial(base ?? ({} as any));
-  },
-  fromPartial<I extends Exact<DeepPartial<SetAccountRequest>, I>>(object: I): SetAccountRequest {
-    const message = createBaseSetAccountRequest();
-    message.AccountId = object.AccountId ?? "";
-    return message;
-  },
-};
-
-function createBaseSetAccountResponse(): SetAccountResponse {
-  return {};
-}
-
-export const SetAccountResponse = {
-  encode(_: SetAccountResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-    return writer;
-  },
-
-  decode(input: _m0.Reader | Uint8Array, length?: number): SetAccountResponse {
-    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-    let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseSetAccountResponse();
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skipType(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(_: any): SetAccountResponse {
-    return {};
-  },
-
-  toJSON(_: SetAccountResponse): unknown {
-    const obj: any = {};
-    return obj;
-  },
-
-  create<I extends Exact<DeepPartial<SetAccountResponse>, I>>(base?: I): SetAccountResponse {
-    return SetAccountResponse.fromPartial(base ?? ({} as any));
-  },
-  fromPartial<I extends Exact<DeepPartial<SetAccountResponse>, I>>(_: I): SetAccountResponse {
-    const message = createBaseSetAccountResponse();
-    return message;
-  },
-};
-
 export type AccountsService = typeof AccountsService;
 export const AccountsService = {
   getAccounts: {
@@ -318,20 +211,10 @@ export const AccountsService = {
     responseSerialize: (value: GetAccountsResponse) => Buffer.from(GetAccountsResponse.encode(value).finish()),
     responseDeserialize: (value: Buffer) => GetAccountsResponse.decode(value),
   },
-  setAccount: {
-    path: "/accounts.Accounts/SetAccount",
-    requestStream: false,
-    responseStream: false,
-    requestSerialize: (value: SetAccountRequest) => Buffer.from(SetAccountRequest.encode(value).finish()),
-    requestDeserialize: (value: Buffer) => SetAccountRequest.decode(value),
-    responseSerialize: (value: SetAccountResponse) => Buffer.from(SetAccountResponse.encode(value).finish()),
-    responseDeserialize: (value: Buffer) => SetAccountResponse.decode(value),
-  },
 } as const;
 
 export interface AccountsServer extends UntypedServiceImplementation {
   getAccounts: handleUnaryCall<GetAccountsRequest, GetAccountsResponse>;
-  setAccount: handleUnaryCall<SetAccountRequest, SetAccountResponse>;
 }
 
 export interface AccountsClient extends Client {
@@ -349,21 +232,6 @@ export interface AccountsClient extends Client {
     metadata: Metadata,
     options: Partial<CallOptions>,
     callback: (error: ServiceError | null, response: GetAccountsResponse) => void,
-  ): ClientUnaryCall;
-  setAccount(
-    request: SetAccountRequest,
-    callback: (error: ServiceError | null, response: SetAccountResponse) => void,
-  ): ClientUnaryCall;
-  setAccount(
-    request: SetAccountRequest,
-    metadata: Metadata,
-    callback: (error: ServiceError | null, response: SetAccountResponse) => void,
-  ): ClientUnaryCall;
-  setAccount(
-    request: SetAccountRequest,
-    metadata: Metadata,
-    options: Partial<CallOptions>,
-    callback: (error: ServiceError | null, response: SetAccountResponse) => void,
   ): ClientUnaryCall;
 }
 

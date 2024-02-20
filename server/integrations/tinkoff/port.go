@@ -32,11 +32,11 @@ func (c *TinkoffBrokerPort) GetAccounts(ctx context.Context) ([]types.Account, e
 	for _, acc := range accountsRes.Accounts {
 		isOpen := acc.Status == 2                                 //pb.AccountStatus_ACCOUNT_STATUS_OPEN
 		hasAccess := acc.AccessLevel == 1 || acc.AccessLevel == 2 //AccessLevel_ACCOUNT_ACCESS_LEVEL_FULL_ACCESS || AccessLevel_ACCOUNT_ACCESS_LEVEL_READ_ONLY
-		isValidType := acc.Type == 1                
-		fmt.Println(acc)              // pb.AccountType_ACCOUNT_TYPE_TINKOFF
+		isValidType := acc.Type == 1
+		fmt.Println(acc) // pb.AccountType_ACCOUNT_TYPE_TINKOFF
 
 		if isOpen && hasAccess && isValidType {
-			accounts = append(accounts, types.Account{Id: acc.GetId(), Name: acc.GetName() })
+			accounts = append(accounts, types.Account{Id: acc.GetId(), Name: acc.GetName()})
 		}
 	}
 
