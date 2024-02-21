@@ -17,7 +17,7 @@ func (s *Server) GetAccounts(ctx context.Context, in *accounts.GetAccountsReques
 
 	var res []*accounts.Account
 
-	accs, err := bot.Broker.GetAccounts(ctx)
+	accs, err := bot.Broker.GetAccounts()
 	if err != nil {
 		return &accounts.GetAccountsResponse{Accounts: res}, err
 	}

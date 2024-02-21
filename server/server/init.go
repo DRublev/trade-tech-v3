@@ -6,6 +6,7 @@ import (
 	"log"
 	accounts "main/grpcGW/grpcGW.accounts"
 	auth "main/grpcGW/grpcGW.auth"
+	marketdata "main/grpcGW/grpcGW.marketdata"
 	"net"
 
 	"google.golang.org/grpc"
@@ -14,6 +15,7 @@ import (
 type Server struct {
 	accounts.UnimplementedAccountsServer
 	auth.UnimplementedAuthServer
+	marketdata.UnimplementedMarketDataServer
 }
 
 func Start(ctx context.Context, port int) {
@@ -31,6 +33,7 @@ func Start(ctx context.Context, port int) {
 
 	accounts.RegisterAccountsServer(s, srv)
 	auth.RegisterAuthServer(s, srv)
+	marketdata.RegisterMarketDataServer(s, srv)
 
 	fmt.Println("Starting server", lis.Addr())
 	err = s.Serve(lis)

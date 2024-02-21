@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package marketData;
+
+// Название пакета для go
+option go_package = "grpcGW.marketdata";
+
+import "google/protobuf/timestamp.proto";
+
+service MarketData {
+    // Название нашего эндпоинта
+    rpc GetCandles(GetCandlesRequest) returns (GetCandlesResponse);
+}
+
+
+// Что ждем от клиента
+message GetCandlesRequest {
+    string instrumentId = 1;
+    int32 interval = 2;
+    google.protobuf.Timestamp start = 3; 
+    google.protobuf.Timestamp end = 4; 
+    
+}
+
+// Что хотим вернуть
+message GetCandlesResponse {
+    message Quant { 
+        int32 units = 1;
+        int32 nano = 2;
+    }
+
+    message OHLC {
+        Quant open = 1;
+        Quant high = 2;
+        Quant low = 3;
+        Quant close = 4;
+        google.protobuf.Timestamp time = 5;
+    }
+
+    repeated OHLC candles = 1;
+}

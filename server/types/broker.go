@@ -1,6 +1,8 @@
 package types
 
-import "context"
+import (
+	"time"
+)
 
 type BrokerKey string
 
@@ -14,6 +16,7 @@ type Account struct {
 }
 
 type Broker interface {
-	GetAccounts(context.Context) ([]Account, error)
-	SetAccount(context.Context, string) error
+	GetAccounts() ([]Account, error)
+	SetAccount(string) error
+	GetCandles(string, Interval, time.Time, time.Time) ([]OHLC, error)
 }
