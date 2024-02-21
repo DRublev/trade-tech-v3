@@ -30,7 +30,9 @@
 ## Генерация protoc
 
 Скачать [protoc](https://grpc.io/docs/protoc-installation/)
+
 TODO: Докинуть установку плагинов для go и ts (прям командами)
+
 Запустить команды
 GO
 ```sh
