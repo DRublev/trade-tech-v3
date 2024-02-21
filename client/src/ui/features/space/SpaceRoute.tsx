@@ -3,6 +3,7 @@ import { Layout } from "../../components/Layout"
 import * as Toolbar from '@radix-ui/react-toolbar';
 import { Button, Card, Flex } from "@radix-ui/themes";
 import { PlayIcon, StopIcon } from '@radix-ui/react-icons'
+import style from '../../basicStyles.css'
 export const ControlsPanel = () => {
     const [isStarted, setIsStarted] = useState(false);
     const onStartClick = () => {
@@ -16,7 +17,7 @@ export const ControlsPanel = () => {
                 <Flex align="center" justify="center" gap="4">
                     <Toolbar.ToggleGroup type="single">
                         <Toolbar.ToggleItem value="start" asChild>
-                            <Button onClick={onStartClick} highContrast variant="ghost" size="1" radius="full" style={{ verticalAlign: 'middle' ,transform:'scale(1.6)'}}>
+                            <Button className={style.button} onClick={onStartClick} highContrast variant="ghost" size="1" radius="full" style={{ verticalAlign: 'middle' ,transform:'scale(1.6)'}}>
                                 {isStarted ? <StopIcon /> : <PlayIcon />}
                             </Button>
                         </Toolbar.ToggleItem>
@@ -26,7 +27,6 @@ export const ControlsPanel = () => {
         </Card>
     )
 }
-
 
 export const SpaceRoute = () => {
     return (
