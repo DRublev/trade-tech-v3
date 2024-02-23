@@ -1,5 +1,5 @@
 import React, { ComponentClass, FC, MutableRefObject, memo, useCallback, useMemo } from "react";
-
+import { scaleTime } from "d3-scale";
 import {
     ChartCanvas,
     Chart as RFChart,
@@ -7,7 +7,6 @@ import {
     CandlestickSeries,
     YAxis,
     XAxis,
-    discontinuousTimeScaleProviderBuilder,
     withDeviceRatio,
     ZoomButtons,
     OHLCTooltip,
@@ -39,13 +38,16 @@ type Props = WithRatioProps & { parentRef: MutableRefObject<HTMLElement>; data?:
 
 const Chart: FC<Props> = ({ parentRef, ratio, data }) => {
     const chartSize = useChartDimensions(parentRef);
-    const xScaleProvider = useMemo(() => discontinuousTimeScaleProviderBuilder().inputDateAccessor(
-        (d: OHLCData) => d.date,
-    ), []);
 
-    const { data: scaledData, xScale, xAccessor, displayXAccessor } = useMemo(() => xScaleProvider(data || debugData), [])
+    const xScale = scaleTime();
 
     const yExtents = useCallback((d: OHLCData) => [d.high, d.low], []);
+
+    const xAccessor = (d: OHLCData) => d && d.date;
+    const max = useMemo(() => data.length && xAccessor(data[data.length - 1]), [data]);
+    const min = useMemo(() => data.length && xAccessor(data[Math.max(0, data.length - 50)]), [data]);
+    const xExtents = [min, max];
+
     const volumeSeries = useCallback((d: OHLCData) => d.volume, []);
 
     const barChartHeight = useMemo(() => chartSize.height / 4, [chartSize.height]);
@@ -59,11 +61,13 @@ const Chart: FC<Props> = ({ parentRef, ratio, data }) => {
                 ratio={ratio}
                 height={chartSize.height}
                 width={chartSize.width}
-                data={scaledData}
-                displayXAccessor={displayXAccessor}
                 seriesName="Data"
+                data={data}
+
                 xScale={xScale}
                 xAccessor={xAccessor}
+                xExtents={xExtents}
+
                 zoomAnchor={mouseBasedZoomAnchor}
             >
                 <RFChart id={2} height={barChartHeight} origin={barChartOrigin} yExtents={volumeSeries}>

@@ -13,10 +13,11 @@ const useAccounts = () => {
         try {
             if (isLoading) return;
             setIsLoading(true);
-            const response = await getAccounts(null);
-            console.log("15 SelectAccountForm", response);
-            setAccounts(response.Accounts.map((a) => ({ id: a.Id, name: a.Name || a.Id })))
+            // TODO: Типизировать
+            const response: any = await getAccounts(null);
+            setAccounts(response.Accounts.map((a: any) => ({ id: a.Id, name: a.Name || a.Id })))
         } catch (e) {
+            // TODO: Показывать алерт
             console.log("19 SelectAccountForm", e);
             setAccounts([]);
         } finally {
@@ -42,14 +43,15 @@ export const SelectAccountForm = () => {
             event.stopPropagation();
 
             const data = Object.fromEntries(new FormData(event.currentTarget));
-            console.log("39 SelectAccountForm", data);
             await setAccount({ id: data.account });
             navigate('/')
 
         } catch (e) {
+            // TODO: Показывать алерт
+
             console.log("24 SelectAccountForm", e);
 
-            // TODO: Set error message
+            // TODO: Сетить serverErrorMessage
         }
     }, []);
 

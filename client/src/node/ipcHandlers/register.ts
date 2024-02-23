@@ -34,9 +34,8 @@ ipcMain.handle(ipcEvents.GET_ACCOUNTS, async (e) => {
 });
 
 ipcMain.handle(ipcEvents.SET_ACCOUNT, async (e, data) => {
-    console.log("56 index", data);
+    if (!data.id) return Promise.reject('id является обязательным параметром');
 
-    if (!data.id) return Promise.reject('id является обязательным параметром')
     storage.save('accountId', data.id);
     return storage.save('accountId', data.id);
 });
