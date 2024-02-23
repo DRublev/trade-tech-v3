@@ -25,7 +25,6 @@
  *  });
  * ```
  */
-import './ui/index.css';
 import '@radix-ui/themes/styles.css';
 
 import './ui/App';
