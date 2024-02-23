@@ -43,6 +43,8 @@ const Chart: FC<Props> = ({ parentRef, ratio, data }) => {
 
     const yExtents = useCallback((d: OHLCData) => [d.high, d.low], []);
 
+    // TODO: Возможно стоит масщтабировать на основе индексов
+    // чтобы самая правая свеча оказалась изначально по центру экрана
     const xAccessor = (d: OHLCData) => d && d.date;
     const max = useMemo(() => data.length && xAccessor(data[data.length - 1]), [data]);
     const min = useMemo(() => data.length && xAccessor(data[Math.max(0, data.length - 50)]), [data]);
