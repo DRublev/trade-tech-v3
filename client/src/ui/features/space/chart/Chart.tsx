@@ -3,7 +3,6 @@ import { ChartCanvas, Chart as RFChart, CrossHairCursor, lastVisibleItemBasedZoo
 import s from './styles.css';
 import { useChartDimensions } from "./hooks";
 
-type Props = WithRatioProps & { parentRef: MutableRefObject<HTMLElement> }
 
 // TODO: Тоже вынести в хук
 const openCloseColor = (d: OHLCData) => d.close > d.open ? "rgba(181, 210, 193)" : "rgba(255, 127, 127)";
@@ -18,13 +17,15 @@ const candlesAppearance = {
     opacity: 1,
 };
 
-const Chart: FC<Props> = ({ parentRef, ratio }) => {
+type Props = WithRatioProps & { parentRef: MutableRefObject<HTMLElement>; data: OHLCData[] }
+
+const Chart: FC<Props> = ({ parentRef, ratio, data }) => {
     const chartSize = useChartDimensions(parentRef);
     const xScaleProvider = useMemo(() => discontinuousTimeScaleProviderBuilder().inputDateAccessor(
         (d: OHLCData) => d.date,
     ), []);
 
-    const { data, xScale, xAccessor, displayXAccessor } = useMemo(() => xScaleProvider(debugData), [])
+    const { data: scaledData, xScale, xAccessor, displayXAccessor } = useMemo(() => xScaleProvider(data || debugData), [])
 
     const yExtents = useCallback((d: OHLCData) => [d.high, d.low], []);
     const volumeSeries = useCallback((d: OHLCData) => d.volume, []);
@@ -40,7 +41,7 @@ const Chart: FC<Props> = ({ parentRef, ratio }) => {
                 ratio={ratio}
                 height={chartSize.height}
                 width={chartSize.width}
-                data={data}
+                data={scaledData}
                 displayXAccessor={displayXAccessor}
                 seriesName="Data"
                 xScale={xScale}
