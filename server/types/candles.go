@@ -23,4 +23,5 @@ type OHLC struct {
 	// Цена закрытия
 	Close Quant
 	Time  time.Time
+	Volume int64
 }

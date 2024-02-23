@@ -1,7 +1,25 @@
-import React, { ComponentClass, FC, MutableRefObject, memo, useCallback, useMemo, useSyncExternalStore } from "react";
-import { ChartCanvas, Chart as RFChart, CrossHairCursor, lastVisibleItemBasedZoomAnchor, CandlestickSeries, YAxis, XAxis, discontinuousTimeScaleProviderBuilder, withDeviceRatio, ZoomButtons, OHLCTooltip, WithRatioProps, EdgeIndicator, MouseCoordinateY, BarSeries } from "react-financial-charts";
+import React, { ComponentClass, FC, MutableRefObject, memo, useCallback, useMemo } from "react";
+
+import {
+    ChartCanvas,
+    Chart as RFChart,
+    CrossHairCursor,
+    CandlestickSeries,
+    YAxis,
+    XAxis,
+    discontinuousTimeScaleProviderBuilder,
+    withDeviceRatio,
+    ZoomButtons,
+    OHLCTooltip,
+    WithRatioProps,
+    EdgeIndicator,
+    MouseCoordinateY,
+    BarSeries,
+    mouseBasedZoomAnchor,
+} from "react-financial-charts";
 import s from './styles.css';
 import { useChartDimensions } from "./hooks";
+import { OHLCData } from "../../../../types";
 
 
 // TODO: Тоже вынести в хук
@@ -17,7 +35,7 @@ const candlesAppearance = {
     opacity: 1,
 };
 
-type Props = WithRatioProps & { parentRef: MutableRefObject<HTMLElement>; data: OHLCData[] }
+type Props = WithRatioProps & { parentRef: MutableRefObject<HTMLElement>; data?: OHLCData[] }
 
 const Chart: FC<Props> = ({ parentRef, ratio, data }) => {
     const chartSize = useChartDimensions(parentRef);
@@ -46,7 +64,7 @@ const Chart: FC<Props> = ({ parentRef, ratio, data }) => {
                 seriesName="Data"
                 xScale={xScale}
                 xAccessor={xAccessor}
-                zoomAnchor={lastVisibleItemBasedZoomAnchor}
+                zoomAnchor={mouseBasedZoomAnchor}
             >
                 <RFChart id={2} height={barChartHeight} origin={barChartOrigin} yExtents={volumeSeries}>
                     <BarSeries fillStyle={volumeColor} yAccessor={volumeSeries} />
@@ -92,14 +110,4 @@ const debugData: OHLCData[] = [
     { date: new Date("2010-01-19"), open: 25.544274163987136, high: 25.95132113440514, low: 25.486124596784563, close: 25.835022, volume: 46575700 },
     { date: new Date("2010-01-20"), open: 25.59411494568944, high: 25.702108656795026, low: 25.17876090842236, close: 25.41136, volume: 54849500 },
     { date: new Date("2010-01-21"), open: 25.427975689088637, high: 25.51935191837554, low: 24.92124291902699, close: 24.92955, volume: 73086700 },
-]
-
-
-interface OHLCData {
-    readonly close: number;
-    readonly date: Date;
-    readonly high: number;
-    readonly low: number;
-    readonly open: number;
-    readonly volume: number;
-}
+];
