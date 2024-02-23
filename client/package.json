@@ -54,7 +54,7 @@
     "file-system-cache": "^2.4.4",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-financial-charts": "^2.0.1",
+    "react-financial-charts": "2.0.1",
     "react-router-dom": "^6.22.0"
   }
 }

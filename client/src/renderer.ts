@@ -26,6 +26,7 @@
  * ```
  */
 import '@radix-ui/themes/styles.css';
+import './index.css';
 
 import './ui/App';
 
