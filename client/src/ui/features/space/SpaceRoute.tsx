@@ -1,17 +1,23 @@
-import React from "react"
+import React, { useState } from 'react';
 import { Layout } from "../../components/Layout"
 import * as Toolbar from '@radix-ui/react-toolbar';
 import { Button, Card, Flex } from "@radix-ui/themes";
-import { PlayIcon } from '@radix-ui/react-icons'
+import { PlayIcon, StopIcon } from '@radix-ui/react-icons'
 export const ControlsPanel = () => {
+    const [isStarted, setIsStarted] = useState(false);
+    const onStartClick = () => {
+        setIsStarted(!isStarted)
+        //future logic
+    }
+
     return (
-        <Card style={{ minWidth: '20vw', padding: 0, position: 'fixed', bottom: '40px', margin: '0 auto', boxShadow: 'var(--shadow-3)' }}>
+        <Card style={{ minWidth: '40vw', padding: 0, position: 'fixed', left: '50%', transform: 'translate(-50%, 50%)', bottom: '40px', margin: '0 auto', boxShadow: '4px 4px 8px 0px rgba(34, 60, 80, 0.2)' }}>
             <Toolbar.Root>
                 <Flex align="center" justify="center" gap="4">
                     <Toolbar.ToggleGroup type="single">
                         <Toolbar.ToggleItem value="start" asChild>
-                            <Button highContrast variant="ghost" size="4" radius="full">
-                                <PlayIcon />
+                            <Button onClick={onStartClick} highContrast variant="ghost" size="1" radius="full" style={{ verticalAlign: 'middle' ,transform:'scale(1.6)'}}>
+                                {isStarted ? <StopIcon /> : <PlayIcon />}
                             </Button>
                         </Toolbar.ToggleItem>
                     </Toolbar.ToggleGroup>
