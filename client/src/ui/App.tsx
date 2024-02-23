@@ -4,6 +4,6 @@ import { Router } from './Router';
 
 const root = createRoot(document.body);
 
-root.render(<React.StrictMode>
+root.render(<React.Fragment>
     <Router />
-</React.StrictMode>);
+</React.Fragment>);

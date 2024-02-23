@@ -34,7 +34,8 @@ message GetCandlesResponse {
         Quant high = 2;
         Quant low = 3;
         Quant close = 4;
-        google.protobuf.Timestamp time = 5;
+        int64 volume = 5;
+        google.protobuf.Timestamp time = 6;
     }
 
     repeated OHLC candles = 1;

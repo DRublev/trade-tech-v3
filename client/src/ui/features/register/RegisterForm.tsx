@@ -17,6 +17,7 @@ export const RegisterForm = () => {
             await regitster(data);
             navigate('select-account');
         } catch (e) {
+            // TODO: Выводить алерт
             console.log("22 RegisterForm", e);
         }
     }, []);

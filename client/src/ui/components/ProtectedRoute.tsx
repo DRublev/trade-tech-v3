@@ -10,7 +10,6 @@ export const ProtectedRoute = ({ children, sandboxOnly }: Props) => {
     const location = useLocation()
     console.log("10 ProtectedRoute", isAuthorized, sandboxOnly, isSandbox);
 
-
     // TODO: Loader
     if (!isLoaded) return <>Loading...</>
 
