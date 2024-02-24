@@ -9,7 +9,8 @@
     "package": "electron-forge package",
     "make": "electron-forge make",
     "publish": "electron-forge publish",
-    "lint": "eslint --ext .ts,.tsx ."
+    "lint": "eslint --ext .ts,.tsx .",
+    "gen-deps-graph": "depcruise src --output-type mermaid"
   },
   "keywords": [],
   "author": {
@@ -31,6 +32,7 @@
     "@typescript-eslint/parser": "^5.0.0",
     "@vercel/webpack-asset-relocator-loader": "1.7.3",
     "css-loader": "^6.10.0",
+    "dependency-cruiser": "^16.2.1",
     "electron": "28.2.2",
     "eslint": "^8.0.1",
     "eslint-plugin-import": "^2.25.0",

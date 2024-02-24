@@ -10,6 +10,7 @@ import "google/protobuf/timestamp.proto";
 service MarketData {
     // Название нашего эндпоинта
     rpc GetCandles(GetCandlesRequest) returns (GetCandlesResponse);
+    rpc SubscribeCandles(SubscribeCandlesRequest) returns (stream OHLC);
 }
 
 
@@ -18,18 +19,15 @@ message GetCandlesRequest {
     string instrumentId = 1;
     int32 interval = 2;
     google.protobuf.Timestamp start = 3; 
-    google.protobuf.Timestamp end = 4; 
-    
+    google.protobuf.Timestamp end = 4;
 }
 
-// Что хотим вернуть
-message GetCandlesResponse {
-    message Quant { 
-        int32 units = 1;
-        int32 nano = 2;
-    }
+message Quant { 
+    int32 units = 1;
+    int32 nano = 2;
+}
 
-    message OHLC {
+message OHLC {
         Quant open = 1;
         Quant high = 2;
         Quant low = 3;
@@ -38,5 +36,12 @@ message GetCandlesResponse {
         google.protobuf.Timestamp time = 6;
     }
 
+// Что хотим вернуть
+message GetCandlesResponse {
     repeated OHLC candles = 1;
+}
+
+message SubscribeCandlesRequest {
+    string instrumentId = 1;
+    int32 interval = 2;
 }

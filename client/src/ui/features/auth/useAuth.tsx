@@ -3,8 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 // TODO: Заюзать useSyncExternalStorage для подписки на isAuthorised
 
 export type AuthInfo =
-    { isAuthorized: false; isLoaded: boolean } |
-    { isAuthorized: true; isLoaded: boolean; account: string; isSandbox?: boolean }
+    { isAuthorized: boolean; isLoaded: boolean; account: string; isSandbox?: boolean }
 
 const DEFAULT_AUTH_INFO = { isAuthorized: false, isSandbox: true, account: '', isLoaded: false }
 
