@@ -4,7 +4,7 @@ package instruments;
 
 option go_package = "grpcGW.instruments";
 
-service Shares {
+service Instruments {
     rpc GetShares(GetInstrumentsRequest) returns (GetSharesResponse);
 }
 
@@ -17,5 +17,5 @@ message Share {
 
 message GetInstrumentsRequest {}
 message GetSharesResponse {
-    repeated Share Instruments = 1;
+    repeated Share instruments = 1;
 }

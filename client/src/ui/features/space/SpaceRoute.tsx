@@ -4,7 +4,9 @@ import * as Toolbar from '@radix-ui/react-toolbar';
 import { Button, Card, Flex } from "@radix-ui/themes";
 import { PlayIcon, StopIcon } from '@radix-ui/react-icons'
 import style from '../../basicStyles.css'
+import { useGetShares } from "../";
 export const ControlsPanel = () => {
+    const getShares = useGetShares();
     const [isStarted, setIsStarted] = useState(false);
     const onStartClick = () => {
         setIsStarted(!isStarted)

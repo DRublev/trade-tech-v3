@@ -1,4 +1,4 @@
 import { credentials } from "@grpc/grpc-js";
-import { InstrumentsClient } from "../../../grpcGW/instruments";
+import { SharesClient, SharesService } from "../../../grpcGW/instruments";
 
-export const accountsService = new InstrumentsClient("0.0.0.0:50051", credentials.createInsecure());
+export const instrumentsService = new SharesClient("0.0.0.0:50051", credentials.createInsecure());
