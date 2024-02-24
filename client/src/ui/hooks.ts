@@ -6,3 +6,10 @@ export const useIpcInoke = <Req, Res>(channel: ValidChannel) => {
 
     return invoke;
 };
+
+export const useIpcListen = (channel: ValidChannel) => {
+    const listen = useCallback((cb: any) => window.ipc ? window.ipc.on(channel, cb) : Promise.reject, [channel]);
+    const removeListen = useCallback((cb: any) => window.ipc ? window.ipc.removeListener(channel, cb) : Promise.reject, [channel]);
+
+    return [listen, removeListen];
+}

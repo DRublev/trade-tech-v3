@@ -1,8 +1,10 @@
 package tinkoff
 
 import (
+	"context"
 	"fmt"
 	"main/types"
+	"sync"
 	"time"
 
 	investapi "github.com/russianinvestments/invest-api-go-sdk/proto"
@@ -79,13 +81,129 @@ func (c *TinkoffBrokerPort) GetCandles(instrumentId string, interval types.Inter
 	// Конвертируем в нужный тип
 	for _, candle := range candlesRes.Candles {
 		candles = append(candles, types.OHLC{
-			Time:  candle.Time.AsTime(),
-			Open:  toQuant(candle.Open),
-			Close: toQuant(candle.Close),
-			Low:   toQuant(candle.Low),
-			High:  toQuant(candle.High),
+			Time:   candle.Time.AsTime(),
+			Open:   toQuant(candle.Open),
+			Close:  toQuant(candle.Close),
+			Low:    toQuant(candle.Low),
+			High:   toQuant(candle.High),
 			Volume: candle.Volume,
 		})
 	}
 	return candles, nil
+}
+
+const nanoPrecision = 1_000_000_000
+
+func quantToNumber(q types.Quant) float64 {
+	return float64(q.Units) + (float64(q.Nano) / nanoPrecision)
+}
+
+func (c *TinkoffBrokerPort) SubscribeCandles(ctx context.Context, ohlcCh *chan types.OHLC, instrumentId string, interval types.Interval) error {
+	sdk, err := c.getSdk()
+	if err != nil {
+		fmt.Println("Cannot init sdk! ", err)
+		return err
+	}
+
+	// TODO: Эту штуку нужно переиспользовать в других эндпоинтах
+	candlesStreamService := sdk.NewMarketDataStreamClient()
+
+	candlesStream, err := candlesStreamService.MarketDataStream()
+	if err != nil {
+		fmt.Println("Cannot create stream ", err)
+		return err
+	}
+
+	wg := &sync.WaitGroup{}
+
+	// TODO: Докинуть обработку стакана и вообще вынести эту логику в некий Subscriber (глянуть паттерны)
+	// Жду ответа по https://t.me/c/1436923108/53910/59213
+	// candlesCh, err := candlesStream.SubscribeCandle([]string{instrumentId}, investapi.SubscriptionInterval_SUBSCRIPTION_INTERVAL_ONE_MINUTE, false)
+	// if err != nil {
+	// 	fmt.Println("Cannot subscribe ", err)
+	// 	return err
+	// }
+
+	// Подписка на свечи по какой то причине не пашет
+	// Буду собирать свечи руками исходя из последних сделок
+	lastPriceCh, err := candlesStream.SubscribeLastPrice([]string{instrumentId})
+	if err != nil {
+		fmt.Println("Cannot subscribe ", err)
+		return err
+	}
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		err := candlesStream.Listen()
+
+		fmt.Println("117 port", "listen end")
+
+		if err != nil {
+			fmt.Println("erorr in candles stream", err)
+		}
+
+	}()
+
+	wg.Add(1)
+	go func(ctx context.Context) {
+		defer wg.Done()
+
+		candles := make(map[int]types.OHLC)
+
+		for {
+			select {
+			case <-ctx.Done():
+				fmt.Println("context closed for ", instrumentId)
+				err := candlesStream.UnSubscribeAll()
+				if err != nil {
+					fmt.Println("Cannot unsubscribe ", instrumentId, err)
+				}
+				return
+			case lastPrice, ok := <-lastPriceCh:
+				if !ok {
+					fmt.Println("stream done for ", instrumentId)
+					return
+				}
+				dealTime := lastPrice.Time.AsTime()
+				if candle, exists := candles[dealTime.Minute()]; !exists {
+					candles[dealTime.Minute()] = types.OHLC{
+						Time:   dealTime,
+						Open:   toQuant(lastPrice.Price),
+						Close:  toQuant(lastPrice.Price),
+						Low:    toQuant(lastPrice.Price),
+						High:   toQuant(lastPrice.Price),
+						Volume: 0,
+					}
+				} else {
+					c := types.OHLC{
+						Time:   dealTime,
+						Open:   toQuant(lastPrice.Price),
+						Close:  toQuant(lastPrice.Price),
+						Low:    candle.Low,
+						High:   candle.High,
+						Volume: 0,
+					}
+					l := quantToNumber(candle.Low)
+					h := quantToNumber(candle.High)
+					if l > lastPrice.Price.ToFloat() {
+						c.Low = toQuant(lastPrice.Price)
+					}
+					if h < lastPrice.Price.ToFloat() {
+						c.High = toQuant(lastPrice.Price)
+					}
+					candles[dealTime.Minute()] = c
+				}
+
+				*ohlcCh <- candles[dealTime.Minute()]
+
+				fmt.Println("164 port", lastPrice, candles[dealTime.Minute()])
+
+			}
+		}
+	}(ctx)
+
+	// wg.Wait()
+
+	return nil
 }
