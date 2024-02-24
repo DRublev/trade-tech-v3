@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package instruments;
+
+option go_package = "grpcGW.instruments";
+
+service Shares {
+    rpc GetShares(GetInstrumentsRequest) returns (GetSharesResponse);
+}
+
+message Share {
+    string Figi = 1;
+    string Name = 2;
+    string Exchange = 3;
+}
+
+message GetInstrumentsRequest {}
+message GetSharesResponse {
+    repeated Share Instruments = 1;
+}

@@ -19,4 +19,5 @@ type Broker interface {
 	GetAccounts() ([]Account, error)
 	SetAccount(string) error
 	GetCandles(string, Interval, time.Time, time.Time) ([]OHLC, error)
+	GetShares(InstrumentStatus)([]Share, error)
 }
