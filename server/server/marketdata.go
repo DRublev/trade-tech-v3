@@ -55,6 +55,7 @@ func (s *Server) GetCandles(ctx context.Context, in *marketdata.GetCandlesReques
 			Low:   &l,
 			Close: &c,
 			Time:  timestamppb.New(candle.Time),
+			Volume: candle.Volume,
 		})
 	}
 

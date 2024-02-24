@@ -1,10 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Layout } from "../../components/Layout"
 import * as Toolbar from '@radix-ui/react-toolbar';
 import { Button, Card, Flex } from "@radix-ui/themes";
-import { PlayIcon, StopIcon } from '@radix-ui/react-icons'
-import style from '../../basicStyles.css'
-import { useGetShares } from "../";
+import { PlayIcon, StopIcon } from '@radix-ui/react-icons';
+import style from '../../basicStyles.css';
+import Chart from "./chart/Chart";
+import s from './styles.css';
+import { useHistoricCandels } from './hooks';
+
 export const ControlsPanel = () => {
     const getShares = useGetShares();
     const [isStarted, setIsStarted] = useState(false);
@@ -19,7 +22,7 @@ export const ControlsPanel = () => {
                 <Flex align="center" justify="center" gap="4">
                     <Toolbar.ToggleGroup type="single">
                         <Toolbar.ToggleItem value="start" asChild>
-                            <Button className={style.button} onClick={onStartClick} highContrast variant="ghost" size="1" radius="full" style={{ verticalAlign: 'middle' ,transform:'scale(1.6)'}}>
+                            <Button className={style.button} onClick={onStartClick} highContrast variant="ghost" size="1" radius="full" style={{ verticalAlign: 'middle', transform: 'scale(1.6)' }}>
                                 {isStarted ? <StopIcon /> : <PlayIcon />}
                             </Button>
                         </Toolbar.ToggleItem>
@@ -30,10 +33,19 @@ export const ControlsPanel = () => {
     )
 }
 
+
+
 export const SpaceRoute = () => {
+    const chartContainer = useRef();
+    // TODO: Прокидывать id выбранного инструмента
+    const { data, isLoading } = useHistoricCandels();
+
     return (
         <Layout>
-
+            <Card ref={chartContainer} className={s.chartContainer}>
+                {isLoading ? 'loading candles...' : <Chart parentRef={chartContainer} data={data} />
+                }
+            </Card>
             <ControlsPanel />
         </Layout>
     )

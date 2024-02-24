@@ -8,6 +8,7 @@ import type {
   ServiceError,
   UntypedServiceImplementation,
 } from "@grpc/grpc-js";
+import Long from "long";
 import _m0 from "protobufjs/minimal";
 import { Timestamp } from "./google/protobuf/timestamp";
 
@@ -36,6 +37,7 @@ export interface GetCandlesResponse_OHLC {
   high: GetCandlesResponse_Quant | undefined;
   low: GetCandlesResponse_Quant | undefined;
   close: GetCandlesResponse_Quant | undefined;
+  volume: number;
   time: Date | undefined;
 }
 
@@ -279,7 +281,7 @@ export const GetCandlesResponse_Quant = {
 };
 
 function createBaseGetCandlesResponse_OHLC(): GetCandlesResponse_OHLC {
-  return { open: undefined, high: undefined, low: undefined, close: undefined, time: undefined };
+  return { open: undefined, high: undefined, low: undefined, close: undefined, volume: 0, time: undefined };
 }
 
 export const GetCandlesResponse_OHLC = {
@@ -296,8 +298,11 @@ export const GetCandlesResponse_OHLC = {
     if (message.close !== undefined) {
       GetCandlesResponse_Quant.encode(message.close, writer.uint32(34).fork()).ldelim();
     }
+    if (message.volume !== 0) {
+      writer.uint32(40).int64(message.volume);
+    }
     if (message.time !== undefined) {
-      Timestamp.encode(toTimestamp(message.time), writer.uint32(42).fork()).ldelim();
+      Timestamp.encode(toTimestamp(message.time), writer.uint32(50).fork()).ldelim();
     }
     return writer;
   },
@@ -338,7 +343,14 @@ export const GetCandlesResponse_OHLC = {
           message.close = GetCandlesResponse_Quant.decode(reader, reader.uint32());
           continue;
         case 5:
-          if (tag !== 42) {
+          if (tag !== 40) {
+            break;
+          }
+
+          message.volume = longToNumber(reader.int64() as Long);
+          continue;
+        case 6:
+          if (tag !== 50) {
             break;
           }
 
@@ -359,6 +371,7 @@ export const GetCandlesResponse_OHLC = {
       high: isSet(object.high) ? GetCandlesResponse_Quant.fromJSON(object.high) : undefined,
       low: isSet(object.low) ? GetCandlesResponse_Quant.fromJSON(object.low) : undefined,
       close: isSet(object.close) ? GetCandlesResponse_Quant.fromJSON(object.close) : undefined,
+      volume: isSet(object.volume) ? globalThis.Number(object.volume) : 0,
       time: isSet(object.time) ? fromJsonTimestamp(object.time) : undefined,
     };
   },
@@ -376,6 +389,9 @@ export const GetCandlesResponse_OHLC = {
     }
     if (message.close !== undefined) {
       obj.close = GetCandlesResponse_Quant.toJSON(message.close);
+    }
+    if (message.volume !== 0) {
+      obj.volume = Math.round(message.volume);
     }
     if (message.time !== undefined) {
       obj.time = message.time.toISOString();
@@ -400,6 +416,7 @@ export const GetCandlesResponse_OHLC = {
     message.close = (object.close !== undefined && object.close !== null)
       ? GetCandlesResponse_Quant.fromPartial(object.close)
       : undefined;
+    message.volume = object.volume ?? 0;
     message.time = object.time ?? undefined;
     return message;
   },
@@ -481,6 +498,18 @@ function fromJsonTimestamp(o: any): Date {
   } else {
     return fromTimestamp(Timestamp.fromJSON(o));
   }
+}
+
+function longToNumber(long: Long): number {
+  if (long.gt(globalThis.Number.MAX_SAFE_INTEGER)) {
+    throw new globalThis.Error("Value is larger than Number.MAX_SAFE_INTEGER");
+  }
+  return long.toNumber();
+}
+
+if (_m0.util.Long !== Long) {
+  _m0.util.Long = Long as any;
+  _m0.configure();
 }
 
 function isSet(value: any): boolean {

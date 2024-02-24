@@ -3,10 +3,7 @@ import { ipcEvents } from '../../ipcEvents';
 import storage from '../Storage';
 
 import './register';
-
-ipcMain.handle(ipcEvents.TEST_HELLO, async (e, data) => {
-    console.log(ipcEvents.TEST_HELLO, e, data);
-});
+import './marketdata';
 
 ipcMain.handle(ipcEvents.GET_AUTH_INFO, async (e) => {
     if (!safeStorage.isEncryptionAvailable()) return Promise.reject("Шифрование не доступно");

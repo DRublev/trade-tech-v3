@@ -84,6 +84,7 @@ func (c *TinkoffBrokerPort) GetCandles(instrumentId string, interval types.Inter
 			Close: toQuant(candle.Close),
 			Low:   toQuant(candle.Low),
 			High:  toQuant(candle.High),
+			Volume: candle.Volume,
 		})
 	}
 	return candles, nil
