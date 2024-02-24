@@ -12,6 +12,7 @@ message Share {
     string Figi = 1;
     string Name = 2;
     string Exchange = 3;
+    // ticker, lot, ipo_date, trading_status, min_price_increment, uid, first_1min_candle_date, first_1day_candle_date
 }
 
 message GetInstrumentsRequest {}
