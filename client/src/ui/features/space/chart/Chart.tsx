@@ -1,5 +1,5 @@
 import React, { ComponentClass, FC, MutableRefObject, memo, useCallback, useMemo } from "react";
-import { scaleTime } from "d3-scale";
+import { scaleTime, scaleUtc } from "d3-scale";
 import {
     ChartCanvas,
     Chart as RFChart,
@@ -15,6 +15,7 @@ import {
     MouseCoordinateY,
     BarSeries,
     mouseBasedZoomAnchor,
+    discontinuousTimeScaleProviderBuilder,
 } from "react-financial-charts";
 import s from './styles.css';
 import { useChartDimensions } from "./hooks";
@@ -26,20 +27,25 @@ const openCloseColor = (d: OHLCData) => d.close > d.open ? "rgba(181, 210, 193)"
 const volumeColor = (d: OHLCData) => d.close > d.open ? "rgba(181, 210, 193, 0.6)" : "rgba(255, 127, 127, 0.6)";
 
 const candlesAppearance = {
-    wickStroke: "#e1e1e1",
+    wickStroke: openCloseColor,
     fill: openCloseColor,
-    stroke: "#e1e1e1",
+    stroke: openCloseColor,
     candleStrokeWidth: 1,
     widthRatio: 0.8,
     opacity: 1,
 };
 
-type Props = WithRatioProps & { parentRef: MutableRefObject<HTMLElement>; data?: OHLCData[] }
+type Props = WithRatioProps & {
+    parentRef: MutableRefObject<HTMLElement>;
+    data?: OHLCData[];
+    isLoading?: boolean;
+}
 
-const Chart: FC<Props> = ({ parentRef, ratio, data }) => {
+const Chart: FC<Props> = ({ parentRef, ratio, data: data, isLoading = false }) => {
     const chartSize = useChartDimensions(parentRef);
 
     const xScale = scaleTime();
+    const yScale: any = scaleUtc();
 
     const yExtents = useCallback((d: OHLCData) => [d.high, d.low], []);
 
@@ -53,9 +59,9 @@ const Chart: FC<Props> = ({ parentRef, ratio, data }) => {
     const volumeSeries = useCallback((d: OHLCData) => d.volume, []);
 
     const barChartHeight = useMemo(() => chartSize.height / 4, [chartSize.height]);
-    const chartHeight = useMemo(() => chartSize.height, [chartSize.height, barChartHeight]);
+    const chartHeight = useMemo(() => chartSize.height - barChartHeight, [chartSize.height, barChartHeight]);
 
-    const barChartOrigin = useCallback((_: number, __: number) => [0, chartHeight - barChartHeight], [chartSize]);
+    const barChartOrigin = useCallback((_: number, __: number) => [0, chartSize.height - barChartHeight], [chartSize]);
 
     return (
         <>
@@ -66,13 +72,14 @@ const Chart: FC<Props> = ({ parentRef, ratio, data }) => {
                 seriesName="Data"
                 data={data}
 
+                padding={{ top: 100, bottom: 100, right: 0, left: 0 }}
                 xScale={xScale}
                 xAccessor={xAccessor}
                 xExtents={xExtents}
 
                 zoomAnchor={mouseBasedZoomAnchor}
             >
-                <RFChart id={2} height={barChartHeight} origin={barChartOrigin} yExtents={volumeSeries}>
+                <RFChart id={2} height={barChartHeight} origin={barChartOrigin} yExtents={volumeSeries} yScale={yScale}>
                     <BarSeries fillStyle={volumeColor} yAccessor={volumeSeries} />
                 </RFChart>
                 <RFChart id={3} height={chartHeight} yExtents={yExtents} >

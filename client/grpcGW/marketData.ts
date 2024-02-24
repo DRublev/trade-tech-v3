@@ -1,5 +1,12 @@
 /* eslint-disable */
-import { ChannelCredentials, Client, makeGenericClientConstructor, Metadata } from "@grpc/grpc-js";
+import {
+  ChannelCredentials,
+  Client,
+  ClientReadableStream,
+  handleServerStreamingCall,
+  makeGenericClientConstructor,
+  Metadata,
+} from "@grpc/grpc-js";
 import type {
   CallOptions,
   ClientOptions,
@@ -22,23 +29,28 @@ export interface GetCandlesRequest {
   end: Date | undefined;
 }
 
-/** Что хотим вернуть */
-export interface GetCandlesResponse {
-  candles: GetCandlesResponse_OHLC[];
-}
-
-export interface GetCandlesResponse_Quant {
+export interface Quant {
   units: number;
   nano: number;
 }
 
-export interface GetCandlesResponse_OHLC {
-  open: GetCandlesResponse_Quant | undefined;
-  high: GetCandlesResponse_Quant | undefined;
-  low: GetCandlesResponse_Quant | undefined;
-  close: GetCandlesResponse_Quant | undefined;
+export interface OHLC {
+  open: Quant | undefined;
+  high: Quant | undefined;
+  low: Quant | undefined;
+  close: Quant | undefined;
   volume: number;
   time: Date | undefined;
+}
+
+/** Что хотим вернуть */
+export interface GetCandlesResponse {
+  candles: OHLC[];
+}
+
+export interface SubscribeCandlesRequest {
+  instrumentId: string;
+  interval: number;
 }
 
 function createBaseGetCandlesRequest(): GetCandlesRequest {
@@ -145,73 +157,12 @@ export const GetCandlesRequest = {
   },
 };
 
-function createBaseGetCandlesResponse(): GetCandlesResponse {
-  return { candles: [] };
-}
-
-export const GetCandlesResponse = {
-  encode(message: GetCandlesResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-    for (const v of message.candles) {
-      GetCandlesResponse_OHLC.encode(v!, writer.uint32(10).fork()).ldelim();
-    }
-    return writer;
-  },
-
-  decode(input: _m0.Reader | Uint8Array, length?: number): GetCandlesResponse {
-    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-    let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseGetCandlesResponse();
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1:
-          if (tag !== 10) {
-            break;
-          }
-
-          message.candles.push(GetCandlesResponse_OHLC.decode(reader, reader.uint32()));
-          continue;
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skipType(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): GetCandlesResponse {
-    return {
-      candles: globalThis.Array.isArray(object?.candles)
-        ? object.candles.map((e: any) => GetCandlesResponse_OHLC.fromJSON(e))
-        : [],
-    };
-  },
-
-  toJSON(message: GetCandlesResponse): unknown {
-    const obj: any = {};
-    if (message.candles?.length) {
-      obj.candles = message.candles.map((e) => GetCandlesResponse_OHLC.toJSON(e));
-    }
-    return obj;
-  },
-
-  create<I extends Exact<DeepPartial<GetCandlesResponse>, I>>(base?: I): GetCandlesResponse {
-    return GetCandlesResponse.fromPartial(base ?? ({} as any));
-  },
-  fromPartial<I extends Exact<DeepPartial<GetCandlesResponse>, I>>(object: I): GetCandlesResponse {
-    const message = createBaseGetCandlesResponse();
-    message.candles = object.candles?.map((e) => GetCandlesResponse_OHLC.fromPartial(e)) || [];
-    return message;
-  },
-};
-
-function createBaseGetCandlesResponse_Quant(): GetCandlesResponse_Quant {
+function createBaseQuant(): Quant {
   return { units: 0, nano: 0 };
 }
 
-export const GetCandlesResponse_Quant = {
-  encode(message: GetCandlesResponse_Quant, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+export const Quant = {
+  encode(message: Quant, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.units !== 0) {
       writer.uint32(8).int32(message.units);
     }
@@ -221,10 +172,10 @@ export const GetCandlesResponse_Quant = {
     return writer;
   },
 
-  decode(input: _m0.Reader | Uint8Array, length?: number): GetCandlesResponse_Quant {
+  decode(input: _m0.Reader | Uint8Array, length?: number): Quant {
     const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
     let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseGetCandlesResponse_Quant();
+    const message = createBaseQuant();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
@@ -251,14 +202,14 @@ export const GetCandlesResponse_Quant = {
     return message;
   },
 
-  fromJSON(object: any): GetCandlesResponse_Quant {
+  fromJSON(object: any): Quant {
     return {
       units: isSet(object.units) ? globalThis.Number(object.units) : 0,
       nano: isSet(object.nano) ? globalThis.Number(object.nano) : 0,
     };
   },
 
-  toJSON(message: GetCandlesResponse_Quant): unknown {
+  toJSON(message: Quant): unknown {
     const obj: any = {};
     if (message.units !== 0) {
       obj.units = Math.round(message.units);
@@ -269,34 +220,34 @@ export const GetCandlesResponse_Quant = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<GetCandlesResponse_Quant>, I>>(base?: I): GetCandlesResponse_Quant {
-    return GetCandlesResponse_Quant.fromPartial(base ?? ({} as any));
+  create<I extends Exact<DeepPartial<Quant>, I>>(base?: I): Quant {
+    return Quant.fromPartial(base ?? ({} as any));
   },
-  fromPartial<I extends Exact<DeepPartial<GetCandlesResponse_Quant>, I>>(object: I): GetCandlesResponse_Quant {
-    const message = createBaseGetCandlesResponse_Quant();
+  fromPartial<I extends Exact<DeepPartial<Quant>, I>>(object: I): Quant {
+    const message = createBaseQuant();
     message.units = object.units ?? 0;
     message.nano = object.nano ?? 0;
     return message;
   },
 };
 
-function createBaseGetCandlesResponse_OHLC(): GetCandlesResponse_OHLC {
+function createBaseOHLC(): OHLC {
   return { open: undefined, high: undefined, low: undefined, close: undefined, volume: 0, time: undefined };
 }
 
-export const GetCandlesResponse_OHLC = {
-  encode(message: GetCandlesResponse_OHLC, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+export const OHLC = {
+  encode(message: OHLC, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.open !== undefined) {
-      GetCandlesResponse_Quant.encode(message.open, writer.uint32(10).fork()).ldelim();
+      Quant.encode(message.open, writer.uint32(10).fork()).ldelim();
     }
     if (message.high !== undefined) {
-      GetCandlesResponse_Quant.encode(message.high, writer.uint32(18).fork()).ldelim();
+      Quant.encode(message.high, writer.uint32(18).fork()).ldelim();
     }
     if (message.low !== undefined) {
-      GetCandlesResponse_Quant.encode(message.low, writer.uint32(26).fork()).ldelim();
+      Quant.encode(message.low, writer.uint32(26).fork()).ldelim();
     }
     if (message.close !== undefined) {
-      GetCandlesResponse_Quant.encode(message.close, writer.uint32(34).fork()).ldelim();
+      Quant.encode(message.close, writer.uint32(34).fork()).ldelim();
     }
     if (message.volume !== 0) {
       writer.uint32(40).int64(message.volume);
@@ -307,10 +258,10 @@ export const GetCandlesResponse_OHLC = {
     return writer;
   },
 
-  decode(input: _m0.Reader | Uint8Array, length?: number): GetCandlesResponse_OHLC {
+  decode(input: _m0.Reader | Uint8Array, length?: number): OHLC {
     const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
     let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseGetCandlesResponse_OHLC();
+    const message = createBaseOHLC();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
@@ -319,28 +270,28 @@ export const GetCandlesResponse_OHLC = {
             break;
           }
 
-          message.open = GetCandlesResponse_Quant.decode(reader, reader.uint32());
+          message.open = Quant.decode(reader, reader.uint32());
           continue;
         case 2:
           if (tag !== 18) {
             break;
           }
 
-          message.high = GetCandlesResponse_Quant.decode(reader, reader.uint32());
+          message.high = Quant.decode(reader, reader.uint32());
           continue;
         case 3:
           if (tag !== 26) {
             break;
           }
 
-          message.low = GetCandlesResponse_Quant.decode(reader, reader.uint32());
+          message.low = Quant.decode(reader, reader.uint32());
           continue;
         case 4:
           if (tag !== 34) {
             break;
           }
 
-          message.close = GetCandlesResponse_Quant.decode(reader, reader.uint32());
+          message.close = Quant.decode(reader, reader.uint32());
           continue;
         case 5:
           if (tag !== 40) {
@@ -365,30 +316,30 @@ export const GetCandlesResponse_OHLC = {
     return message;
   },
 
-  fromJSON(object: any): GetCandlesResponse_OHLC {
+  fromJSON(object: any): OHLC {
     return {
-      open: isSet(object.open) ? GetCandlesResponse_Quant.fromJSON(object.open) : undefined,
-      high: isSet(object.high) ? GetCandlesResponse_Quant.fromJSON(object.high) : undefined,
-      low: isSet(object.low) ? GetCandlesResponse_Quant.fromJSON(object.low) : undefined,
-      close: isSet(object.close) ? GetCandlesResponse_Quant.fromJSON(object.close) : undefined,
+      open: isSet(object.open) ? Quant.fromJSON(object.open) : undefined,
+      high: isSet(object.high) ? Quant.fromJSON(object.high) : undefined,
+      low: isSet(object.low) ? Quant.fromJSON(object.low) : undefined,
+      close: isSet(object.close) ? Quant.fromJSON(object.close) : undefined,
       volume: isSet(object.volume) ? globalThis.Number(object.volume) : 0,
       time: isSet(object.time) ? fromJsonTimestamp(object.time) : undefined,
     };
   },
 
-  toJSON(message: GetCandlesResponse_OHLC): unknown {
+  toJSON(message: OHLC): unknown {
     const obj: any = {};
     if (message.open !== undefined) {
-      obj.open = GetCandlesResponse_Quant.toJSON(message.open);
+      obj.open = Quant.toJSON(message.open);
     }
     if (message.high !== undefined) {
-      obj.high = GetCandlesResponse_Quant.toJSON(message.high);
+      obj.high = Quant.toJSON(message.high);
     }
     if (message.low !== undefined) {
-      obj.low = GetCandlesResponse_Quant.toJSON(message.low);
+      obj.low = Quant.toJSON(message.low);
     }
     if (message.close !== undefined) {
-      obj.close = GetCandlesResponse_Quant.toJSON(message.close);
+      obj.close = Quant.toJSON(message.close);
     }
     if (message.volume !== 0) {
       obj.volume = Math.round(message.volume);
@@ -399,25 +350,150 @@ export const GetCandlesResponse_OHLC = {
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<GetCandlesResponse_OHLC>, I>>(base?: I): GetCandlesResponse_OHLC {
-    return GetCandlesResponse_OHLC.fromPartial(base ?? ({} as any));
+  create<I extends Exact<DeepPartial<OHLC>, I>>(base?: I): OHLC {
+    return OHLC.fromPartial(base ?? ({} as any));
   },
-  fromPartial<I extends Exact<DeepPartial<GetCandlesResponse_OHLC>, I>>(object: I): GetCandlesResponse_OHLC {
-    const message = createBaseGetCandlesResponse_OHLC();
-    message.open = (object.open !== undefined && object.open !== null)
-      ? GetCandlesResponse_Quant.fromPartial(object.open)
-      : undefined;
-    message.high = (object.high !== undefined && object.high !== null)
-      ? GetCandlesResponse_Quant.fromPartial(object.high)
-      : undefined;
-    message.low = (object.low !== undefined && object.low !== null)
-      ? GetCandlesResponse_Quant.fromPartial(object.low)
-      : undefined;
-    message.close = (object.close !== undefined && object.close !== null)
-      ? GetCandlesResponse_Quant.fromPartial(object.close)
-      : undefined;
+  fromPartial<I extends Exact<DeepPartial<OHLC>, I>>(object: I): OHLC {
+    const message = createBaseOHLC();
+    message.open = (object.open !== undefined && object.open !== null) ? Quant.fromPartial(object.open) : undefined;
+    message.high = (object.high !== undefined && object.high !== null) ? Quant.fromPartial(object.high) : undefined;
+    message.low = (object.low !== undefined && object.low !== null) ? Quant.fromPartial(object.low) : undefined;
+    message.close = (object.close !== undefined && object.close !== null) ? Quant.fromPartial(object.close) : undefined;
     message.volume = object.volume ?? 0;
     message.time = object.time ?? undefined;
+    return message;
+  },
+};
+
+function createBaseGetCandlesResponse(): GetCandlesResponse {
+  return { candles: [] };
+}
+
+export const GetCandlesResponse = {
+  encode(message: GetCandlesResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    for (const v of message.candles) {
+      OHLC.encode(v!, writer.uint32(10).fork()).ldelim();
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): GetCandlesResponse {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetCandlesResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.candles.push(OHLC.decode(reader, reader.uint32()));
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetCandlesResponse {
+    return {
+      candles: globalThis.Array.isArray(object?.candles) ? object.candles.map((e: any) => OHLC.fromJSON(e)) : [],
+    };
+  },
+
+  toJSON(message: GetCandlesResponse): unknown {
+    const obj: any = {};
+    if (message.candles?.length) {
+      obj.candles = message.candles.map((e) => OHLC.toJSON(e));
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetCandlesResponse>, I>>(base?: I): GetCandlesResponse {
+    return GetCandlesResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GetCandlesResponse>, I>>(object: I): GetCandlesResponse {
+    const message = createBaseGetCandlesResponse();
+    message.candles = object.candles?.map((e) => OHLC.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseSubscribeCandlesRequest(): SubscribeCandlesRequest {
+  return { instrumentId: "", interval: 0 };
+}
+
+export const SubscribeCandlesRequest = {
+  encode(message: SubscribeCandlesRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.instrumentId !== "") {
+      writer.uint32(10).string(message.instrumentId);
+    }
+    if (message.interval !== 0) {
+      writer.uint32(16).int32(message.interval);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): SubscribeCandlesRequest {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseSubscribeCandlesRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.instrumentId = reader.string();
+          continue;
+        case 2:
+          if (tag !== 16) {
+            break;
+          }
+
+          message.interval = reader.int32();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): SubscribeCandlesRequest {
+    return {
+      instrumentId: isSet(object.instrumentId) ? globalThis.String(object.instrumentId) : "",
+      interval: isSet(object.interval) ? globalThis.Number(object.interval) : 0,
+    };
+  },
+
+  toJSON(message: SubscribeCandlesRequest): unknown {
+    const obj: any = {};
+    if (message.instrumentId !== "") {
+      obj.instrumentId = message.instrumentId;
+    }
+    if (message.interval !== 0) {
+      obj.interval = Math.round(message.interval);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<SubscribeCandlesRequest>, I>>(base?: I): SubscribeCandlesRequest {
+    return SubscribeCandlesRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<SubscribeCandlesRequest>, I>>(object: I): SubscribeCandlesRequest {
+    const message = createBaseSubscribeCandlesRequest();
+    message.instrumentId = object.instrumentId ?? "";
+    message.interval = object.interval ?? 0;
     return message;
   },
 };
@@ -434,11 +510,21 @@ export const MarketDataService = {
     responseSerialize: (value: GetCandlesResponse) => Buffer.from(GetCandlesResponse.encode(value).finish()),
     responseDeserialize: (value: Buffer) => GetCandlesResponse.decode(value),
   },
+  subscribeCandles: {
+    path: "/marketData.MarketData/SubscribeCandles",
+    requestStream: false,
+    responseStream: true,
+    requestSerialize: (value: SubscribeCandlesRequest) => Buffer.from(SubscribeCandlesRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer) => SubscribeCandlesRequest.decode(value),
+    responseSerialize: (value: OHLC) => Buffer.from(OHLC.encode(value).finish()),
+    responseDeserialize: (value: Buffer) => OHLC.decode(value),
+  },
 } as const;
 
 export interface MarketDataServer extends UntypedServiceImplementation {
   /** Название нашего эндпоинта */
   getCandles: handleUnaryCall<GetCandlesRequest, GetCandlesResponse>;
+  subscribeCandles: handleServerStreamingCall<SubscribeCandlesRequest, OHLC>;
 }
 
 export interface MarketDataClient extends Client {
@@ -458,6 +544,12 @@ export interface MarketDataClient extends Client {
     options: Partial<CallOptions>,
     callback: (error: ServiceError | null, response: GetCandlesResponse) => void,
   ): ClientUnaryCall;
+  subscribeCandles(request: SubscribeCandlesRequest, options?: Partial<CallOptions>): ClientReadableStream<OHLC>;
+  subscribeCandles(
+    request: SubscribeCandlesRequest,
+    metadata?: Metadata,
+    options?: Partial<CallOptions>,
+  ): ClientReadableStream<OHLC>;
 }
 
 export const MarketDataClient = makeGenericClientConstructor(MarketDataService, "marketData.MarketData") as unknown as {
