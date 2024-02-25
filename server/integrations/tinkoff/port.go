@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"main/types"
+	"os"
+	"os/signal"
 	"sync"
 	"time"
 
@@ -105,6 +107,12 @@ func (c *TinkoffBrokerPort) SubscribeCandles(ctx context.Context, ohlcCh *chan t
 		return err
 	}
 
+	backCtx, _ := signal.NotifyContext(context.Background(), os.Interrupt)
+	go func() {
+		<-backCtx.Done()
+		sdk.Stop()
+	}()
+
 	// TODO: Эту штуку нужно переиспользовать в других эндпоинтах
 	candlesStreamService := sdk.NewMarketDataStreamClient()
 
@@ -117,20 +125,20 @@ func (c *TinkoffBrokerPort) SubscribeCandles(ctx context.Context, ohlcCh *chan t
 	wg := &sync.WaitGroup{}
 
 	// TODO: Докинуть обработку стакана и вообще вынести эту логику в некий Subscriber (глянуть паттерны)
-	// Жду ответа по https://t.me/c/1436923108/53910/59213
-	// candlesCh, err := candlesStream.SubscribeCandle([]string{instrumentId}, investapi.SubscriptionInterval_SUBSCRIPTION_INTERVAL_ONE_MINUTE, false)
-	// if err != nil {
-	// 	fmt.Println("Cannot subscribe ", err)
-	// 	return err
-	// }
-
-	// Подписка на свечи по какой то причине не пашет
-	// Буду собирать свечи руками исходя из последних сделок
-	lastPriceCh, err := candlesStream.SubscribeLastPrice([]string{instrumentId})
+	// Стрим не работает по выходным, см https://t.me/c/1436923108/53910/59213
+	candlesCh, err := candlesStream.SubscribeCandle([]string{instrumentId}, investapi.SubscriptionInterval_SUBSCRIPTION_INTERVAL_ONE_MINUTE, false)
 	if err != nil {
 		fmt.Println("Cannot subscribe ", err)
 		return err
 	}
+
+	// Собирать свечи руками исходя из последних сделок, для выходных дней
+	lastPriceCh := make(chan *investapi.LastPrice)
+	// lastPriceCh, err := candlesStream.SubscribeLastPrice([]string{instrumentId})
+	// if err != nil {
+	// 	fmt.Println("Cannot subscribe ", err)
+	// 	return err
+	// }
 
 	wg.Add(1)
 	go func() {
@@ -160,6 +168,21 @@ func (c *TinkoffBrokerPort) SubscribeCandles(ctx context.Context, ohlcCh *chan t
 					fmt.Println("Cannot unsubscribe ", instrumentId, err)
 				}
 				return
+			case candle, ok := <-candlesCh:
+				if !ok {
+					fmt.Println("stream done for ", instrumentId)
+					return
+				}
+				ohlc := types.OHLC{
+					Time: candle.Time.AsTime(),
+					Volume: candle.Volume,
+					Open: toQuant(candle.Open),
+					High: toQuant(candle.High),
+					Low: toQuant(candle.Low),
+					Close: toQuant(candle.Close),
+				}
+				*ohlcCh <- ohlc
+			// Врубать только для дебага графика в выходные!
 			case lastPrice, ok := <-lastPriceCh:
 				if !ok {
 					fmt.Println("stream done for ", instrumentId)
