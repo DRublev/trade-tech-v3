@@ -225,9 +225,8 @@ func (c *TinkoffBrokerPort) GetShares(instrumentStatus types.InstrumentStatus) (
 		fmt.Println("Cannot get shares", err)
 		return []types.Share{}, err
 	}
-	fmt.Println(sharesRes)
 	fmt.Println("test go")
 	shares := []types.Share{}
-
+	fmt.Println(sharesRes.Instruments[0])
 	return shares, nil
 }

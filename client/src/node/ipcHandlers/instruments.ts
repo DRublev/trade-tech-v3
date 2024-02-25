@@ -11,9 +11,9 @@ ipcMain.handle(ipcEvents.GET_SHARES, async (e, req) => {
     const res = await new Promise((resolve, reject) => {
         sharesService.getShares({
             instrumentStatus
-        }, (e, { Instruments }) => {
+        }, (e,  Instruments) => {
             if (e) return reject(e);
-            resolve(Instruments)
+            resolve(Instruments.instruments)
         });
     });
     return res;

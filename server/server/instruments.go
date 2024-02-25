@@ -19,13 +19,12 @@ func (s *Server) GetShares(ctx context.Context, in *shares.GetInstrumentsRequest
 	var res []*shares.Share
 
 	// Вызываем созданный ранее сервис
-	sharesRes, err := bot.Broker.GetShares(types.InstrumentStatus(in.InstrumentStatus),)
+	_, err = bot.Broker.GetShares(types.InstrumentStatus(in.InstrumentStatus),)
 
 	if err != nil {
 		return &shares.GetSharesResponse{Instruments: res}, err
 	}
 
 	fmt.Println("shares GetShares request")
-	fmt.Println(sharesRes)
 	return &shares.GetSharesResponse{Instruments: res}, nil
 }
