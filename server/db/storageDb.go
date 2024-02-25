@@ -26,6 +26,21 @@ func (d *DB) getStoragePath(storageName []string) (string, error) {
 	return p, nil
 }
 
+func (d *DB) Prune(storageName []string) error {
+	storageFile, err := d.getStoragePath(storageName)
+	if err != nil {
+		log.Default().Println("Failed to get storage path: ", err)
+		return err
+	}
+
+	if _, err := os.Stat(storageFile); os.IsNotExist(err) {
+		return nil
+	}
+
+	err = os.RemoveAll(storageFile)
+	return err
+}
+
 func (d *DB) Append(storageName []string, content []byte) error {
 	storageFile, err := d.getStoragePath(storageName)
 	fmt.Println("Appending to ", storageFile)

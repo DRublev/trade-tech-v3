@@ -24,13 +24,18 @@ class AuthState {
 
 export const useAuth = () => {
     const authState = new AuthState();
-    const [atuhInfo, setAuthInfo] = useState(authState.state);
+    const [authInfo, setAuthInfo] = useState(authState.state);
 
     const getAuthInfo = useCallback(async () => {
         const info = await window.ipc.invoke('GET_AUTH_INFO');
 
         return info || { isAuthorised: false, isSandbox: true, account: null };
     }, []);
+
+    const setShouldUpdateAuthInfo = useCallback(() => {
+        authState.state.isLoaded = false;
+        setAuthInfo({ ...authState.state });
+    }, [authState]);
 
     const updateAuthInfo = async () => {
         try {
@@ -48,7 +53,7 @@ export const useAuth = () => {
         if (!authState.state.isLoaded) {
             updateAuthInfo()
         }
-    }, []);
+    }, [authState.state.isLoaded]);
 
-    return atuhInfo;
+    return { ...authInfo, setShouldUpdateAuthInfo };
 }

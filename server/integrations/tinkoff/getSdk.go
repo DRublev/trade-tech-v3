@@ -76,6 +76,7 @@ func getToken() (string, error) {
 	token, err := utils.Decrypt(string(encrypted), secret)
 	if err != nil {
 		fmt.Println("cannot decrypt token", err)
+		dbInstance.Prune([]string{"auth"})
 		return "", errors.New("cannot decrypt token")
 	}
 
