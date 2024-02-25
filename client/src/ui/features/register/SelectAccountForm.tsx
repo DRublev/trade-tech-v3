@@ -3,6 +3,7 @@ import * as Form from '@radix-ui/react-form';
 import { Button, Card, Flex, RadioGroup } from "@radix-ui/themes";
 import { useGetAccount, useSetAccount } from "./hooks";
 import { useNavigate } from "react-router";
+import { useAuth } from "../auth/useAuth";
 
 const useAccounts = () => {
     const getAccounts = useGetAccount();
@@ -34,6 +35,7 @@ const useAccounts = () => {
 
 export const SelectAccountForm = () => {
     const { accounts, isLoading } = useAccounts();
+    const { setShouldUpdateAuthInfo } = useAuth();
     const setAccount = useSetAccount();
     const navigate = useNavigate();
 
@@ -42,10 +44,10 @@ export const SelectAccountForm = () => {
             event.preventDefault();
             event.stopPropagation();
 
+            setShouldUpdateAuthInfo();
             const data = Object.fromEntries(new FormData(event.currentTarget));
             await setAccount({ id: data.account });
             navigate('/')
-
         } catch (e) {
             // TODO: Показывать алерт
 
@@ -60,10 +62,10 @@ export const SelectAccountForm = () => {
             <Form.Root onSubmit={handleSubmit}>
                 <Flex direction="column" gap="3">
                     <RadioGroup.Root>
-                        <Form.Field name="account">
+                        <Form.Field name="account" >
                             {accounts.map(account => (
-                                <Flex align="center" gap="3">
-                                    <Form.Control type="radio" value={account.id}></Form.Control>
+                                <Flex align="center" gap="3" key={account.id}>
+                                    <Form.Control required type="radio" value={account.id}></Form.Control>
                                     <Form.Label >{account.name}</Form.Label>
                                 </Flex>
                             ))}
