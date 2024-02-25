@@ -4,6 +4,7 @@ import storage from '../Storage';
 
 import './register';
 import './marketdata';
+import './instruments';
 
 ipcMain.handle(ipcEvents.GET_AUTH_INFO, async (e) => {
     if (!safeStorage.isEncryptionAvailable()) return Promise.reject("Шифрование не доступно");

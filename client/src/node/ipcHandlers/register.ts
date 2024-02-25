@@ -3,6 +3,7 @@ import { ipcEvents } from "../../ipcEvents";
 import storage from '../Storage';
 import { accountsService } from '../grpc/accounts';
 import { authService } from '../grpc/auth';
+import { sharesService } from '../grpc/instruments'
 
 type Payload = {
     token: string;

@@ -7,19 +7,17 @@ import style from '../../basicStyles.css';
 import Chart from "./chart/Chart";
 import s from './styles.css';
 import { useCandles } from './hooks';
-import { useHistoricCandels, useGetShares } from './hooks';
+import { useGetShares } from './hooks';
 
 export const ControlsPanel = () => {
+
     const getShares = useGetShares();
     const [isStarted, setIsStarted] = useState(false);
-    const onStartClick = () => {
-       
+    const onStartClick = async () => {
+
         setIsStarted(!isStarted)
-    
-        async () => {
-            const response: any = await getShares("test");
-        }
-    
+        const response: any = await getShares({ instrumentStatus: 1 });
+
         //future logic
     }
 
@@ -45,7 +43,7 @@ export const ControlsPanel = () => {
 export const SpaceRoute = () => {
     const chartContainer = useRef();
     // TODO: Прокидывать id выбранного инструмента
-    const { data, isLoading } = useCandles();
+    // const { data, isLoading } = useCandles();
 
     return (
         <Layout>
@@ -53,8 +51,8 @@ export const SpaceRoute = () => {
                 {/* TODO: Запилить лоадер для графика
                     Может быть прокидывать isLoading внутрь и разруливать внутри Chart
                 */}
-                {isLoading ? 'loading candles...' : <Chart parentRef={chartContainer} data={data} />
-                }
+                {/* {isLoading ? 'loading candles...' : <Chart parentRef={chartContainer} data={data} /> */}
+                {/* } */}
             </Card>
             <ControlsPanel />
         </Layout>
