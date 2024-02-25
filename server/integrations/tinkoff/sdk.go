@@ -42,7 +42,7 @@ func getInstance() *investgo.Client {
 	return instance
 }
 
-func (c *TinkoffBrokerPort) getSdk() (*investgo.Client, error) {
+func (c *TinkoffBrokerPort) NewSdk() (*investgo.Client, error) {
 	if isInited() {
 		return getInstance(), nil
 	}

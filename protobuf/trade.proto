@@ -9,7 +9,6 @@ service Trade {
     rpc Stop(StopRequest) returns (StopResponse);
 }
 
-
 message StartRequest {
     string Strategy = 1;
     string InstrumentId = 2;   

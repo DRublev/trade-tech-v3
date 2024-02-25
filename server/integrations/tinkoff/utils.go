@@ -20,7 +20,7 @@ func toQuant(iq *investapi.Quotation) types.Quant {
 	}
 }
 
-type InvestCandle interface {
+type IInvestCandle interface {
 	GetTime() *timestamppb.Timestamp
 	GetOpen() *investapi.Quotation
 	GetHigh() *investapi.Quotation
@@ -29,7 +29,7 @@ type InvestCandle interface {
 	GetVolume() int64
 }
 
-func toOHLC(c InvestCandle) types.OHLC {
+func toOHLC(c IInvestCandle) types.OHLC {
 	candle := types.OHLC{
 		Time:   c.GetTime().AsTime(),
 		Open:   toQuant(c.GetOpen()),
