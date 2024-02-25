@@ -19,7 +19,8 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	MarketData_GetCandles_FullMethodName = "/marketData.MarketData/GetCandles"
+	MarketData_GetCandles_FullMethodName       = "/marketData.MarketData/GetCandles"
+	MarketData_SubscribeCandles_FullMethodName = "/marketData.MarketData/SubscribeCandles"
 )
 
 // MarketDataClient is the client API for MarketData service.
@@ -28,6 +29,7 @@ const (
 type MarketDataClient interface {
 	// Название нашего эндпоинта
 	GetCandles(ctx context.Context, in *GetCandlesRequest, opts ...grpc.CallOption) (*GetCandlesResponse, error)
+	SubscribeCandles(ctx context.Context, in *SubscribeCandlesRequest, opts ...grpc.CallOption) (MarketData_SubscribeCandlesClient, error)
 }
 
 type marketDataClient struct {
@@ -47,12 +49,45 @@ func (c *marketDataClient) GetCandles(ctx context.Context, in *GetCandlesRequest
 	return out, nil
 }
 
+func (c *marketDataClient) SubscribeCandles(ctx context.Context, in *SubscribeCandlesRequest, opts ...grpc.CallOption) (MarketData_SubscribeCandlesClient, error) {
+	stream, err := c.cc.NewStream(ctx, &MarketData_ServiceDesc.Streams[0], MarketData_SubscribeCandles_FullMethodName, opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &marketDataSubscribeCandlesClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type MarketData_SubscribeCandlesClient interface {
+	Recv() (*OHLC, error)
+	grpc.ClientStream
+}
+
+type marketDataSubscribeCandlesClient struct {
+	grpc.ClientStream
+}
+
+func (x *marketDataSubscribeCandlesClient) Recv() (*OHLC, error) {
+	m := new(OHLC)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // MarketDataServer is the server API for MarketData service.
 // All implementations must embed UnimplementedMarketDataServer
 // for forward compatibility
 type MarketDataServer interface {
 	// Название нашего эндпоинта
 	GetCandles(context.Context, *GetCandlesRequest) (*GetCandlesResponse, error)
+	SubscribeCandles(*SubscribeCandlesRequest, MarketData_SubscribeCandlesServer) error
 	mustEmbedUnimplementedMarketDataServer()
 }
 
@@ -62,6 +97,9 @@ type UnimplementedMarketDataServer struct {
 
 func (UnimplementedMarketDataServer) GetCandles(context.Context, *GetCandlesRequest) (*GetCandlesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetCandles not implemented")
+}
+func (UnimplementedMarketDataServer) SubscribeCandles(*SubscribeCandlesRequest, MarketData_SubscribeCandlesServer) error {
+	return status.Errorf(codes.Unimplemented, "method SubscribeCandles not implemented")
 }
 func (UnimplementedMarketDataServer) mustEmbedUnimplementedMarketDataServer() {}
 
@@ -94,6 +132,27 @@ func _MarketData_GetCandles_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MarketData_SubscribeCandles_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(SubscribeCandlesRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(MarketDataServer).SubscribeCandles(m, &marketDataSubscribeCandlesServer{stream})
+}
+
+type MarketData_SubscribeCandlesServer interface {
+	Send(*OHLC) error
+	grpc.ServerStream
+}
+
+type marketDataSubscribeCandlesServer struct {
+	grpc.ServerStream
+}
+
+func (x *marketDataSubscribeCandlesServer) Send(m *OHLC) error {
+	return x.ServerStream.SendMsg(m)
+}
+
 // MarketData_ServiceDesc is the grpc.ServiceDesc for MarketData service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -106,6 +165,12 @@ var MarketData_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _MarketData_GetCandles_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "SubscribeCandles",
+			Handler:       _MarketData_SubscribeCandles_Handler,
+			ServerStreams: true,
+		},
+	},
 	Metadata: "marketData.proto",
 }

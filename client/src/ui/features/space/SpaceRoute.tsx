@@ -6,6 +6,7 @@ import { PlayIcon, StopIcon } from '@radix-ui/react-icons';
 import style from '../../basicStyles.css';
 import Chart from "./chart/Chart";
 import s from './styles.css';
+import { useCandles } from './hooks';
 import { useHistoricCandels, useGetShares } from './hooks';
 
 export const ControlsPanel = () => {
@@ -44,11 +45,14 @@ export const ControlsPanel = () => {
 export const SpaceRoute = () => {
     const chartContainer = useRef();
     // TODO: Прокидывать id выбранного инструмента
-    const { data, isLoading } = useHistoricCandels();
+    const { data, isLoading } = useCandles();
 
     return (
         <Layout>
             <Card ref={chartContainer} className={s.chartContainer}>
+                {/* TODO: Запилить лоадер для графика
+                    Может быть прокидывать isLoading внутрь и разруливать внутри Chart
+                */}
                 {isLoading ? 'loading candles...' : <Chart parentRef={chartContainer} data={data} />
                 }
             </Card>
