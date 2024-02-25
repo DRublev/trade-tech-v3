@@ -2,9 +2,9 @@
 // versions:
 // - protoc-gen-go-grpc v1.3.0
 // - protoc             v4.25.3
-// source: instruments.proto
+// source: shares.proto
 
-package grpcGW_instruments
+package grpcGW_shares
 
 import (
 	context "context"
@@ -19,7 +19,7 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	Shares_GetShares_FullMethodName = "/instruments.Shares/GetShares"
+	Shares_GetShares_FullMethodName = "/shares.Shares/GetShares"
 )
 
 // SharesClient is the client API for Shares service.
@@ -96,7 +96,7 @@ func _Shares_GetShares_Handler(srv interface{}, ctx context.Context, dec func(in
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var Shares_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "instruments.Shares",
+	ServiceName: "shares.Shares",
 	HandlerType: (*SharesServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
@@ -105,5 +105,5 @@ var Shares_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "instruments.proto",
+	Metadata: "shares.proto",
 }

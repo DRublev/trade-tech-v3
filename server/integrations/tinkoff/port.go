@@ -90,7 +90,7 @@ func (c *TinkoffBrokerPort) GetCandles(instrumentId string, interval types.Inter
 	return candles, nil
 }
 
-func (c *TinkoffBrokerPort) GetShares(instrumentStatus investapi.InstrumentStatus) ([]types.Share, error) {
+func (c *TinkoffBrokerPort) GetShares(instrumentStatus types.InstrumentStatus) ([]types.Share, error) {
 	// Инициализируем investgo sdk
 	sdk, err := c.getSdk()
 	if err != nil {
@@ -102,12 +102,13 @@ func (c *TinkoffBrokerPort) GetShares(instrumentStatus investapi.InstrumentStatu
 	instrumentService := sdk.NewInstrumentsServiceClient()
 
 	// Получаем акции по инструменту
-	sharesRes, err := instrumentService.Shares(instrumentStatus)
+	sharesRes, err := instrumentService.Shares(investapi.InstrumentStatus(instrumentStatus))
 	if err != nil {
 		fmt.Println("Cannot get shares", err)
 		return []types.Share{}, err
 	}
 	fmt.Println(sharesRes)
+	fmt.Println("test go")
 	shares := []types.Share{}
 
 	return shares, nil

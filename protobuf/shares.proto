@@ -1,10 +1,10 @@
 syntax = "proto3";
 
-package instruments;
+package shares;
 
-option go_package = "grpcGW.instruments";
+option go_package = "grpcGW.shares";
 
-service Instruments {
+service Shares {
     rpc GetShares(GetInstrumentsRequest) returns (GetSharesResponse);
 }
 
@@ -15,7 +15,10 @@ message Share {
     // ticker, lot, ipo_date, trading_status, min_price_increment, uid, first_1min_candle_date, first_1day_candle_date
 }
 
-message GetInstrumentsRequest {}
+message GetInstrumentsRequest {
+     int32 instrumentStatus = 2;
+}
+
 message GetSharesResponse {
     repeated Share instruments = 1;
 }

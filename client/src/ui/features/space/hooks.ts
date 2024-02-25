@@ -2,10 +2,14 @@ import { GetCandlesRequest } from "../../../../grpcGW/marketData";
 import { useIpcInoke } from "../../hooks";
 import { OHLCData } from "../../../types";
 import { useState, useEffect } from "react";
+import { GetInstrumentsRequest } from "../../../../grpcGW/instruments";
+import { GetSharesResponse } from "../../../../grpcGW/instruments";
 
 type GetCandlesResponse = OHLCData[];
 
 export const useGetCandles = (): (req: GetCandlesRequest) => Promise<GetCandlesResponse> => useIpcInoke("GET_CANDLES");
+// export const useGetShares = (): (req: GetInstrumentsRequest) => Promise<GetSharesResponse> => useIpcInoke("GET_SHARES");
+export const useGetShares = () => useIpcInoke("GET_SHARES");
 
 export const useHistoricCandels = (figiOrInstrumentId: string = "BBG004730N88") => {
     const getCandles = useGetCandles();

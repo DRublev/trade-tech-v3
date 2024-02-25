@@ -4,27 +4,27 @@ import (
 	"context"
 	"fmt"
 	"main/bot"
-	 instruments "main/grpcGW/grpcGW.instruments"
+	shares "main/grpcGW/grpcGW.shares"
 	"main/types"
 )
 
-func (s *Server) GetShares(ctx context.Context, in *instruments.GetInstrumentsRequest) (*instruments.GetSharesResponse, error) {
+func (s *Server) GetShares(ctx context.Context, in *shares.GetInstrumentsRequest) (*shares.GetSharesResponse, error) {
 	err := bot.Init(ctx, types.Tinkoff)
 	if err != nil {
-		fmt.Println("instrument GetShares request err", err)
-		return &instruments.GetSharesResponse{Instruments: []*instruments.Share{}}, err
+		fmt.Println("shares GetShares request err", err)
+		return &shares.GetSharesResponse{Instruments: []*shares.Share{}}, err
 	}
 
-	var res []*instruments.Share
+	var res []*shares.Share
 
 	// Вызываем созданный ранее сервис
-	shares, err := bot.Broker.GetShares(types.InstrumentStatus{})
+	sharesRes, err := bot.Broker.GetShares(types.InstrumentStatus(in.InstrumentStatus),)
 
 	if err != nil {
-		return &instruments.GetSharesResponse{Instruments: res}, err
+		return &shares.GetSharesResponse{Instruments: res}, err
 	}
 
-	fmt.Println("instrumetns GetShares request")
-	fmt.Println(shares)
-	return &instruments.GetSharesResponse{Instruments: res}, nil
+	fmt.Println("shares GetShares request")
+	fmt.Println(sharesRes)
+	return &shares.GetSharesResponse{Instruments: res}, nil
 }

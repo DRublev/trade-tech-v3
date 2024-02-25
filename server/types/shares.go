@@ -1,9 +1,6 @@
 package types
 
-type InstrumentStatus struct {
-	Number int
-	Name   string
-}
+type InstrumentStatus byte
 
 type Share struct {
 	Figi     string

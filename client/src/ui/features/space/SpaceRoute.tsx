@@ -6,13 +6,19 @@ import { PlayIcon, StopIcon } from '@radix-ui/react-icons';
 import style from '../../basicStyles.css';
 import Chart from "./chart/Chart";
 import s from './styles.css';
-import { useHistoricCandels } from './hooks';
+import { useHistoricCandels, useGetShares } from './hooks';
 
 export const ControlsPanel = () => {
     const getShares = useGetShares();
     const [isStarted, setIsStarted] = useState(false);
     const onStartClick = () => {
+       
         setIsStarted(!isStarted)
+    
+        async () => {
+            const response: any = await getShares("test");
+        }
+    
         //future logic
     }
 
