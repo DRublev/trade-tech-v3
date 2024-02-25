@@ -44,7 +44,7 @@ export const ControlsPanel = () => {
 export const SpaceRoute = () => {
     const chartContainer = useRef();
     // TODO: Прокидывать id выбранного инструмента
-    // const { data, isLoading } = useCandles();
+    const { data, isLoading } = useCandles();
 
     return (
         <Layout>
@@ -52,8 +52,7 @@ export const SpaceRoute = () => {
                 {/* TODO: Запилить лоадер для графика
                     Может быть прокидывать isLoading внутрь и разруливать внутри Chart
                 */}
-                {/* {isLoading ? 'loading candles...' : <Chart parentRef={chartContainer} data={data} /> */}
-                {/* } */}
+                {isLoading ? 'loading candles...' : <Chart parentRef={chartContainer} data={data} /> }
             </Card>
             <ControlsPanel />
         </Layout>

@@ -226,7 +226,6 @@ func (c *TinkoffBrokerPort) GetShares(instrumentStatus types.InstrumentStatus) (
 		return []types.Share{}, err
 	}
 
-	fmt.Println(sharesRes.Instruments[0])
 	shares := []types.Share{}
 	// Конвертируем в нужный тип
 	for _, share := range sharesRes.Instruments {
@@ -249,7 +248,6 @@ func (c *TinkoffBrokerPort) GetShares(instrumentStatus types.InstrumentStatus) (
 			})
 		}
 	}
-	fmt.Println("suka ebanaya")
-	fmt.Println(shares)
+
 	return shares, nil
 }
