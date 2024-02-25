@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"log"
 	"main/db"
-	sdk "main/integrations/tinkoff/sdk"
 	"main/utils"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/russianinvestments/invest-api-go-sdk/investgo"
@@ -16,11 +16,35 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
+var instance *investgo.Client = nil
+var once sync.Once
 var dbInstance = db.DB{}
 
+func initialize(ctx context.Context, config investgo.Config, l investgo.Logger) *investgo.Client {
+	once.Do(func() {
+		inst, err := investgo.NewClient(ctx, config, l)
+		if err != nil {
+			log.Fatalln("Cannot init sdk!" + err.Error())
+			return
+		}
+		instance = inst
+		fmt.Println("Instance created", inst != nil)
+	})
+
+	return instance
+}
+
+func isInited() bool {
+	return instance != nil
+}
+
+func getInstance() *investgo.Client {
+	return instance
+}
+
 func (c *TinkoffBrokerPort) getSdk() (*investgo.Client, error) {
-	if sdk.IsInited() {
-		return sdk.GetInstance(), nil
+	if isInited() {
+		return getInstance(), nil
 	}
 
 	token, err := getToken()
@@ -54,7 +78,7 @@ func (c *TinkoffBrokerPort) getSdk() (*investgo.Client, error) {
 
 	ctx := context.Background()
 
-	s := sdk.Init(ctx, *config, logger)
+	s := initialize(ctx, *config, logger)
 	fmt.Println("Tinkoff sdk inited")
 
 	return s, nil

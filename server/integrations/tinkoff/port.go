@@ -15,8 +15,8 @@ import (
 const ENDPOINT = "sandbox-invest-public-api.tinkoff.ru:443"
 
 // https://github.com/RussianInvestments/invest-api-go-sdk
-// TODO: Хорошо бы явно наследовать types.Broker (чтоб были подсказки при имплементации метода)
-type TinkoffBrokerPort struct{}
+
+// TODO: Пора разделять методы по файлам
 
 func (c *TinkoffBrokerPort) GetAccounts() ([]types.Account, error) {
 	sdk, err := c.getSdk()
@@ -53,13 +53,6 @@ func (c *TinkoffBrokerPort) SetAccount(accountId string) error {
 	return nil
 }
 
-func toQuant(iq *investapi.Quotation) types.Quant {
-	return types.Quant{
-		Units: int(iq.Units),
-		Nano:  int(iq.Nano),
-	}
-}
-
 func (c *TinkoffBrokerPort) GetCandles(instrumentId string, interval types.Interval, start time.Time, end time.Time) ([]types.OHLC, error) {
 	// Инициализируем investgo sdk
 	sdk, err := c.getSdk()
@@ -82,22 +75,9 @@ func (c *TinkoffBrokerPort) GetCandles(instrumentId string, interval types.Inter
 
 	// Конвертируем в нужный тип
 	for _, candle := range candlesRes.Candles {
-		candles = append(candles, types.OHLC{
-			Time:   candle.Time.AsTime(),
-			Open:   toQuant(candle.Open),
-			Close:  toQuant(candle.Close),
-			Low:    toQuant(candle.Low),
-			High:   toQuant(candle.High),
-			Volume: candle.Volume,
-		})
+		candles = append(candles, toOHLC(candle))
 	}
 	return candles, nil
-}
-
-const nanoPrecision = 1_000_000_000
-
-func quantToNumber(q types.Quant) float64 {
-	return float64(q.Units) + (float64(q.Nano) / nanoPrecision)
 }
 
 func (c *TinkoffBrokerPort) SubscribeCandles(ctx context.Context, ohlcCh *chan types.OHLC, instrumentId string, interval types.Interval) error {
@@ -173,14 +153,7 @@ func (c *TinkoffBrokerPort) SubscribeCandles(ctx context.Context, ohlcCh *chan t
 					fmt.Println("stream done for ", instrumentId)
 					return
 				}
-				ohlc := types.OHLC{
-					Time: candle.Time.AsTime(),
-					Volume: candle.Volume,
-					Open: toQuant(candle.Open),
-					High: toQuant(candle.High),
-					Low: toQuant(candle.Low),
-					Close: toQuant(candle.Close),
-				}
+				ohlc := toOHLC(candle)
 				*ohlcCh <- ohlc
 			// Врубать только для дебага графика в выходные!
 			case lastPrice, ok := <-lastPriceCh:
