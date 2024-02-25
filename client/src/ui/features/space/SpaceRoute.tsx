@@ -17,6 +17,7 @@ export const ControlsPanel = () => {
 
         setIsStarted(!isStarted)
         const response: any = await getShares({ instrumentStatus: 1 });
+        console.log(response)
 
         //future logic
     }

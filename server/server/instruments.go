@@ -9,7 +9,6 @@ import (
 )
 
 func (s *Server) GetShares(ctx context.Context, in *shares.GetInstrumentsRequest) (*shares.GetSharesResponse, error) {
-	fmt.Println("blya")
 	err := bot.Init(ctx, types.Tinkoff)
 	if err != nil {
 		fmt.Println("shares GetShares request err", err)

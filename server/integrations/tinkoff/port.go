@@ -225,8 +225,31 @@ func (c *TinkoffBrokerPort) GetShares(instrumentStatus types.InstrumentStatus) (
 		fmt.Println("Cannot get shares", err)
 		return []types.Share{}, err
 	}
-	fmt.Println("test go")
-	shares := []types.Share{}
+
 	fmt.Println(sharesRes.Instruments[0])
+	shares := []types.Share{}
+	// Конвертируем в нужный тип
+	for _, share := range sharesRes.Instruments {
+		if share.ShareType == investapi.ShareType_SHARE_TYPE_COMMON &&
+			!share.ForQualInvestorFlag &&
+			share.ApiTradeAvailableFlag &&
+			share.SellAvailableFlag {
+			shares = append(shares, types.Share{
+				Name:                share.Name,
+				Figi:                share.Figi,
+				Exchange:            share.Exchange,
+				Ticker:              share.Ticker,
+				Lot:                 share.Lot,
+				IpoDate:             share.IpoDate.AsTime(),
+				TradingStatus:       types.TradingStatus(share.TradingStatus),
+				MinPriceIncrement:   toQuant(share.MinPriceIncrement),
+				Uid:                 share.Uid,
+				First1minCandleDate: share.First_1MinCandleDate.AsTime(),
+				First1dayCandleDate: share.First_1DayCandleDate.AsTime(),
+			})
+		}
+	}
+	fmt.Println("suka ebanaya")
+	fmt.Println(shares)
 	return shares, nil
 }

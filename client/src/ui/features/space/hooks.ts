@@ -2,8 +2,8 @@ import { GetCandlesRequest } from "../../../../grpcGW/marketData";
 import { useIpcInoke, useIpcListen } from "../../hooks";
 import { OHLCData } from "../../../types";
 import { useState, useEffect, useCallback } from "react";
-import { GetInstrumentsRequest } from "../../../../grpcGW/instruments";
-import { GetSharesResponse } from "../../../../grpcGW/instruments";
+import { GetInstrumentsRequest } from "../../../../grpcGW/shares";
+import { GetSharesResponse } from "../../../../grpcGW/shares";
 
 type GetCandlesResponse = OHLCData[];
 

@@ -4,15 +4,30 @@ package shares;
 
 option go_package = "grpcGW.shares";
 
+import "google/protobuf/timestamp.proto";
+
 service Shares {
     rpc GetShares(GetInstrumentsRequest) returns (GetSharesResponse);
 }
 
+message Quatation { 
+    int32 units = 1;
+    int32 nano = 2;
+}
+
 message Share {
-    string Figi = 1;
-    string Name = 2;
-    string Exchange = 3;
-    // ticker, lot, ipo_date, trading_status, min_price_increment, uid, first_1min_candle_date, first_1day_candle_date
+    string figi = 1;
+    string name = 2;
+    string exchange = 3;
+    string ticker = 4;
+    int32 lot = 5;
+    google.protobuf.Timestamp ipo_date = 6;
+    int32 trading_status = 7;
+    Quatation min_price_increment = 8;
+    string uid = 9;
+    google.protobuf.Timestamp first_1min_candle_date = 10;
+    google.protobuf.Timestamp first_1day_candle_date = 11;
+
 }
 
 message GetInstrumentsRequest {

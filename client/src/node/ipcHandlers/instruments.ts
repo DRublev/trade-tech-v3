@@ -7,14 +7,16 @@ ipcMain.handle(ipcEvents.GET_SHARES, async (e, req) => {
 
     if (!instrumentStatus) return Promise.reject('InstrumentStatus обязательный параметр');
 
-
     const res = await new Promise((resolve, reject) => {
         sharesService.getShares({
             instrumentStatus
-        }, (e,  Instruments) => {
+        }, (e,  resp) => {
             if (e) return reject(e);
-            resolve(Instruments.instruments)
+            resolve(resp.instruments)
+            console.log(resp.instruments + "test")
         });
     });
+    console.log('fuck')
+    console.log(res)
     return res;
 }); 
