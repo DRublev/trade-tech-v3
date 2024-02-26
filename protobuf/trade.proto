@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package trade;
+
+option go_package = "grpcGW.trade";
+
+service Trade {
+    rpc Start(StartRequest) returns (StartResponse);
+    rpc Stop(StopRequest) returns (StopResponse);
+}
+
+message StartRequest {
+    string Strategy = 1;
+    string InstrumentId = 2;   
+}
+
+message StartResponse {
+    bool Ok = 1;
+    string Error = 2;
+}
+
+message StopRequest {
+    string Strategy = 1;
+    string InstrumentId = 2;
+}
+
+message StopResponse {
+    bool Ok = 1;
+    string Error = 2;
+}
+
+message ChangeConfigRequest {
+    string Strategy = 1;
+    string InstrumentId = 2;
+    string Config = 3;
+}
+
+message ChangeConfigResponse {
+    bool Ok = 1;
+    string Error = 2;
+}

@@ -2,8 +2,11 @@ package tinkoff
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"main/types"
+	"os"
+	"os/signal"
 	"sync"
 	"time"
 
@@ -13,11 +16,11 @@ import (
 const ENDPOINT = "sandbox-invest-public-api.tinkoff.ru:443"
 
 // https://github.com/RussianInvestments/invest-api-go-sdk
-// TODO: Хорошо бы явно наследовать types.Broker (чтоб были подсказки при имплементации метода)
-type TinkoffBrokerPort struct{}
+
+// TODO: Пора разделять методы по файлам
 
 func (c *TinkoffBrokerPort) GetAccounts() ([]types.Account, error) {
-	sdk, err := c.getSdk()
+	sdk, err := c.NewSdk()
 	if err != nil {
 		fmt.Println("Cannot init sdk! ", err)
 		return []types.Account{}, err
@@ -51,16 +54,9 @@ func (c *TinkoffBrokerPort) SetAccount(accountId string) error {
 	return nil
 }
 
-func toQuant(iq *investapi.Quotation) types.Quant {
-	return types.Quant{
-		Units: int(iq.Units),
-		Nano:  int(iq.Nano),
-	}
-}
-
 func (c *TinkoffBrokerPort) GetCandles(instrumentId string, interval types.Interval, start time.Time, end time.Time) ([]types.OHLC, error) {
 	// Инициализируем investgo sdk
-	sdk, err := c.getSdk()
+	sdk, err := c.NewSdk()
 	if err != nil {
 		fmt.Println("Cannot init sdk! ", err)
 		return []types.OHLC{}, err
@@ -80,30 +76,23 @@ func (c *TinkoffBrokerPort) GetCandles(instrumentId string, interval types.Inter
 
 	// Конвертируем в нужный тип
 	for _, candle := range candlesRes.Candles {
-		candles = append(candles, types.OHLC{
-			Time:   candle.Time.AsTime(),
-			Open:   toQuant(candle.Open),
-			Close:  toQuant(candle.Close),
-			Low:    toQuant(candle.Low),
-			High:   toQuant(candle.High),
-			Volume: candle.Volume,
-		})
+		candles = append(candles, toOHLC(candle))
 	}
 	return candles, nil
 }
 
-const nanoPrecision = 1_000_000_000
-
-func quantToNumber(q types.Quant) float64 {
-	return float64(q.Units) + (float64(q.Nano) / nanoPrecision)
-}
-
 func (c *TinkoffBrokerPort) SubscribeCandles(ctx context.Context, ohlcCh *chan types.OHLC, instrumentId string, interval types.Interval) error {
-	sdk, err := c.getSdk()
+	sdk, err := c.NewSdk()
 	if err != nil {
 		fmt.Println("Cannot init sdk! ", err)
 		return err
 	}
+
+	backCtx, _ := signal.NotifyContext(context.Background(), os.Interrupt)
+	go func() {
+		<-backCtx.Done()
+		sdk.Stop()
+	}()
 
 	// TODO: Эту штуку нужно переиспользовать в других эндпоинтах
 	candlesStreamService := sdk.NewMarketDataStreamClient()
@@ -117,20 +106,20 @@ func (c *TinkoffBrokerPort) SubscribeCandles(ctx context.Context, ohlcCh *chan t
 	wg := &sync.WaitGroup{}
 
 	// TODO: Докинуть обработку стакана и вообще вынести эту логику в некий Subscriber (глянуть паттерны)
-	// Жду ответа по https://t.me/c/1436923108/53910/59213
-	// candlesCh, err := candlesStream.SubscribeCandle([]string{instrumentId}, investapi.SubscriptionInterval_SUBSCRIPTION_INTERVAL_ONE_MINUTE, false)
-	// if err != nil {
-	// 	fmt.Println("Cannot subscribe ", err)
-	// 	return err
-	// }
-
-	// Подписка на свечи по какой то причине не пашет
-	// Буду собирать свечи руками исходя из последних сделок
-	lastPriceCh, err := candlesStream.SubscribeLastPrice([]string{instrumentId})
+	// Стрим не работает по выходным, см https://t.me/c/1436923108/53910/59213
+	candlesCh, err := candlesStream.SubscribeCandle([]string{instrumentId}, investapi.SubscriptionInterval_SUBSCRIPTION_INTERVAL_ONE_MINUTE, false)
 	if err != nil {
 		fmt.Println("Cannot subscribe ", err)
 		return err
 	}
+
+	// Собирать свечи руками исходя из последних сделок, для выходных дней
+	lastPriceCh := make(chan *investapi.LastPrice)
+	// lastPriceCh, err := candlesStream.SubscribeLastPrice([]string{instrumentId})
+	// if err != nil {
+	// 	fmt.Println("Cannot subscribe ", err)
+	// 	return err
+	// }
 
 	wg.Add(1)
 	go func() {
@@ -160,6 +149,14 @@ func (c *TinkoffBrokerPort) SubscribeCandles(ctx context.Context, ohlcCh *chan t
 					fmt.Println("Cannot unsubscribe ", instrumentId, err)
 				}
 				return
+			case candle, ok := <-candlesCh:
+				if !ok {
+					fmt.Println("stream done for ", instrumentId)
+					return
+				}
+				ohlc := toOHLC(candle)
+				*ohlcCh <- ohlc
+			// Врубать только для дебага графика в выходные!
 			case lastPrice, ok := <-lastPriceCh:
 				if !ok {
 					fmt.Println("stream done for ", instrumentId)
@@ -209,7 +206,7 @@ func (c *TinkoffBrokerPort) SubscribeCandles(ctx context.Context, ohlcCh *chan t
 }
 
 func (c *TinkoffBrokerPort) GetShares(instrumentStatus types.InstrumentStatus) ([]types.Share, error) {
-	sdk, err := c.getSdk()
+	sdk, err := c.NewSdk()
 	if err != nil {
 		fmt.Println("Cannot init sdk! ", err)
 		return []types.Share{}, err
@@ -248,4 +245,8 @@ func (c *TinkoffBrokerPort) GetShares(instrumentStatus types.InstrumentStatus) (
 	}
 
 	return shares, nil
+}
+
+func (c *TinkoffBrokerPort) PlaceOrder(order types.Order) (string, error) {
+	return "", errors.New("method not implemented")
 }

@@ -40,6 +40,8 @@ export const useCandles = (figiOrInstrumentId: string = "BBG004730N88", interval
                 end: now,
             });
 
+            console.log("39 hooks", candles);
+
             // TODO: Чтобы избежать лагов графика стоит ограничивать размер candles в N айтемов, в зависимости от размера окна и интервала
             setData(candles.filter(d => d));
         } catch (e) {
@@ -56,31 +58,41 @@ export const useCandles = (figiOrInstrumentId: string = "BBG004730N88", interval
         });
         console.log("49 hooks", res);
     }
-    const sub = async () => {
-        await onCandles(handleNewCandle)
-    };
 
-    const handleNewCandle = (e: Event, candle: OHLCData) => {
-        console.log("56 hooks", candle);
+    const handleNewCandle = useCallback((e: Event, candle: OHLCData) => {
         if (!candle) return;
-        const lastCandleDate = data[data.length - 1].date;
-        if (lastCandleDate.getMinutes() === candle.date.getMinutes()) {
-            setData(data.splice(data.length - 1, 1, candle));
-        } else {
-            data.push(candle);
-            setData(data);
-        }
-    }
+
+        setData((prevData) => {
+            if (!prevData.length) return [candle];
+
+            const lastCandleDate = prevData[prevData.length - 1].date;
+
+            if (lastCandleDate.getMinutes() === candle.date.getMinutes()) {
+                prevData[prevData.length - 1] = candle;
+                return [...prevData];
+            }
+
+            return [...prevData, candle];
+        });
+        
+    }, [figiOrInstrumentId])
 
     useEffect(() => {
+        onCandles(handleNewCandle);
+
+
+
+    }, [handleNewCandle]);
+
+    useEffect(() => {
+        console.log("86 hooks", );
+        
         getInitialCandels();
-        sub();
         subscribeCandles();
 
         return () => {
             off(handleNewCandle);
         }
-
     }, [figiOrInstrumentId]);
 
     return { data, isLoading, error };

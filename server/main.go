@@ -30,6 +30,8 @@ func main() {
 	defer cancel()
 	go server.Start(ctx, *port)
 
+	// TODO: Вызывать NewPool 
+
 	<-ctx.Done()
 
 	os.Exit(1)

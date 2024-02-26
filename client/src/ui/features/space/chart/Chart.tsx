@@ -16,6 +16,7 @@ import {
     BarSeries,
     mouseBasedZoomAnchor,
     discontinuousTimeScaleProviderBuilder,
+    lastVisibleItemBasedZoomAnchor,
 } from "react-financial-charts";
 import s from './styles.css';
 import { useChartDimensions } from "./hooks";
@@ -77,7 +78,7 @@ const Chart: FC<Props> = ({ parentRef, ratio, data: data, isLoading = false }) =
                 xAccessor={xAccessor}
                 xExtents={xExtents}
 
-                zoomAnchor={mouseBasedZoomAnchor}
+                zoomAnchor={lastVisibleItemBasedZoomAnchor}
             >
                 <RFChart id={2} height={barChartHeight} origin={barChartOrigin} yExtents={volumeSeries} yScale={yScale}>
                     <BarSeries fillStyle={volumeColor} yAccessor={volumeSeries} />
