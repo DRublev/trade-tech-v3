@@ -205,6 +205,48 @@ func (c *TinkoffBrokerPort) SubscribeCandles(ctx context.Context, ohlcCh *chan t
 	return nil
 }
 
+func (c *TinkoffBrokerPort) GetShares(instrumentStatus types.InstrumentStatus) ([]types.Share, error) {
+	sdk, err := c.NewSdk()
+	if err != nil {
+		fmt.Println("Cannot init sdk! ", err)
+		return []types.Share{}, err
+	}
+
+	instrumentService := sdk.NewInstrumentsServiceClient()
+
+	sharesRes, err := instrumentService.Shares(investapi.InstrumentStatus(instrumentStatus))
+	if err != nil {
+		fmt.Println("Cannot get shares", err)
+		return []types.Share{}, err
+	}
+
+	shares := []types.Share{}
+
+	for _, share := range sharesRes.Instruments {
+		if share.ShareType == investapi.ShareType_SHARE_TYPE_COMMON &&
+			!share.ForQualInvestorFlag &&
+			share.ApiTradeAvailableFlag &&
+			share.BuyAvailableFlag &&
+			share.SellAvailableFlag {
+			shares = append(shares, types.Share{
+				Name:                share.Name,
+				Figi:                share.Figi,
+				Exchange:            share.Exchange,
+				Ticker:              share.Ticker,
+				Lot:                 share.Lot,
+				IpoDate:             share.IpoDate.AsTime(),
+				TradingStatus:       types.TradingStatus(share.TradingStatus),
+				MinPriceIncrement:   toQuant(share.MinPriceIncrement),
+				Uid:                 share.Uid,
+				First1minCandleDate: share.First_1MinCandleDate.AsTime(),
+				First1dayCandleDate: share.First_1DayCandleDate.AsTime(),
+			})
+		}
+	}
+
+	return shares, nil
+}
+
 func (c *TinkoffBrokerPort) PlaceOrder(order types.Order) (string, error) {
 	return "", errors.New("method not implemented")
 }

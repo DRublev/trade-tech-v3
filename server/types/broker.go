@@ -21,5 +21,6 @@ type IBroker interface {
 	SetAccount(string) error
 	GetCandles(string, Interval, time.Time, time.Time) ([]OHLC, error)
 	SubscribeCandles(context.Context, *chan OHLC, string, Interval) error
+	GetShares(InstrumentStatus)([]Share, error)
 	PlaceOrder(order Order) (string, error)
 }

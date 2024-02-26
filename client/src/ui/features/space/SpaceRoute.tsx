@@ -7,11 +7,18 @@ import style from '../../basicStyles.css';
 import Chart from "./chart/Chart";
 import s from './styles.css';
 import { useCandles } from './hooks';
+import { useGetShares } from './hooks';
 
 export const ControlsPanel = () => {
+
+    const getShares = useGetShares();
     const [isStarted, setIsStarted] = useState(false);
-    const onStartClick = () => {
+    const onStartClick = async () => {
+
         setIsStarted(!isStarted)
+        const response: any = await getShares({ instrumentStatus: 1 });
+        console.log(response)
+
         //future logic
     }
 
@@ -45,8 +52,7 @@ export const SpaceRoute = () => {
                 {/* TODO: Запилить лоадер для графика
                     Может быть прокидывать isLoading внутрь и разруливать внутри Chart
                 */}
-                {isLoading ? 'loading candles...' : <Chart parentRef={chartContainer} data={data} />
-                }
+                {isLoading ? 'loading candles...' : <Chart parentRef={chartContainer} data={data} /> }
             </Card>
             <ControlsPanel />
         </Layout>

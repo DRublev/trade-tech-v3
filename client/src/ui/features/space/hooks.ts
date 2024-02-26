@@ -2,10 +2,14 @@ import { GetCandlesRequest } from "../../../../grpcGW/marketData";
 import { useIpcInoke, useIpcListen } from "../../hooks";
 import { OHLCData } from "../../../types";
 import { useState, useEffect, useCallback } from "react";
+import { GetInstrumentsRequest } from "../../../../grpcGW/shares";
+import { GetSharesResponse } from "../../../../grpcGW/shares";
 
 type GetCandlesResponse = OHLCData[];
 
 export const useGetCandles = (): (req: GetCandlesRequest) => Promise<GetCandlesResponse> => useIpcInoke("GET_CANDLES");
+// export const useGetShares = (): (req: GetInstrumentsRequest) => Promise<GetSharesResponse> => useIpcInoke("GET_SHARES");
+export const useGetShares = () => useIpcInoke("GET_SHARES");
 
 // TODO: Нужен хук который сам бы хендлил отписку
 const useSubscribeCandles = () => useIpcInoke("SUBSCRIBE_CANDLES");
