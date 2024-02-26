@@ -55,7 +55,15 @@ ipcMain.handle(ipcEvents.SUBSCRIBE_CANDLES, async (e, req) => {
             const stream = marketdataService.subscribeCandles({ instrumentId, interval })
             stream.on('data', candle => {
                 console.log("53 marketdata", candle);
-                win.webContents.send(ipcEvents.NEW_CANDLE, candle);
+                win.webContents.send(ipcEvents.NEW_CANDLE, {
+                    ...candle,
+                    open: quantToNumber(candle.open),
+                    high: quantToNumber(candle.high),
+                    low: quantToNumber(candle.low),
+                    close: quantToNumber(candle.close),
+                    // TODO: Пофиксить на беке
+                    date: candle.time
+                });
             });
             stream.on('end', () => {
                 resolve(true);
