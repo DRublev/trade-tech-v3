@@ -11,6 +11,7 @@ service MarketData {
     // Название нашего эндпоинта
     rpc GetCandles(GetCandlesRequest) returns (GetCandlesResponse);
     rpc SubscribeCandles(SubscribeCandlesRequest) returns (stream OHLC);
+    rpc SubscribeOrderbook(SubscribeOrderbookRequest) returns (stream Orderbook);
 }
 
 
@@ -44,4 +45,24 @@ message GetCandlesResponse {
 message SubscribeCandlesRequest {
     string instrumentId = 1;
     int32 interval = 2;
+}
+
+message BidAsk {
+    Quant price = 1;
+    int64 quantity = 2;
+}
+
+message Orderbook {
+    string instrumentId = 1;
+    int32 depth = 2;
+    google.protobuf.Timestamp time = 3;
+    Quant limitUp = 4;
+    Quant limitDown = 5;
+    repeated BidAsk bids = 6;
+    repeated BidAsk asks = 7;
+}
+
+message SubscribeOrderbookRequest {
+    string instrumentId = 1;
+    int32 depth = 2;
 }

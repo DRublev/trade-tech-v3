@@ -53,6 +53,26 @@ export interface SubscribeCandlesRequest {
   interval: number;
 }
 
+export interface BidAsk {
+  price: Quant | undefined;
+  quantity: number;
+}
+
+export interface Orderbook {
+  instrumentId: string;
+  depth: number;
+  time: Date | undefined;
+  limitUp: Quant | undefined;
+  limitDown: Quant | undefined;
+  bids: BidAsk[];
+  asks: BidAsk[];
+}
+
+export interface SubscribeOrderbookRequest {
+  instrumentId: string;
+  depth: number;
+}
+
 function createBaseGetCandlesRequest(): GetCandlesRequest {
   return { instrumentId: "", interval: 0, start: undefined, end: undefined };
 }
@@ -498,6 +518,307 @@ export const SubscribeCandlesRequest = {
   },
 };
 
+function createBaseBidAsk(): BidAsk {
+  return { price: undefined, quantity: 0 };
+}
+
+export const BidAsk = {
+  encode(message: BidAsk, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.price !== undefined) {
+      Quant.encode(message.price, writer.uint32(10).fork()).ldelim();
+    }
+    if (message.quantity !== 0) {
+      writer.uint32(16).int64(message.quantity);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): BidAsk {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseBidAsk();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.price = Quant.decode(reader, reader.uint32());
+          continue;
+        case 2:
+          if (tag !== 16) {
+            break;
+          }
+
+          message.quantity = longToNumber(reader.int64() as Long);
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): BidAsk {
+    return {
+      price: isSet(object.price) ? Quant.fromJSON(object.price) : undefined,
+      quantity: isSet(object.quantity) ? globalThis.Number(object.quantity) : 0,
+    };
+  },
+
+  toJSON(message: BidAsk): unknown {
+    const obj: any = {};
+    if (message.price !== undefined) {
+      obj.price = Quant.toJSON(message.price);
+    }
+    if (message.quantity !== 0) {
+      obj.quantity = Math.round(message.quantity);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<BidAsk>, I>>(base?: I): BidAsk {
+    return BidAsk.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<BidAsk>, I>>(object: I): BidAsk {
+    const message = createBaseBidAsk();
+    message.price = (object.price !== undefined && object.price !== null) ? Quant.fromPartial(object.price) : undefined;
+    message.quantity = object.quantity ?? 0;
+    return message;
+  },
+};
+
+function createBaseOrderbook(): Orderbook {
+  return { instrumentId: "", depth: 0, time: undefined, limitUp: undefined, limitDown: undefined, bids: [], asks: [] };
+}
+
+export const Orderbook = {
+  encode(message: Orderbook, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.instrumentId !== "") {
+      writer.uint32(10).string(message.instrumentId);
+    }
+    if (message.depth !== 0) {
+      writer.uint32(16).int32(message.depth);
+    }
+    if (message.time !== undefined) {
+      Timestamp.encode(toTimestamp(message.time), writer.uint32(26).fork()).ldelim();
+    }
+    if (message.limitUp !== undefined) {
+      Quant.encode(message.limitUp, writer.uint32(34).fork()).ldelim();
+    }
+    if (message.limitDown !== undefined) {
+      Quant.encode(message.limitDown, writer.uint32(42).fork()).ldelim();
+    }
+    for (const v of message.bids) {
+      BidAsk.encode(v!, writer.uint32(50).fork()).ldelim();
+    }
+    for (const v of message.asks) {
+      BidAsk.encode(v!, writer.uint32(58).fork()).ldelim();
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): Orderbook {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseOrderbook();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.instrumentId = reader.string();
+          continue;
+        case 2:
+          if (tag !== 16) {
+            break;
+          }
+
+          message.depth = reader.int32();
+          continue;
+        case 3:
+          if (tag !== 26) {
+            break;
+          }
+
+          message.time = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
+          continue;
+        case 4:
+          if (tag !== 34) {
+            break;
+          }
+
+          message.limitUp = Quant.decode(reader, reader.uint32());
+          continue;
+        case 5:
+          if (tag !== 42) {
+            break;
+          }
+
+          message.limitDown = Quant.decode(reader, reader.uint32());
+          continue;
+        case 6:
+          if (tag !== 50) {
+            break;
+          }
+
+          message.bids.push(BidAsk.decode(reader, reader.uint32()));
+          continue;
+        case 7:
+          if (tag !== 58) {
+            break;
+          }
+
+          message.asks.push(BidAsk.decode(reader, reader.uint32()));
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): Orderbook {
+    return {
+      instrumentId: isSet(object.instrumentId) ? globalThis.String(object.instrumentId) : "",
+      depth: isSet(object.depth) ? globalThis.Number(object.depth) : 0,
+      time: isSet(object.time) ? fromJsonTimestamp(object.time) : undefined,
+      limitUp: isSet(object.limitUp) ? Quant.fromJSON(object.limitUp) : undefined,
+      limitDown: isSet(object.limitDown) ? Quant.fromJSON(object.limitDown) : undefined,
+      bids: globalThis.Array.isArray(object?.bids) ? object.bids.map((e: any) => BidAsk.fromJSON(e)) : [],
+      asks: globalThis.Array.isArray(object?.asks) ? object.asks.map((e: any) => BidAsk.fromJSON(e)) : [],
+    };
+  },
+
+  toJSON(message: Orderbook): unknown {
+    const obj: any = {};
+    if (message.instrumentId !== "") {
+      obj.instrumentId = message.instrumentId;
+    }
+    if (message.depth !== 0) {
+      obj.depth = Math.round(message.depth);
+    }
+    if (message.time !== undefined) {
+      obj.time = message.time.toISOString();
+    }
+    if (message.limitUp !== undefined) {
+      obj.limitUp = Quant.toJSON(message.limitUp);
+    }
+    if (message.limitDown !== undefined) {
+      obj.limitDown = Quant.toJSON(message.limitDown);
+    }
+    if (message.bids?.length) {
+      obj.bids = message.bids.map((e) => BidAsk.toJSON(e));
+    }
+    if (message.asks?.length) {
+      obj.asks = message.asks.map((e) => BidAsk.toJSON(e));
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<Orderbook>, I>>(base?: I): Orderbook {
+    return Orderbook.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<Orderbook>, I>>(object: I): Orderbook {
+    const message = createBaseOrderbook();
+    message.instrumentId = object.instrumentId ?? "";
+    message.depth = object.depth ?? 0;
+    message.time = object.time ?? undefined;
+    message.limitUp = (object.limitUp !== undefined && object.limitUp !== null)
+      ? Quant.fromPartial(object.limitUp)
+      : undefined;
+    message.limitDown = (object.limitDown !== undefined && object.limitDown !== null)
+      ? Quant.fromPartial(object.limitDown)
+      : undefined;
+    message.bids = object.bids?.map((e) => BidAsk.fromPartial(e)) || [];
+    message.asks = object.asks?.map((e) => BidAsk.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseSubscribeOrderbookRequest(): SubscribeOrderbookRequest {
+  return { instrumentId: "", depth: 0 };
+}
+
+export const SubscribeOrderbookRequest = {
+  encode(message: SubscribeOrderbookRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.instrumentId !== "") {
+      writer.uint32(10).string(message.instrumentId);
+    }
+    if (message.depth !== 0) {
+      writer.uint32(16).int32(message.depth);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): SubscribeOrderbookRequest {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseSubscribeOrderbookRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.instrumentId = reader.string();
+          continue;
+        case 2:
+          if (tag !== 16) {
+            break;
+          }
+
+          message.depth = reader.int32();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): SubscribeOrderbookRequest {
+    return {
+      instrumentId: isSet(object.instrumentId) ? globalThis.String(object.instrumentId) : "",
+      depth: isSet(object.depth) ? globalThis.Number(object.depth) : 0,
+    };
+  },
+
+  toJSON(message: SubscribeOrderbookRequest): unknown {
+    const obj: any = {};
+    if (message.instrumentId !== "") {
+      obj.instrumentId = message.instrumentId;
+    }
+    if (message.depth !== 0) {
+      obj.depth = Math.round(message.depth);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<SubscribeOrderbookRequest>, I>>(base?: I): SubscribeOrderbookRequest {
+    return SubscribeOrderbookRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<SubscribeOrderbookRequest>, I>>(object: I): SubscribeOrderbookRequest {
+    const message = createBaseSubscribeOrderbookRequest();
+    message.instrumentId = object.instrumentId ?? "";
+    message.depth = object.depth ?? 0;
+    return message;
+  },
+};
+
 export type MarketDataService = typeof MarketDataService;
 export const MarketDataService = {
   /** Название нашего эндпоинта */
@@ -519,12 +840,23 @@ export const MarketDataService = {
     responseSerialize: (value: OHLC) => Buffer.from(OHLC.encode(value).finish()),
     responseDeserialize: (value: Buffer) => OHLC.decode(value),
   },
+  subscribeOrderbook: {
+    path: "/marketData.MarketData/SubscribeOrderbook",
+    requestStream: false,
+    responseStream: true,
+    requestSerialize: (value: SubscribeOrderbookRequest) =>
+      Buffer.from(SubscribeOrderbookRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer) => SubscribeOrderbookRequest.decode(value),
+    responseSerialize: (value: Orderbook) => Buffer.from(Orderbook.encode(value).finish()),
+    responseDeserialize: (value: Buffer) => Orderbook.decode(value),
+  },
 } as const;
 
 export interface MarketDataServer extends UntypedServiceImplementation {
   /** Название нашего эндпоинта */
   getCandles: handleUnaryCall<GetCandlesRequest, GetCandlesResponse>;
   subscribeCandles: handleServerStreamingCall<SubscribeCandlesRequest, OHLC>;
+  subscribeOrderbook: handleServerStreamingCall<SubscribeOrderbookRequest, Orderbook>;
 }
 
 export interface MarketDataClient extends Client {
@@ -550,6 +882,15 @@ export interface MarketDataClient extends Client {
     metadata?: Metadata,
     options?: Partial<CallOptions>,
   ): ClientReadableStream<OHLC>;
+  subscribeOrderbook(
+    request: SubscribeOrderbookRequest,
+    options?: Partial<CallOptions>,
+  ): ClientReadableStream<Orderbook>;
+  subscribeOrderbook(
+    request: SubscribeOrderbookRequest,
+    metadata?: Metadata,
+    options?: Partial<CallOptions>,
+  ): ClientReadableStream<Orderbook>;
 }
 
 export const MarketDataClient = makeGenericClientConstructor(MarketDataService, "marketData.MarketData") as unknown as {

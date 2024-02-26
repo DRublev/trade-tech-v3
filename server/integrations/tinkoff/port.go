@@ -89,10 +89,6 @@ func (c *TinkoffBrokerPort) SubscribeCandles(ctx context.Context, ohlcCh *chan t
 	}
 
 	backCtx, _ := signal.NotifyContext(context.Background(), os.Interrupt)
-	go func() {
-		<-backCtx.Done()
-		sdk.Stop()
-	}()
 
 	// TODO: Эту штуку нужно переиспользовать в других эндпоинтах
 	candlesStreamService := sdk.NewMarketDataStreamClient()
@@ -112,6 +108,12 @@ func (c *TinkoffBrokerPort) SubscribeCandles(ctx context.Context, ohlcCh *chan t
 		fmt.Println("Cannot subscribe ", err)
 		return err
 	}
+
+	go func() {
+		<-backCtx.Done()
+		candlesStream.UnSubscribeCandle([]string{instrumentId}, investapi.SubscriptionInterval(interval), false)
+		sdk.Stop()
+	}()
 
 	// Собирать свечи руками исходя из последних сделок, для выходных дней
 	lastPriceCh := make(chan *investapi.LastPrice)
@@ -144,7 +146,7 @@ func (c *TinkoffBrokerPort) SubscribeCandles(ctx context.Context, ohlcCh *chan t
 			select {
 			case <-ctx.Done():
 				fmt.Println("context closed for ", instrumentId)
-				err := candlesStream.UnSubscribeAll()
+				err := candlesStream.UnSubscribeCandle([]string{instrumentId}, investapi.SubscriptionInterval(interval), false)
 				if err != nil {
 					fmt.Println("Cannot unsubscribe ", instrumentId, err)
 				}
@@ -195,12 +197,11 @@ func (c *TinkoffBrokerPort) SubscribeCandles(ctx context.Context, ohlcCh *chan t
 				*ohlcCh <- candles[dealTime.Minute()]
 
 				fmt.Println("164 port", lastPrice, candles[dealTime.Minute()])
-
 			}
 		}
 	}(ctx)
 
-	// wg.Wait()
+	wg.Wait()
 
 	return nil
 }
@@ -245,6 +246,83 @@ func (c *TinkoffBrokerPort) GetShares(instrumentStatus types.InstrumentStatus) (
 	}
 
 	return shares, nil
+}
+
+func (c *TinkoffBrokerPort) SubscribeOrderbook(ctx context.Context, orderbookCh *chan types.Orderbook, instrumentId string, depth int32) error {
+	sdk, err := c.NewSdk()
+	if err != nil {
+		fmt.Println("Cannot init sdk! ", err)
+		return err
+	}
+
+	backCtx, _ := signal.NotifyContext(context.Background(), os.Interrupt)
+
+	streamService := sdk.NewMarketDataStreamClient()
+	orderbookStream, err := streamService.MarketDataStream()
+	if err != nil {
+		fmt.Println("Cannot create stream ", err)
+		return err
+	}
+
+	wg := &sync.WaitGroup{}
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		err := orderbookStream.Listen()
+
+		if err != nil {
+			fmt.Println("erorr in orderbooks stream", err)
+		}
+
+	}()
+
+	go func() {
+		<-backCtx.Done()
+		orderbookStream.UnSubscribeOrderBook([]string{instrumentId}, depth)
+		sdk.Stop()
+	}()
+
+	orderbookChan, err := orderbookStream.SubscribeOrderBook([]string{instrumentId}, depth)
+	if err != nil {
+		fmt.Println("Cannot subscribe ", err)
+		return err
+	}
+
+	wg.Add(1)
+	go func(ctx context.Context) {
+		defer wg.Done()
+
+		for {
+			select {
+			case <-ctx.Done():
+				err := orderbookStream.UnSubscribeOrderBook([]string{instrumentId}, depth)
+				if err != nil {
+					fmt.Println("Cannot unsubscribe ", instrumentId, err)
+				}
+				return
+			case orderbook, ok := <-orderbookChan:
+				if !ok {
+					fmt.Println("stream done for ", instrumentId)
+					return
+				}
+				item := types.Orderbook{
+					InstrumentId: instrumentId,
+					Depth:        depth,
+					Time:         orderbook.Time.AsTime(),
+					LimitUp:      toQuant(orderbook.LimitUp),
+					LimitDown:    toQuant(orderbook.LimitDown),
+					Bids:         toBidAsk(orderbook.Bids),
+					Asks:         toBidAsk(orderbook.Asks),
+				}
+				*orderbookCh <- item
+			}
+		}
+	}(ctx)
+
+	wg.Wait()
+
+	return nil
 }
 
 func (c *TinkoffBrokerPort) PlaceOrder(order types.Order) (string, error) {
