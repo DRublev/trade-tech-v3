@@ -13,6 +13,11 @@ type Quant struct {
 	Nano int
 }
 
+type Money struct {
+	Quant
+	Currency string
+}
+
 type OHLC struct {
 	// Цена открытия
 	Open Quant
@@ -21,7 +26,7 @@ type OHLC struct {
 	// Минимальная цена за интервал
 	Low Quant
 	// Цена закрытия
-	Close Quant
-	Time  time.Time
+	Close  Quant
+	Time   time.Time
 	Volume int64
 }

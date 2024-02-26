@@ -7,7 +7,7 @@ import (
 	"main/types"
 )
 
-var Broker types.Broker
+var Broker types.IBroker
 
 func Init(ctx context.Context, key types.BrokerKey) error {
 	if Broker != nil {

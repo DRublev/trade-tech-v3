@@ -16,9 +16,10 @@ type Account struct {
 	Name string
 }
 
-type Broker interface {
+type IBroker interface {
 	GetAccounts() ([]Account, error)
 	SetAccount(string) error
 	GetCandles(string, Interval, time.Time, time.Time) ([]OHLC, error)
 	SubscribeCandles(context.Context, *chan OHLC, string, Interval) error
+	PlaceOrder(order Order) (string, error)
 }

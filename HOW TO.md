@@ -6,7 +6,7 @@
 - В интерфейсе `Broker` описать метод получения свечей
   ```go
     // types/broker.go
-    type Broker interface {
+    type IBroker interface {
         // ...
         GetCandles(string, Interval, time.Time, time.Time) ([]OHLC, error)
     }
