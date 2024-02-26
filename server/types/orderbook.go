@@ -3,7 +3,7 @@ package types
 import "time"
 
 type BidAsk struct {
-	Quantiny int64
+	Quantity int64
 	Price    Quant
 }
 

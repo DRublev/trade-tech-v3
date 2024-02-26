@@ -48,7 +48,7 @@ func toBidAsk(in []*investapi.Order) []*types.BidAsk {
 	for _, inItem := range in {
 		item := &types.BidAsk{
 			Price:    toQuant(inItem.Price),
-			Quantiny: inItem.Quantity,
+			Quantity: inItem.Quantity,
 		}
 		items = append(items, item)
 	}
