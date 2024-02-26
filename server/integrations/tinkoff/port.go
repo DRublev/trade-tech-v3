@@ -209,17 +209,14 @@ func (c *TinkoffBrokerPort) SubscribeCandles(ctx context.Context, ohlcCh *chan t
 }
 
 func (c *TinkoffBrokerPort) GetShares(instrumentStatus types.InstrumentStatus) ([]types.Share, error) {
-	// Инициализируем investgo sdk
 	sdk, err := c.getSdk()
 	if err != nil {
 		fmt.Println("Cannot init sdk! ", err)
 		return []types.Share{}, err
 	}
 
-	// Сервис для работы с инструментами
 	instrumentService := sdk.NewInstrumentsServiceClient()
 
-	// Получаем акции по инструменту
 	sharesRes, err := instrumentService.Shares(investapi.InstrumentStatus(instrumentStatus))
 	if err != nil {
 		fmt.Println("Cannot get shares", err)
@@ -227,11 +224,12 @@ func (c *TinkoffBrokerPort) GetShares(instrumentStatus types.InstrumentStatus) (
 	}
 
 	shares := []types.Share{}
-	// Конвертируем в нужный тип
+
 	for _, share := range sharesRes.Instruments {
 		if share.ShareType == investapi.ShareType_SHARE_TYPE_COMMON &&
 			!share.ForQualInvestorFlag &&
 			share.ApiTradeAvailableFlag &&
+			share.BuyAvailableFlag &&
 			share.SellAvailableFlag {
 			shares = append(shares, types.Share{
 				Name:                share.Name,
