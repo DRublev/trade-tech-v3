@@ -26,7 +26,16 @@ func (s *Server) SetToken(ctx context.Context, in *auth.SetTokenRequest) (*auth.
 		return &auth.SetTokenResponse{}, errors.New("cannot encrypt token")
 	}
 
-	err = dbInstance.Append([]string{"auth"}, []byte(encrypted + "\n"))
+	err = dbInstance.Append([]string{"auth"}, []byte(encrypted+"\n"))
 
 	return &auth.SetTokenResponse{}, err
+}
+
+func (s *Server) HasToken(ctx context.Context, in *auth.HasTokenRequest) (*auth.HasTokenResponse, error) {
+	encrypted, err := dbInstance.Get([]string{"auth"})
+	if err != nil {
+		return &auth.HasTokenResponse{HasToken: false}, err
+	}
+
+	return &auth.HasTokenResponse{HasToken: encrypted != nil}, nil
 }

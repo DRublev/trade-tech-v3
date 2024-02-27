@@ -27,6 +27,13 @@ export interface ClearTokenRequest {
 export interface ClearTokenResponse {
 }
 
+export interface HasTokenRequest {
+}
+
+export interface HasTokenResponse {
+  HasToken: boolean;
+}
+
 function createBaseSetTokenRequest(): SetTokenRequest {
   return { Token: "", IsSandbox: false };
 }
@@ -244,6 +251,106 @@ export const ClearTokenResponse = {
   },
 };
 
+function createBaseHasTokenRequest(): HasTokenRequest {
+  return {};
+}
+
+export const HasTokenRequest = {
+  encode(_: HasTokenRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): HasTokenRequest {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseHasTokenRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(_: any): HasTokenRequest {
+    return {};
+  },
+
+  toJSON(_: HasTokenRequest): unknown {
+    const obj: any = {};
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<HasTokenRequest>, I>>(base?: I): HasTokenRequest {
+    return HasTokenRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<HasTokenRequest>, I>>(_: I): HasTokenRequest {
+    const message = createBaseHasTokenRequest();
+    return message;
+  },
+};
+
+function createBaseHasTokenResponse(): HasTokenResponse {
+  return { HasToken: false };
+}
+
+export const HasTokenResponse = {
+  encode(message: HasTokenResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.HasToken === true) {
+      writer.uint32(8).bool(message.HasToken);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): HasTokenResponse {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseHasTokenResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 8) {
+            break;
+          }
+
+          message.HasToken = reader.bool();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): HasTokenResponse {
+    return { HasToken: isSet(object.HasToken) ? globalThis.Boolean(object.HasToken) : false };
+  },
+
+  toJSON(message: HasTokenResponse): unknown {
+    const obj: any = {};
+    if (message.HasToken === true) {
+      obj.HasToken = message.HasToken;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<HasTokenResponse>, I>>(base?: I): HasTokenResponse {
+    return HasTokenResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<HasTokenResponse>, I>>(object: I): HasTokenResponse {
+    const message = createBaseHasTokenResponse();
+    message.HasToken = object.HasToken ?? false;
+    return message;
+  },
+};
+
 export type AuthService = typeof AuthService;
 export const AuthService = {
   setToken: {
@@ -264,11 +371,21 @@ export const AuthService = {
     responseSerialize: (value: ClearTokenResponse) => Buffer.from(ClearTokenResponse.encode(value).finish()),
     responseDeserialize: (value: Buffer) => ClearTokenResponse.decode(value),
   },
+  hasToken: {
+    path: "/auth.Auth/HasToken",
+    requestStream: false,
+    responseStream: false,
+    requestSerialize: (value: HasTokenRequest) => Buffer.from(HasTokenRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer) => HasTokenRequest.decode(value),
+    responseSerialize: (value: HasTokenResponse) => Buffer.from(HasTokenResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer) => HasTokenResponse.decode(value),
+  },
 } as const;
 
 export interface AuthServer extends UntypedServiceImplementation {
   setToken: handleUnaryCall<SetTokenRequest, SetTokenResponse>;
   clearToken: handleUnaryCall<ClearTokenRequest, ClearTokenResponse>;
+  hasToken: handleUnaryCall<HasTokenRequest, HasTokenResponse>;
 }
 
 export interface AuthClient extends Client {
@@ -301,6 +418,21 @@ export interface AuthClient extends Client {
     metadata: Metadata,
     options: Partial<CallOptions>,
     callback: (error: ServiceError | null, response: ClearTokenResponse) => void,
+  ): ClientUnaryCall;
+  hasToken(
+    request: HasTokenRequest,
+    callback: (error: ServiceError | null, response: HasTokenResponse) => void,
+  ): ClientUnaryCall;
+  hasToken(
+    request: HasTokenRequest,
+    metadata: Metadata,
+    callback: (error: ServiceError | null, response: HasTokenResponse) => void,
+  ): ClientUnaryCall;
+  hasToken(
+    request: HasTokenRequest,
+    metadata: Metadata,
+    options: Partial<CallOptions>,
+    callback: (error: ServiceError | null, response: HasTokenResponse) => void,
   ): ClientUnaryCall;
 }
 
