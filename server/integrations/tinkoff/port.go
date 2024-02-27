@@ -248,7 +248,7 @@ func (c *TinkoffBrokerPort) GetShares(instrumentStatus types.InstrumentStatus) (
 	return shares, nil
 }
 
-func (c *TinkoffBrokerPort) SubscribeOrderbook(ctx context.Context, orderbookCh *chan types.Orderbook, instrumentId string, depth int32) error {
+func (c *TinkoffBrokerPort) SubscribeOrderbook(ctx context.Context, orderbookCh *chan *types.Orderbook, instrumentId string, depth int32) error {
 	sdk, err := c.NewSdk()
 	if err != nil {
 		fmt.Println("Cannot init sdk! ", err)
@@ -277,9 +277,17 @@ func (c *TinkoffBrokerPort) SubscribeOrderbook(ctx context.Context, orderbookCh 
 
 	}()
 
+	unsubscribe := func() {
+		err := orderbookStream.UnSubscribeOrderBook([]string{instrumentId}, depth)
+		if err != nil {
+			fmt.Println("Cannot unsubscribe ", instrumentId, err)
+		}
+		close(*orderbookCh)
+	}
+
 	go func() {
 		<-backCtx.Done()
-		orderbookStream.UnSubscribeOrderBook([]string{instrumentId}, depth)
+		unsubscribe()
 		sdk.Stop()
 	}()
 
@@ -296,10 +304,8 @@ func (c *TinkoffBrokerPort) SubscribeOrderbook(ctx context.Context, orderbookCh 
 		for {
 			select {
 			case <-ctx.Done():
-				err := orderbookStream.UnSubscribeOrderBook([]string{instrumentId}, depth)
-				if err != nil {
-					fmt.Println("Cannot unsubscribe ", instrumentId, err)
-				}
+				unsubscribe()
+
 				return
 			case orderbook, ok := <-orderbookChan:
 				if !ok {
@@ -315,7 +321,7 @@ func (c *TinkoffBrokerPort) SubscribeOrderbook(ctx context.Context, orderbookCh 
 					Bids:         toBidAsk(orderbook.Bids),
 					Asks:         toBidAsk(orderbook.Asks),
 				}
-				*orderbookCh <- item
+				*orderbookCh <- &item
 			}
 		}
 	}(ctx)
