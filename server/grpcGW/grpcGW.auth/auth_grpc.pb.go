@@ -21,6 +21,7 @@ const _ = grpc.SupportPackageIsVersion7
 const (
 	Auth_SetToken_FullMethodName   = "/auth.Auth/SetToken"
 	Auth_ClearToken_FullMethodName = "/auth.Auth/ClearToken"
+	Auth_HasToken_FullMethodName   = "/auth.Auth/HasToken"
 )
 
 // AuthClient is the client API for Auth service.
@@ -29,6 +30,7 @@ const (
 type AuthClient interface {
 	SetToken(ctx context.Context, in *SetTokenRequest, opts ...grpc.CallOption) (*SetTokenResponse, error)
 	ClearToken(ctx context.Context, in *ClearTokenRequest, opts ...grpc.CallOption) (*ClearTokenResponse, error)
+	HasToken(ctx context.Context, in *HasTokenRequest, opts ...grpc.CallOption) (*HasTokenResponse, error)
 }
 
 type authClient struct {
@@ -57,12 +59,22 @@ func (c *authClient) ClearToken(ctx context.Context, in *ClearTokenRequest, opts
 	return out, nil
 }
 
+func (c *authClient) HasToken(ctx context.Context, in *HasTokenRequest, opts ...grpc.CallOption) (*HasTokenResponse, error) {
+	out := new(HasTokenResponse)
+	err := c.cc.Invoke(ctx, Auth_HasToken_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AuthServer is the server API for Auth service.
 // All implementations must embed UnimplementedAuthServer
 // for forward compatibility
 type AuthServer interface {
 	SetToken(context.Context, *SetTokenRequest) (*SetTokenResponse, error)
 	ClearToken(context.Context, *ClearTokenRequest) (*ClearTokenResponse, error)
+	HasToken(context.Context, *HasTokenRequest) (*HasTokenResponse, error)
 	mustEmbedUnimplementedAuthServer()
 }
 
@@ -75,6 +87,9 @@ func (UnimplementedAuthServer) SetToken(context.Context, *SetTokenRequest) (*Set
 }
 func (UnimplementedAuthServer) ClearToken(context.Context, *ClearTokenRequest) (*ClearTokenResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ClearToken not implemented")
+}
+func (UnimplementedAuthServer) HasToken(context.Context, *HasTokenRequest) (*HasTokenResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method HasToken not implemented")
 }
 func (UnimplementedAuthServer) mustEmbedUnimplementedAuthServer() {}
 
@@ -125,6 +140,24 @@ func _Auth_ClearToken_Handler(srv interface{}, ctx context.Context, dec func(int
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Auth_HasToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(HasTokenRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServer).HasToken(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Auth_HasToken_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServer).HasToken(ctx, req.(*HasTokenRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Auth_ServiceDesc is the grpc.ServiceDesc for Auth service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -139,6 +172,10 @@ var Auth_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ClearToken",
 			Handler:    _Auth_ClearToken_Handler,
+		},
+		{
+			MethodName: "HasToken",
+			Handler:    _Auth_HasToken_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
