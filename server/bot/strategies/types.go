@@ -24,6 +24,7 @@ type IStrategy interface {
 }
 
 type Strategy struct {
+	IStrategy
 	Key             StrategyKey
 	OrdersToPlaceCh *chan types.Order
 }
