@@ -8,6 +8,7 @@ import (
 	auth "main/grpcGW/grpcGW.auth"
 	marketdata "main/grpcGW/grpcGW.marketdata"
 	shares "main/grpcGW/grpcGW.shares"
+	trade "main/grpcGW/grpcGW.trade"
 	"net"
 
 	"google.golang.org/grpc"
@@ -18,10 +19,12 @@ type Server struct {
 	auth.UnimplementedAuthServer
 	marketdata.UnimplementedMarketDataServer
 	shares.UnimplementedSharesServer
+	trade.UnimplementedTradeServer
 }
 
 func Start(ctx context.Context, port int) {
 	s := grpc.NewServer()
+	defer s.Stop()
 	fmt.Println("Starting server")
 
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
@@ -37,6 +40,7 @@ func Start(ctx context.Context, port int) {
 	auth.RegisterAuthServer(s, srv)
 	marketdata.RegisterMarketDataServer(s, srv)
 	shares.RegisterSharesServer(s, srv)
+	trade.RegisterTradeServer(s, srv)
 
 	fmt.Println("Starting server", lis.Addr())
 	err = s.Serve(lis)

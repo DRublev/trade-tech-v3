@@ -13,5 +13,6 @@ type ConfigRepository struct {
 }
 
 func (cr *ConfigRepository) Get(key string) (*strategies.Config, error) {
+	// TODO: Возможно тут понадобится мьютекс
 	return nil, errors.New("method is not implemented")
 }
