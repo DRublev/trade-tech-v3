@@ -149,14 +149,19 @@ func (s *Server) SubscribeOrderbook(in *marketdata.SubscribeOrderbookRequest, st
 		return err
 	}
 
-	streamCtx := stream.Context()
-	orderbookCh := make(chan types.Orderbook)
+	orderbookProvider := bot.NewOrederbookProvider()
+	orderbookCh, err := orderbookProvider.GetOrCreate(in.InstrumentId)
+	if err != nil {
+		return err
+	}
 
-	err = bot.Broker.SubscribeOrderbook(streamCtx, &orderbookCh, in.InstrumentId, in.Depth)
+	streamCtx := stream.Context()
+	err = bot.Broker.SubscribeOrderbook(streamCtx, orderbookCh, in.InstrumentId, in.Depth)
+
 	select {
 	case <-streamCtx.Done():
 		return err
-	case o, ok := <-orderbookCh:
+	case o, ok := <-*orderbookCh:
 		if !ok {
 			return errors.New("stream is end")
 		}

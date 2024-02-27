@@ -24,7 +24,7 @@ type StrategyPool struct {
 	strategies       StrategiesMap
 }
 
-var once sync.Once
+var oncePool sync.Once
 var pool *StrategyPool
 
 func NewPool() *StrategyPool {
@@ -32,7 +32,7 @@ func NewPool() *StrategyPool {
 		return pool
 	}
 
-	once.Do(func() {
+	oncePool.Do(func() {
 		pool = &StrategyPool{}
 		pool.configRepository = &config.ConfigRepository{}
 		pool.strategies = StrategiesMap{
