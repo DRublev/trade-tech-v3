@@ -8,7 +8,6 @@ import { GetSharesResponse } from "../../../../grpcGW/shares";
 type GetCandlesResponse = OHLCData[];
 
 export const useGetCandles = (): (req: GetCandlesRequest) => Promise<GetCandlesResponse> => useIpcInoke("GET_CANDLES");
-// export const useGetShares = (): (req: GetInstrumentsRequest) => Promise<GetSharesResponse> => useIpcInoke("GET_SHARES");
 export const useGetShares = () => useIpcInoke("GET_SHARES");
 
 // TODO: Нужен хук который сам бы хендлил отписку
@@ -74,7 +73,7 @@ export const useCandles = (figiOrInstrumentId: string = "BBG004730N88", interval
 
             return [...prevData, candle];
         });
-        
+
     }, [figiOrInstrumentId])
 
     useEffect(() => {
@@ -85,8 +84,8 @@ export const useCandles = (figiOrInstrumentId: string = "BBG004730N88", interval
     }, [handleNewCandle]);
 
     useEffect(() => {
-        console.log("86 hooks", );
-        
+        console.log("86 hooks",);
+
         getInitialCandels();
         subscribeCandles();
 

@@ -6,12 +6,19 @@ declare const MAIN_WINDOW_WEBPACK_ENTRY: string;
 declare const MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY: string;
 
 import './node/ipcHandlers'
+import { getShares } from './node/ipcHandlers/instruments';
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require('electron-squirrel-startup')) {
   app.quit();
 }
 
+const fetchSharesList = async () => {
+  try {
+    await getShares({ instrumentStatus: 1 });
+  }
+  catch (err) { console.log('fetch shares error ' + err) }
+}
 const createWindow = (): void => {
   // TODO: Подумать над тем, чтобы вынести общение с сервером (стриминговые запросы) в воркер или отдельное спрятанное окно
   // Create the browser window.
@@ -45,7 +52,10 @@ const createWindow = (): void => {
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
-app.on('ready', createWindow);
+app.on('ready', () => {
+  createWindow();
+  fetchSharesList();
+});
 
 // Quit when all windows are closed, except on macOS. There, it's common
 // for applications and their menu bar to stay active until the user quits

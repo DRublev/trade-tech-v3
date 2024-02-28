@@ -8,17 +8,14 @@ import Chart from "./chart/Chart";
 import s from './styles.css';
 import { useCandles } from './hooks';
 import { useGetShares } from './hooks';
+import { SharesPop } from './SharesPopUp';
 
 export const ControlsPanel = () => {
 
-    const getShares = useGetShares();
     const [isStarted, setIsStarted] = useState(false);
+
     const onStartClick = async () => {
-
         setIsStarted(!isStarted)
-        const response: any = await getShares({ instrumentStatus: 1 });
-        console.log(response)
-
         //future logic
     }
 
@@ -27,6 +24,7 @@ export const ControlsPanel = () => {
             <Toolbar.Root>
                 <Flex align="center" justify="center" gap="4">
                     <Toolbar.ToggleGroup type="single">
+                        <SharesPop />
                         <Toolbar.ToggleItem value="start" asChild>
                             <Button className={style.button} onClick={onStartClick} highContrast variant="ghost" size="1" radius="full" style={{ verticalAlign: 'middle', transform: 'scale(1.6)' }}>
                                 {isStarted ? <StopIcon /> : <PlayIcon />}
@@ -52,7 +50,7 @@ export const SpaceRoute = () => {
                 {/* TODO: Запилить лоадер для графика
                     Может быть прокидывать isLoading внутрь и разруливать внутри Chart
                 */}
-                {isLoading ? 'loading candles...' : <Chart parentRef={chartContainer} data={data} /> }
+                {isLoading ? 'loading candles...' : <Chart parentRef={chartContainer} data={data} />}
             </Card>
             <ControlsPanel />
         </Layout>
