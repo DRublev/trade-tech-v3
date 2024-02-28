@@ -9,7 +9,6 @@ import { Share } from "../../../../grpcGW/shares";
 
 
 const useSharesFromStore = () => {
-    // const getShares = useGetSharesFromStore();
     const [sharesFromStore, setShares] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
 
