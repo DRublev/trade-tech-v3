@@ -5,8 +5,15 @@ import React, { useCallback, useEffect, useState } from "react"
 import { PopoverWindow } from "../../components/PopoverWindow"
 import style from '../../basicStyles.css';
 import storage from "../../../node/Storage";
-import { Share } from "../../../../grpcGW/shares";
+import { Quatation, Share } from "../../../../grpcGW/shares";
+import { quantToNumber } from '../../../node/ipcHandlers/marketdata';
+import { Quant } from '../../../../grpcGW/marketData';
 
+const nanoPrecision = 1_000_000_000;
+const quantToNumber = (q: Quatation | undefined): number => {
+
+    return q ? Number(q.units + (q.nano / nanoPrecision)) : 0;
+}
 
 const useSharesFromStore = () => {
     const [sharesFromStore, setShares] = useState([]);
@@ -44,7 +51,7 @@ export const SharesPop = () => {
                         {sharesFromStore.map((share: Share) =>
                             <div key={share.ticker} style={{ display: 'flex', justifyContent: 'space-between' }}>
                                 <span>{share.name}</span>
-                                <span style={{ color: 'gray' }}>{share.minPriceIncrement?.nano}</span>
+                                <span style={{ color: 'gray' }}>{quantToNumber(share.minPriceIncrement)}</span>
                             </div>)}
                     </ScrollArea.Viewport>
                 </ScrollArea.Root>
