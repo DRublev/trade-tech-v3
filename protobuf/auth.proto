@@ -7,6 +7,7 @@ option go_package = "grpcGW.auth";
 service Auth {
     rpc SetToken(SetTokenRequest) returns (SetTokenResponse);
     rpc ClearToken(ClearTokenRequest) returns (ClearTokenResponse);
+    rpc HasToken(HasTokenRequest) returns (HasTokenResponse);
 }
 
 message SetTokenRequest {
@@ -19,3 +20,8 @@ message ClearTokenRequest {
     bool ForSandbox = 1;
 }
 message ClearTokenResponse {}
+
+message HasTokenRequest {}
+message HasTokenResponse {
+    bool HasToken = 1;
+}

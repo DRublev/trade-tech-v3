@@ -3,7 +3,6 @@ import { ipcEvents } from "../../ipcEvents";
 import storage from '../Storage';
 import { accountsService } from '../grpc/accounts';
 import { authService } from '../grpc/auth';
-import { sharesService } from '../grpc/instruments'
 
 type Payload = {
     token: string;
@@ -17,7 +16,7 @@ ipcMain.handle(ipcEvents.REGISTER, async (e, data: Payload) => {
 
     await storage.save('isSandbox', isSandbox ? 1 : 0);
     await storage.save('isAuthorised', true);
-    
+
     return new Promise((resolve, reject) => authService.setToken({ Token: token, IsSandbox: isSandbox }, (err, res) => {
         if (err) return reject(err);
         resolve(res);
