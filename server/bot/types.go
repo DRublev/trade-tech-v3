@@ -37,9 +37,3 @@ type OrderExecutionState struct {
 	Direction          types.OperationType
 	InstrumentId       string
 }
-
-type IOrderWatcher interface {
-	MarkAsSent(id IdempodentId, orderId OrderId) error
-	Subscribe(orderId IdempodentId) error
-	notify(orderId IdempodentId) error
-}
