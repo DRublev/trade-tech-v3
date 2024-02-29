@@ -96,3 +96,28 @@ export const useCandles = (figiOrInstrumentId: string = "BBG004730N88", interval
 
     return { data, isLoading, error };
 }
+
+export const useSharesFromStore = () => {
+    const [sharesFromStore, setShares] = useState([]);
+    const [isLoading, setIsLoading] = useState(false);
+
+    const load = useCallback(async () => {
+        try {
+            if (isLoading) return;
+            setIsLoading(true);
+            const response: any = await window.ipc.invoke('GET_SHARES_FROM_STORE');
+            setShares(response.shares)
+        } catch (error) {
+            console.error(`get shares error: ${error}`);
+            setShares([]);
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        load();
+    }, [])
+
+    return { sharesFromStore, isLoading }
+};

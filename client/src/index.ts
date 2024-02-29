@@ -12,12 +12,12 @@ import { getShares } from './node/ipcHandlers/instruments';
 if (require('electron-squirrel-startup')) {
   app.quit();
 }
-
+const instrumentBaseState = 1
 const fetchSharesList = async () => {
   try {
-    await getShares({ instrumentStatus: 1 });
+    await getShares({ instrumentStatus: instrumentBaseState });
   }
-  catch (err) { console.log('fetch shares error ' + err) }
+  catch (error) { console.error(`fetch shares error: ${error}`)}
 }
 const createWindow = (): void => {
   // TODO: Подумать над тем, чтобы вынести общение с сервером (стриминговые запросы) в воркер или отдельное спрятанное окно

@@ -12,8 +12,8 @@ ipcMain.handle(ipcEvents.GET_SHARES_FROM_STORE, async (e) => {
     try {
         const shares = await storage.get('shares');
         return Promise.resolve({ shares });
-    } catch (err) {
-        return Promise.reject('Не удалось получить данные из сторы: ' + err)
+    } catch (error) {
+        return Promise.reject(`Не удалось получить данные из сторы: ${error}`)
     }
 });
 
@@ -22,15 +22,15 @@ export async function getShares(req: GetInstrumentsRequest): Promise<GetSharesRe
 
     if (!instrumentStatus) return Promise.reject('InstrumentStatus обязательный параметр');
 
-    const res: any = await new Promise((resolve, reject) => {
+    const res: GetSharesResponse = await new Promise((resolve, reject) => {
         sharesService.getShares({
             instrumentStatus
-        }, (e, resp) => {
-            if (e) return reject(e);
+        }, (error, response) => {
+            if (error) return reject(error);
             storage.remove('shares')
-            resolve(resp.instruments)
+            resolve(response)
         });
     });
-    storage.save('shares', res);
+    storage.save('shares', res.instruments);
     return res;
 }

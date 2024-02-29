@@ -7,38 +7,13 @@ import style from '../../basicStyles.css';
 import storage from "../../../node/Storage";
 import { Quatation, Share } from "../../../../grpcGW/shares";
 import { quantToNumber } from '../../../node/ipcHandlers/marketdata';
-import { Quant } from '../../../../grpcGW/marketData';
+import { useSharesFromStore } from './hooks';
 
 const nanoPrecision = 1_000_000_000;
 const quantToNumber = (q: Quatation | undefined): number => {
 
     return q ? Number(q.units + (q.nano / nanoPrecision)) : 0;
 }
-
-const useSharesFromStore = () => {
-    const [sharesFromStore, setShares] = useState([]);
-    const [isLoading, setIsLoading] = useState(false);
-
-    const load = useCallback(async () => {
-        try {
-            if (isLoading) return;
-            setIsLoading(true);
-            const response: any = await window.ipc.invoke('GET_SHARES_FROM_STORE');
-            setShares(response.shares)
-        } catch (e) {
-            console.log("get shares error: ", e);
-            setShares([]);
-        } finally {
-            setIsLoading(false);
-        }
-    }, []);
-
-    useEffect(() => {
-        load();
-    }, [])
-
-    return { sharesFromStore, isLoading }
-};
 
 export const SharesPop = () => {
     const { sharesFromStore, isLoading } = useSharesFromStore();
