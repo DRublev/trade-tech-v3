@@ -9,9 +9,14 @@ type IStrategyState[T any] interface {
 
 type StrategyState[T any] struct {
 	IStrategyState[T]
-	state T
+	value T
+}
+
+func (s *StrategyState[T]) String() string {
+	// TODO: Дергать Marshall
+	return "s"
 }
 
 func (s *StrategyState[T]) Get() *T {
-	return &s.state
+	return &s.value
 }
