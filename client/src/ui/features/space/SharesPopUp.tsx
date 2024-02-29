@@ -1,0 +1,52 @@
+import * as ScrollArea from '@radix-ui/react-scroll-area';
+import { MixerHorizontalIcon } from "@radix-ui/react-icons"
+import { Button, Card, Flex } from "@radix-ui/themes"
+import React, { useCallback, useEffect, useState } from "react"
+import { PopoverWindow } from "../../components/PopoverWindow"
+import style from '../../basicStyles.css';
+import storage from "../../../node/Storage";
+import { Quatation, Share } from "../../../../grpcGW/shares";
+import { quantToNumber } from '../../../node/ipcHandlers/marketdata';
+import { useSharesFromStore } from './hooks';
+
+const nanoPrecision = 1_000_000_000;
+const quantToNumber = (q: Quatation | undefined): number => {
+
+    return q ? Number(q.units + (q.nano / nanoPrecision)) : 0;
+}
+
+export const SharesPop = () => {
+    const { sharesFromStore, isLoading } = useSharesFromStore();
+    const SharesPopUpContent = () => {
+
+        return (
+            <Card color="gray">
+                <ScrollArea.Root style={{ padding: '15px', width: '500px', height: '500px', color: 'white', overflow: 'auto' }}>
+                    <ScrollArea.Viewport>
+                        {sharesFromStore.map((share: Share) =>
+                            <div key={share.ticker} style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span>{share.name}</span>
+                                <span style={{ color: 'gray' }}>{quantToNumber(share.minPriceIncrement)}</span>
+                            </div>)}
+                    </ScrollArea.Viewport>
+                </ScrollArea.Root>
+            </Card>
+        )
+    }
+
+    const SharesTriggerButton = () => {
+        return (
+            <div style={{ marginRight: '20px' }}>
+                <Button highContrast variant="ghost" size="4" radius="full" style={{ verticalAlign: 'middle' }} className={style.button}>
+                    <MixerHorizontalIcon color='white' style={{ color: 'black' }} />
+                </Button>
+            </div>
+        )
+    }
+
+    return (
+        <PopoverWindow triger={SharesTriggerButton()}>
+            {SharesPopUpContent()}
+        </PopoverWindow>
+    )
+}
