@@ -8,7 +8,7 @@ type Props = {
 
 export const PopoverWindow = ({ children, triger }) => {
     return (
-        <Popover.Root  >
+        <Popover.Root>
             <Popover.Trigger style={{ border: 'none', backgroundColor: 'inherit', color: 'white' }}>
                 {triger}
             </Popover.Trigger>
