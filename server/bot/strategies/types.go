@@ -16,15 +16,21 @@ func (s StrategyKey) IsValid() bool {
 	return false
 }
 
-type Config interface{}
+type Config struct {
+	// Доступный для торговли баланс
+	Balance float32
+
+	// Акция для торговли
+	InstrumentId string
+}
 
 type IStrategy interface {
-	Start(config Config) (bool, error)
+	Start(config *Config) (bool, error)
 	Stop() (bool, error)
 }
 
 type Strategy struct {
 	IStrategy
 	Key             StrategyKey
-	OrdersToPlaceCh *chan types.Order
+	OrdersToPlaceCh *chan types.PlaceOrder
 }

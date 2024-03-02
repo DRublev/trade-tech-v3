@@ -12,3 +12,6 @@ type Order struct {
 
 type PlaceOrder struct {
 }
+
+type IdempodentId string
+type OrderId string
