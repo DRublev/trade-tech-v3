@@ -1,14 +1,12 @@
 import * as ScrollArea from '@radix-ui/react-scroll-area';
 import { MixerHorizontalIcon } from "@radix-ui/react-icons"
-import { Button, Card, Flex, TextField } from "@radix-ui/themes"
-import React, { useCallback, useEffect, useState } from "react"
+import { Button, Card } from "@radix-ui/themes"
+import React, { useState } from "react"
 import { PopoverWindow } from "../../components/PopoverWindow"
 import style from '../../basicStyles.css';
-import storage from "../../../node/Storage";
 import { Quatation, Share } from "../../../../grpcGW/shares";
 import { quantToNumber } from '../../../node/ipcHandlers/marketdata';
 import { useSharesFromStore } from './hooks';
-import { Field } from '@radix-ui/react-form';
 import { SerarchInput } from '../../components/SearchInput';
 
 const nanoPrecision = 1_000_000_000;
@@ -16,10 +14,10 @@ const quantToNumber = (q: Quatation | undefined): number => {
     return q ? Number(q.units + (q.nano / nanoPrecision)) : 0;
 }
 
-const isContainsWithIgnoreCase = (value: string, term: string) : boolean => {
+const isContainsWithIgnoreCase = (value: string, term: string): boolean => {
     return value.toLocaleLowerCase().includes(term) ||
-    value.toUpperCase().includes(term) ||
-    value.includes(term)
+        value.toUpperCase().includes(term) ||
+        value.includes(term)
 }
 export const SharesPop = () => {
     const { sharesFromStore } = useSharesFromStore();
@@ -34,16 +32,16 @@ export const SharesPop = () => {
     const mapShares = () => {
         return (
             sharesFromStore.filter((share: Share) => {
-                return isContainsWithIgnoreCase(share.name,term) ||
-                    isContainsWithIgnoreCase(share.ticker,term) ||
+                return isContainsWithIgnoreCase(share.name, term) ||
+                    isContainsWithIgnoreCase(share.ticker, term) ||
                     share.uid.includes(term)
             }).map((share: Share) =>
-                <div style={{marginBottom:'5px'}}>
+                <div style={{ marginBottom: '5px' }}>
                     <div key={share.ticker} style={{ display: 'flex', justifyContent: 'space-between' }}>
                         <span>{share.name}</span>
                         <span style={{ color: 'gray' }}>{quantToNumber(share.minPriceIncrement)}</span>
                     </div>
-                    <div style={{color:'gray', fontSize:'12px'}}> {share.ticker}</div>
+                    <div style={{ color: 'gray', fontSize: '12px' }}> {share.ticker}</div>
                 </div>
 
             )
