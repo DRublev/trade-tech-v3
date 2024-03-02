@@ -1,8 +1,8 @@
-package bot
+package orderbook
 
 import (
 	"errors"
-	"strings"
+	"main/types"
 	"sync"
 )
 
@@ -14,9 +14,9 @@ type IOrderWatcher interface {
 type OrderWatcher struct {
 	sync.RWMutex
 	IOrderWatcher
-	idempodentsToWatch []string
-	idempodentsToOrdersMap map[string]string
-	notifyCh           *chan OrderExecutionState
+	idempodentsToWatch     []types.IdempodentId
+	idempodentsToOrdersMap map[types.IdempodentId]types.OrderId
+	notifyCh               *chan OrderExecutionState
 }
 
 var onceOw sync.Once
@@ -29,8 +29,8 @@ func NewOrderWatcher() *OrderWatcher {
 
 	onceOw.Do(func() {
 		ow = &OrderWatcher{
-			idempodentsToWatch: []string{},
-			idempodentsToOrdersMap: make(map[string]string),
+			idempodentsToWatch:     []types.IdempodentId{},
+			idempodentsToOrdersMap: make(map[types.IdempodentId]types.OrderId),
 		}
 	})
 
@@ -49,24 +49,23 @@ func (ow *OrderWatcher) Register(notifyCh *chan OrderExecutionState) error {
 	return nil
 }
 
-func (ow *OrderWatcher) Watch(idempodentId string) error {
-	
-	for _, candidate := ow.idempodentsToWatch {
+func (ow *OrderWatcher) Watch(idempodentId types.IdempodentId) error {
+
+	for _, candidate := range ow.idempodentsToWatch {
 		if candidate == idempodentId {
 			return nil
 		}
 	}
 
 	ow.RWMutex.Lock()
-	ow.idempodentsToWatch = strings.Join(ow.idempodentsToWatch, idempodentId)
+	ow.idempodentsToWatch = append(ow.idempodentsToWatch, idempodentId)
 	ow.RWMutex.Unlock()
 
 	return nil
 }
 
-
-func (ow *OrderWatcher) PairWithOrderId(idempodentId string, orderId string) error {
-	c, ok := ow.idempodentsToOrdersMap[idempodentId]
+func (ow *OrderWatcher) PairWithOrderId(idempodentId types.IdempodentId, orderId types.OrderId) error {
+	_, ok := ow.idempodentsToOrdersMap[idempodentId]
 	if ok {
 		return errors.New("already matched with this idempodent")
 	}
@@ -84,10 +83,7 @@ func (ow *OrderWatcher) Notify(idempodentId string, state OrderExecutionState) e
 		return errors.New("found no orders with this idempodent or idempodent not watching")
 	}
 
-	// TODO: помониторить, может горутина тут не нужна
-	go func() {
-		ow.notifyCh <- state
-	}()
+	*ow.notifyCh <- state
 
 	return nil
 }

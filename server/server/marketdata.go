@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"main/bot"
+	"main/bot/orderbook"
 	marketdata "main/grpcGW/grpcGW.marketdata"
 	"main/types"
 	"os"
@@ -149,7 +150,7 @@ func (s *Server) SubscribeOrderbook(in *marketdata.SubscribeOrderbookRequest, st
 		return err
 	}
 
-	orderbookProvider := bot.NewOrederbookProvider()
+	orderbookProvider := orderbook.NewOrederbookProvider()
 	orderbookCh, err := orderbookProvider.GetOrCreate(in.InstrumentId)
 	if err != nil {
 		return err
