@@ -1,33 +1,61 @@
 import * as ScrollArea from '@radix-ui/react-scroll-area';
 import { MixerHorizontalIcon } from "@radix-ui/react-icons"
-import { Button, Card, Flex } from "@radix-ui/themes"
-import React, { useCallback, useEffect, useState } from "react"
+import { Button, Card } from "@radix-ui/themes"
+import React, { useCallback, useState } from "react"
 import { PopoverWindow } from "../../components/PopoverWindow"
 import style from '../../basicStyles.css';
-import storage from "../../../node/Storage";
 import { Quatation, Share } from "../../../../grpcGW/shares";
 import { quantToNumber } from '../../../node/ipcHandlers/marketdata';
 import { useSharesFromStore } from './hooks';
+import { SerarchInput } from '../../components/SearchInput';
 
 const nanoPrecision = 1_000_000_000;
 const quantToNumber = (q: Quatation | undefined): number => {
-
     return q ? Number(q.units + (q.nano / nanoPrecision)) : 0;
 }
 
-export const SharesPop = () => {
-    const { sharesFromStore, isLoading } = useSharesFromStore();
-    const SharesPopUpContent = () => {
+const isContainsWithIgnoreCase = (value: string, term: string): boolean => {
+    return value.toLocaleLowerCase().includes(term.toLocaleLowerCase())
+}
 
+export const SharesPop = () => {
+    const { sharesFromStore } = useSharesFromStore();
+
+    const [term, setTerm] = useState("")
+
+    const onSearchChange = useCallback((target: EventTarget & HTMLInputElement) => {
+        const term = target.value
+        setTerm(term)
+    }, [])
+
+    const ShareListItem = () => {
         return (
-            <Card color="gray">
-                <ScrollArea.Root style={{ padding: '15px', width: '500px', height: '500px', color: 'white', overflow: 'auto' }}>
+            sharesFromStore.filter((share: Share) => {
+                return isContainsWithIgnoreCase(share.name, term) ||
+                    isContainsWithIgnoreCase(share.ticker, term) ||
+                    share.uid.includes(term)
+            }).map((share: Share, index) =>
+                <div key={index} style={{ marginBottom: '5px' }}>
+                    <div key={share.ticker} style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span>{share.name}</span>
+                        <span style={{ color: 'gray' }}>{quantToNumber(share.minPriceIncrement)}</span>
+                    </div>
+                    <div style={{ color: 'gray', fontSize: '12px' }}> {share.ticker}</div>
+                </div>
+
+            )
+        )
+    }
+
+    const SharesPopUpContent = () => {
+        return (
+            <Card style={{ padding: '15px' }} color="gray">
+                <SerarchInput placeholder='Поиск...' onChange={({ target }) => {
+                    onSearchChange(target)
+                }} />
+                <ScrollArea.Root style={{ width: '500px', height: '500px', color: 'white', overflow: 'auto' }}>
                     <ScrollArea.Viewport>
-                        {sharesFromStore.map((share: Share) =>
-                            <div key={share.ticker} style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <span>{share.name}</span>
-                                <span style={{ color: 'gray' }}>{quantToNumber(share.minPriceIncrement)}</span>
-                            </div>)}
+                        <ShareListItem />
                     </ScrollArea.Viewport>
                 </ScrollArea.Root>
             </Card>
