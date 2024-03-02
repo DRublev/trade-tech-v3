@@ -12,6 +12,11 @@
     "lint": "eslint --ext .ts,.tsx .",
     "gen-deps-graph": "depcruise src --output-type mermaid"
   },
+  "engines": {
+        "node": "20.x",
+        "npm": "10.x",
+        "yarn": "1.x"
+    },
   "keywords": [],
   "author": {
     "name": "DRublev",
