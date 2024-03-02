@@ -3,9 +3,11 @@ package spread
 import (
 	"fmt"
 	"main/bot/orderbook"
+	"main/bot/orders"
 	"main/bot/strategies"
 	"main/types"
 	"sync"
+	"time"
 )
 
 type Config struct {
@@ -16,20 +18,38 @@ type Config struct {
 
 	// Сколько мс ждать после исполнения итерации покупка-продажа перед следующей
 	nextOrderCooldownMs int32
+
+	// Каким количчеством акций торговать? Макс
+	maxSharesToHold int32
+
+	// Лотность инструмента
+	lotSize int32
 }
 
 type State struct {
 	// Оставшееся количество денег
-	balance float32
+	leftBalance float32
 
-	// Количество лотов, купленных на данный момент
-	holdingLots int32
+	// Сумма, которая должна списаться при выставлении ордера на покупку
+	// Инкрементим когда хотим выставить бай ордер
+	// Декрементим когда закрываем бай ордер
+	notConfirmedBlockedMoney float32
 
-	// Количество лотов, на которое выставлены ордера на покупку
-	pendingBuyLots int32
+	// Количество акций, купленных на данный момент
+	holdingShares int32
 
-	// Количество лотов, на которое выставлены ордера на продажу
-	pendingSellLots int32
+	// Количество акций, на которое выставлены ордера на покупку
+	pendingBuyShares int32
+
+	// Количество акций, на которое выставлены ордера на продажу
+	pendingSellShares int32
+
+	lastBuyPrice float32
+}
+
+type isWorking struct {
+	sync.RWMutex
+	value bool
 }
 
 type SpreadStrategy struct {
@@ -37,20 +57,22 @@ type SpreadStrategy struct {
 	strategies.Strategy
 	config Config
 	// Канал для стакана
-	obCh  *chan *types.Orderbook
-	state strategies.StrategyState[State]
+	obCh              *chan *types.Orderbook
+	state             strategies.StrategyState[State]
+	nextOrderCooldown *time.Timer
+	isBuying          isWorking
+	isSelling         isWorking
+
+	toPlaceOrders chan *types.PlaceOrder
 }
 
 func New() *SpreadStrategy {
 	inst := &SpreadStrategy{}
-
-	orderCh := make(chan types.PlaceOrder)
-	inst.OrdersToPlaceCh = &orderCh
-
+	inst.toPlaceOrders = make(chan *types.PlaceOrder)
 	return inst
 }
 
-func (s *SpreadStrategy) Start(config *strategies.Config) (bool, error) {
+func (s *SpreadStrategy) Start(config *strategies.Config, ordersToPlaceCh *chan *types.PlaceOrder, orderStateChangeCh *chan orders.OrderExecutionState) (bool, error) {
 	// TODO: Нужен метод ConvertSerialsableToType[T](candidate) T, который конвертирует типы через json.Marshall
 	s.config = ((any)(*config)).(Config)
 
@@ -64,14 +86,18 @@ func (s *SpreadStrategy) Start(config *strategies.Config) (bool, error) {
 	// Заполняем изначальное состояние
 	s.state = strategies.StrategyState[State]{}
 	err = s.state.Set(State{
-		holdingLots:     0,
-		pendingBuyLots:  0,
-		pendingSellLots: 0,
-		balance:         s.config.Balance,
+		holdingShares:            0,
+		pendingBuyShares:         0,
+		pendingSellShares:        0,
+		leftBalance:              s.config.Balance,
+		notConfirmedBlockedMoney: 0,
+		lastBuyPrice:             0,
 	})
 	if err != nil {
 		return false, err
 	}
+
+	s.nextOrderCooldown = time.NewTimer(time.Duration(0) * time.Millisecond)
 
 	s.obCh = ch
 	// Слушаем изменения в стакане
@@ -81,12 +107,42 @@ func (s *SpreadStrategy) Start(config *strategies.Config) (bool, error) {
 			case ob, ok := <-*ch:
 				if !ok {
 					fmt.Println("spread orderbook channel end")
+					return
 				}
 
 				go s.onOrderbook(ob)
 			}
 		}
 	}(s.obCh)
+
+	// Копируем выставляемые ордера в другой канал
+	go func(source *chan *types.PlaceOrder, target *chan *types.PlaceOrder) {
+		for {
+			select {
+			case orderToPlace, ok := <-*source:
+				if !ok {
+					fmt.Println("orders to place channel end, closing target channel")
+					return
+				}
+				*target <- orderToPlace
+			}
+		}
+	}(&s.toPlaceOrders, ordersToPlaceCh)
+
+	// Подписка на изменения в ордерах
+	go func(source *chan orders.OrderExecutionState) {
+		for {
+			select {
+			case state, ok := <-*source:
+				if !ok {
+					fmt.Println("order state channel end")
+					return
+				}
+				go s.onOrderSateChange(state)
+			}
+
+		}
+	}(orderStateChangeCh)
 
 	return true, nil
 }
@@ -97,6 +153,12 @@ func (s *SpreadStrategy) Stop() (bool, error) {
 
 func (s *SpreadStrategy) onOrderbook(ob *types.Orderbook) {
 	wg := &sync.WaitGroup{}
+
+	wg.Add(1)
+	go s.checkForRottenBuys(wg, ob)
+	wg.Add(1)
+	go s.checkForRottenSells(wg, ob)
+
 	wg.Add(1)
 	go s.buy(wg, ob)
 	wg.Add(1)
@@ -109,9 +171,116 @@ func (s *SpreadStrategy) onOrderbook(ob *types.Orderbook) {
 func (s *SpreadStrategy) buy(wg *sync.WaitGroup, ob *types.Orderbook) {
 	defer wg.Done()
 
+	if s.isBuying.value {
+		fmt.Println("Already buying")
+		return
+	}
+
+	isHoldingMaxShares := s.state.Get().holdingShares+s.state.Get().pendingBuyShares >= s.config.maxSharesToHold
+	if isHoldingMaxShares {
+		fmt.Printf("already holding max shares. holding %v, processing %v,  max %v\n", s.state.Get().holdingShares, s.state.Get().pendingBuyShares, s.config.maxSharesToHold)
+		return
+	}
+
+	minBuyPrice := ob.Bids[0].Price
+	leftBalance := s.state.Get().leftBalance - s.state.Get().notConfirmedBlockedMoney
+	if leftBalance < minBuyPrice {
+		fmt.Printf("Not enough money to enter position. First bid price: %v; Left money: %v\n", minBuyPrice, leftBalance)
+		return
+	}
+
+	canBuySharesAmount := leftBalance / (minBuyPrice * float32(s.config.lotSize))
+	fmt.Printf("First bid price: %v; Left money: %v; Can buy %v shares\n", minBuyPrice, leftBalance, canBuySharesAmount)
+	if canBuySharesAmount == 0 {
+		fmt.Println("Can buy 0 shares")
+		return
+	}
+
+	ok := s.isBuying.TryLock()
+	if !ok {
+		fmt.Println("isBuy mutex cannot be locked")
+		return
+	}
+	defer s.isBuying.Unlock()
+
+	s.isBuying.value = true
+
+	if canBuySharesAmount > float32(s.config.maxSharesToHold) {
+		canBuySharesAmount = float32(s.config.maxSharesToHold)
+	}
+
+	order := &types.PlaceOrder{}
+	fmt.Printf("Order to place: %v\n", order)
+	s.toPlaceOrders <- order
+
+	newState := *s.state.Get()
+	newState.pendingBuyShares += int32(canBuySharesAmount)
+	newState.notConfirmedBlockedMoney += canBuySharesAmount * minBuyPrice
+	newState.lastBuyPrice = minBuyPrice
+	s.state.Set(newState)
+	s.isBuying.value = false
 }
 
 func (s *SpreadStrategy) sell(wg *sync.WaitGroup, ob *types.Orderbook) {
 	defer wg.Done()
+
+	if s.isSelling.value {
+		fmt.Println("Already buying")
+		return
+	}
+
+	state := *s.state.Get()
+	if state.holdingShares-state.pendingSellShares == 0 {
+		fmt.Println("Nothing to sale, hold 0 shares")
+		return
+	}
+	if state.holdingShares < 0 {
+		fmt.Printf("ERROR, holding less than 0 shares: %v\n", state.holdingShares)
+		return
+	}
+
+	minAskPrice := ob.Asks[0].Price
+	shouldMakeSell := minAskPrice-s.state.Get().lastBuyPrice >= s.config.minSpread
+	if !shouldMakeSell {
+		fmt.Printf("Not a good deal. asks[0].price: %v; lastBuyPrice: %v; minSpread: %v\n", minAskPrice, s.state.Get().lastBuyPrice, s.config.minSpread)
+		return
+	}
+
+	ok := s.isSelling.TryLock()
+	if !ok {
+		fmt.Println("isSelling mutex cannot be locked")
+		return
+	}
+	defer s.isBuying.Unlock()
+
+	order := &types.PlaceOrder{}
+	fmt.Printf("Order to place: %v\n", order)
+	s.toPlaceOrders <- order
+
+
+	s.state.Lock()
+	defer s.state.Unlock()
+	state = *s.state.Get()
+	state.pendingSellShares += state.holdingShares
+	s.state.Set(state)
+	s.isSelling.value = false
+}
+
+func (s *SpreadStrategy) checkForRottenBuys(wg *sync.WaitGroup, ob *types.Orderbook) {
+	defer wg.Done()
+	// TODO: Чекать неаткуальные выставленные ордера и отменять их
+
+	// TODO: Сбрасывать lastBuyPrice на предыдущий, если закрываем какой то бай ордер
+}
+
+func (s *SpreadStrategy) checkForRottenSells(wg *sync.WaitGroup, ob *types.Orderbook) {
+	defer wg.Done()
+	// TODO: Чекать неаткуальные выставленные ордера и отменять их
+
+}
+
+func (s *SpreadStrategy) onOrderSateChange(state orders.OrderExecutionState) {
+	// TODO: Обновлять последнюю цену покупки
+	// TODO: Обновлять Оставшийся баланс и остальной стейт
 
 }

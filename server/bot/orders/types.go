@@ -1,4 +1,4 @@
-package orderbook
+package orders
 
 import "main/types"
 

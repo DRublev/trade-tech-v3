@@ -4,7 +4,9 @@ import (
 	"errors"
 	"fmt"
 	config "main/bot/config"
+	"main/bot/orders"
 	"main/bot/strategies"
+	"main/types"
 	"sync"
 )
 
@@ -71,14 +73,44 @@ func (sp *StrategyPool) Start(key strategies.StrategyKey, instrumentId string) (
 	sp.strategies.Lock()
 	sp.strategies.value[sp.getMapKey(key, instrumentId)] = strategy
 	sp.strategies.Unlock()
+
+	ordersToPlaceCh := make(chan *types.PlaceOrder)
+	ordersStateCh := make(chan orders.OrderExecutionState)
+
 	okCh := make(chan bool, 1)
-	go func() {
-		ok, err := strategy.Start(config)
+	go func(ordersToPlaceCh chan *types.PlaceOrder, ordersStateCh *chan orders.OrderExecutionState) {
+		ok, err := strategy.Start(config, &ordersToPlaceCh, ordersStateCh)
 		if err != nil {
 			fmt.Println("Error starting strategy ", err)
 		}
 		okCh <- ok
-	}()
+	}(ordersToPlaceCh, &ordersStateCh)
+
+	ow := orders.NewOrderWatcher()
+	go func(source chan *types.PlaceOrder, ordersStateCh *chan orders.OrderExecutionState) {
+		err := ow.Register(ordersStateCh)
+		if err != nil {
+			fmt.Println("error registering notification channel!", err)
+			return
+		}
+		// TODO: Тут будет WithIdempodentId
+		for {
+			select {
+			case order, ok := <- ordersToPlaceCh:
+				if !ok {
+					fmt.Println("orders to place channel closed")
+					return
+				}
+				orderId, err := Broker.PlaceOrder(order)
+				if err != nil {
+					fmt.Printf("error placing order: %v\n", err)
+					continue
+				}
+				ow.Watch(order.IdempodentId)
+				ow.PairWithOrderId(order.IdempodentId, orderId)
+			}
+		}
+	}(ordersToPlaceCh, &ordersStateCh)
 
 	return <-okCh, nil
 }

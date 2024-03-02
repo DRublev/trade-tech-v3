@@ -331,6 +331,6 @@ func (c *TinkoffBrokerPort) SubscribeOrderbook(ctx context.Context, orderbookCh 
 	return nil
 }
 
-func (c *TinkoffBrokerPort) PlaceOrder(order types.Order) (string, error) {
+func (c *TinkoffBrokerPort) PlaceOrder(order *types.PlaceOrder) (string, error) {
 	return "", errors.New("method not implemented")
 }

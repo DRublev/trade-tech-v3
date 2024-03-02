@@ -1,4 +1,4 @@
-package orderbook
+package orders
 
 import (
 	"errors"
@@ -33,6 +33,8 @@ func NewOrderWatcher() *OrderWatcher {
 			idempodentsToOrdersMap: make(map[types.IdempodentId]types.OrderId),
 		}
 	})
+
+	// TODO: Вызывать Broker.SubscribeOrders в горутине, как коллбек дергать ow.Notify 
 
 	return ow
 }

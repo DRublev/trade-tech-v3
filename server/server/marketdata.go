@@ -8,6 +8,7 @@ import (
 	"main/bot/orderbook"
 	marketdata "main/grpcGW/grpcGW.marketdata"
 	"main/types"
+	"math"
 	"os"
 	"os/signal"
 	"sync"
@@ -74,6 +75,20 @@ func toMDQuant(q *types.Quant) *marketdata.Quant {
 	}
 }
 
+func roundFloat(val float32, precision uint) float64 {
+	ratio := math.Pow(10, float64(precision))
+	return math.Round(float64(val)*ratio) / ratio
+}
+func toMDQuantFromNum(p float32) *marketdata.Quant {
+	units := math.Floor(float64(p))
+	nano := roundFloat(p-float32(units), 9)
+
+	return &marketdata.Quant{
+		Units: int32(units),
+		Nano:  int32(nano),
+	}
+}
+
 func (s *Server) SubscribeCandles(in *marketdata.SubscribeCandlesRequest, stream marketdata.MarketData_SubscribeCandlesServer) error {
 	var err error
 
@@ -131,7 +146,7 @@ func toMDBidAsk(in []*types.BidAsk) []*marketdata.BidAsk {
 
 	for _, inItem := range in {
 		item := &marketdata.BidAsk{
-			Price:    toMDQuant(&inItem.Price),
+			Price:    toMDQuantFromNum(inItem.Price),
 			Quantity: inItem.Quantity,
 		}
 		items = append(items, item)
