@@ -1,7 +1,7 @@
 import * as ScrollArea from '@radix-ui/react-scroll-area';
 import { MixerHorizontalIcon } from "@radix-ui/react-icons"
 import { Button, Card } from "@radix-ui/themes"
-import React, { useState } from "react"
+import React, { useCallback, useState } from "react"
 import { PopoverWindow } from "../../components/PopoverWindow"
 import style from '../../basicStyles.css';
 import { Quatation, Share } from "../../../../grpcGW/shares";
@@ -15,28 +15,27 @@ const quantToNumber = (q: Quatation | undefined): number => {
 }
 
 const isContainsWithIgnoreCase = (value: string, term: string): boolean => {
-    return value.toLocaleLowerCase().includes(term) ||
-        value.toUpperCase().includes(term) ||
-        value.includes(term)
+    return value.toLocaleLowerCase().includes(term.toLocaleLowerCase())
 }
+
 export const SharesPop = () => {
     const { sharesFromStore } = useSharesFromStore();
 
     const [term, setTerm] = useState("")
 
-    const onSearchChange = (target: EventTarget & HTMLInputElement) => {
+    const onSearchChange = useCallback((target: EventTarget & HTMLInputElement) => {
         const term = target.value
         setTerm(term)
-    }
+    }, [])
 
-    const mapShares = () => {
+    const ShareListItem = () => {
         return (
             sharesFromStore.filter((share: Share) => {
                 return isContainsWithIgnoreCase(share.name, term) ||
                     isContainsWithIgnoreCase(share.ticker, term) ||
                     share.uid.includes(term)
-            }).map((share: Share) =>
-                <div style={{ marginBottom: '5px' }}>
+            }).map((share: Share, index) =>
+                <div key={index} style={{ marginBottom: '5px' }}>
                     <div key={share.ticker} style={{ display: 'flex', justifyContent: 'space-between' }}>
                         <span>{share.name}</span>
                         <span style={{ color: 'gray' }}>{quantToNumber(share.minPriceIncrement)}</span>
@@ -49,7 +48,6 @@ export const SharesPop = () => {
     }
 
     const SharesPopUpContent = () => {
-
         return (
             <Card style={{ padding: '15px' }} color="gray">
                 <SerarchInput placeholder='Поиск...' onChange={({ target }) => {
@@ -57,7 +55,7 @@ export const SharesPop = () => {
                 }} />
                 <ScrollArea.Root style={{ width: '500px', height: '500px', color: 'white', overflow: 'auto' }}>
                     <ScrollArea.Viewport>
-                        {mapShares()}
+                        <ShareListItem />
                     </ScrollArea.Viewport>
                 </ScrollArea.Root>
             </Card>

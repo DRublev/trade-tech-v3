@@ -4,7 +4,7 @@ import React, { ChangeEventHandler } from "react"
 
 type Props = {
     placeholder: string
-    onChange: Function
+    onChange: ChangeEventHandler<HTMLInputElement>
 };
 
 export const SerarchInput = ({ placeholder, onChange }: Props) => {
@@ -13,7 +13,7 @@ export const SerarchInput = ({ placeholder, onChange }: Props) => {
             <TextField.Slot style={{ marginRight: '5px' }} >
                 <MagnifyingGlassIcon height="16" width="16" />
             </TextField.Slot>
-            <TextField.Input onChange={(eventTarget: any) => onChange(eventTarget)} radius="large" placeholder={placeholder} style={{border: 'none', backgroundColor:'inherit'}}/>
+            <TextField.Input onChange={onChange} radius="large" placeholder={placeholder} style={{border: 'none', backgroundColor:'inherit'}}/>
         </TextField.Root>
     )
 }
