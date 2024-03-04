@@ -75,6 +75,7 @@ func New() *SpreadStrategy {
 func (s *SpreadStrategy) Start(config *strategies.Config, ordersToPlaceCh *chan *types.PlaceOrder, orderStateChangeCh *chan orders.OrderExecutionState) (bool, error) {
 	// TODO: Нужен метод ConvertSerialsableToType[T](candidate) T, который конвертирует типы через json.Marshall
 	s.config = ((any)(*config)).(Config)
+	fmt.Printf("78 strategy %v\n", *config, s.config)
 
 	// Создаем или получаем канал, в который будет постаупать инфа о стакане
 	obProvider := orderbook.NewOrederbookProvider()
@@ -209,7 +210,12 @@ func (s *SpreadStrategy) buy(wg *sync.WaitGroup, ob *types.Orderbook) {
 		canBuySharesAmount = float32(s.config.maxSharesToHold)
 	}
 
-	order := &types.PlaceOrder{}
+	order := &types.PlaceOrder{
+		InstrumentID: s.config.InstrumentId,
+		Quantity: int64(canBuySharesAmount),
+		Price: types.Price(minBuyPrice),
+		Direction: types.Buy,
+	}
 	fmt.Printf("Order to place: %v\n", order)
 	s.toPlaceOrders <- order
 
@@ -253,10 +259,14 @@ func (s *SpreadStrategy) sell(wg *sync.WaitGroup, ob *types.Orderbook) {
 	}
 	defer s.isBuying.Unlock()
 
-	order := &types.PlaceOrder{}
+	order := &types.PlaceOrder{
+		InstrumentID: s.config.InstrumentId,
+		Quantity: int64(state.holdingShares),
+		Direction: types.Sell,
+		Price: types.Price(minAskPrice),
+	}
 	fmt.Printf("Order to place: %v\n", order)
 	s.toPlaceOrders <- order
-
 
 	s.state.Lock()
 	defer s.state.Unlock()
@@ -268,6 +278,7 @@ func (s *SpreadStrategy) sell(wg *sync.WaitGroup, ob *types.Orderbook) {
 
 func (s *SpreadStrategy) checkForRottenBuys(wg *sync.WaitGroup, ob *types.Orderbook) {
 	defer wg.Done()
+	fmt.Printf("276 strategy %v  \n", ob)
 	// TODO: Чекать неаткуальные выставленные ордера и отменять их
 
 	// TODO: Сбрасывать lastBuyPrice на предыдущий, если закрываем какой то бай ордер
@@ -282,5 +293,5 @@ func (s *SpreadStrategy) checkForRottenSells(wg *sync.WaitGroup, ob *types.Order
 func (s *SpreadStrategy) onOrderSateChange(state orders.OrderExecutionState) {
 	// TODO: Обновлять последнюю цену покупки
 	// TODO: Обновлять Оставшийся баланс и остальной стейт
-
+	fmt.Printf("291 strategy %v  \n", state)
 }

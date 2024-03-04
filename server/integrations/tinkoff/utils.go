@@ -44,10 +44,9 @@ func toOHLC(c IInvestCandle) types.OHLC {
 
 func toBidAsk(in []*investapi.Order) []*types.BidAsk {
 	var items []*types.BidAsk
-
 	for _, inItem := range in {
 		item := &types.BidAsk{
-			Price:    toQuant(inItem.Price),
+			Price:    float32(quantToNumber(toQuant(inItem.Price))),
 			Quantity: inItem.Quantity,
 		}
 		items = append(items, item)

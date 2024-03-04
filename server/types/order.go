@@ -10,8 +10,21 @@ const (
 type Order struct {
 }
 
+type Price float64
+
 type PlaceOrder struct {
-	IdempodentId IdempodentId
+	IdempodentID IdempodentId
+
+	// Количесто лотов в заявке
+	Quantity int64
+
+	// Цена за 1 лот
+	Price Price
+
+	Direction OperationType
+
+	// ID  инструмента (акции, фонда и тп.)
+	InstrumentID string
 }
 
 type IdempodentId string

@@ -8,6 +8,8 @@ import (
 	"main/bot/strategies"
 	"main/types"
 	"sync"
+
+	"github.com/google/uuid"
 )
 
 type IStrategyPool interface {
@@ -93,7 +95,6 @@ func (sp *StrategyPool) Start(key strategies.StrategyKey, instrumentId string) (
 			fmt.Println("error registering notification channel!", err)
 			return
 		}
-		// TODO: Тут будет WithIdempodentId
 		for {
 			select {
 			case order, ok := <- ordersToPlaceCh:
@@ -101,13 +102,17 @@ func (sp *StrategyPool) Start(key strategies.StrategyKey, instrumentId string) (
 					fmt.Println("orders to place channel closed")
 					return
 				}
-				orderId, err := Broker.PlaceOrder(order)
+				
+				// TODO: Тут сделать WithIdempodentId
+				order.IdempodentID = types.IdempodentId(uuid.New().String())
+				
+				orderID, err := Broker.PlaceOrder(order)
 				if err != nil {
 					fmt.Printf("error placing order: %v\n", err)
 					continue
 				}
-				ow.Watch(order.IdempodentId)
-				ow.PairWithOrderId(order.IdempodentId, orderId)
+				ow.Watch(order.IdempodentID)
+				ow.PairWithOrderId(order.IdempodentID, orderID)
 			}
 		}
 	}(ordersToPlaceCh, &ordersStateCh)
