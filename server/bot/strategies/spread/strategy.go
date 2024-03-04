@@ -296,7 +296,6 @@ func (s *SpreadStrategy) sell(wg *sync.WaitGroup, ob *types.Orderbook) {
 
 func (s *SpreadStrategy) checkForRottenBuys(wg *sync.WaitGroup, ob *types.Orderbook) {
 	defer wg.Done()
-	fmt.Printf("276 strategy %v  \n", ob)
 	// TODO: Чекать неаткуальные выставленные ордера и отменять их
 
 	// TODO: Сбрасывать lastBuyPrice на предыдущий, если закрываем какой то бай ордер
