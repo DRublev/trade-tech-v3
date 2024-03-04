@@ -8,7 +8,6 @@ import { GetSharesResponse } from "../../../../grpcGW/shares";
 type GetCandlesResponse = OHLCData[];
 
 export const useGetCandles = (): (req: GetCandlesRequest) => Promise<GetCandlesResponse> => useIpcInoke("GET_CANDLES");
-// export const useGetShares = (): (req: GetInstrumentsRequest) => Promise<GetSharesResponse> => useIpcInoke("GET_SHARES");
 export const useGetShares = () => useIpcInoke("GET_SHARES");
 
 // TODO: Нужен хук который сам бы хендлил отписку
@@ -74,7 +73,7 @@ export const useCandles = (figiOrInstrumentId = "BBG004730RP0" /* GAZP */, inter
 
             return [...prevData, candle];
         });
-        
+
     }, [figiOrInstrumentId])
 
     useEffect(() => {
@@ -85,8 +84,8 @@ export const useCandles = (figiOrInstrumentId = "BBG004730RP0" /* GAZP */, inter
     }, [handleNewCandle]);
 
     useEffect(() => {
-        console.log("86 hooks", );
-        
+        console.log("86 hooks",);
+
         getInitialCandels();
         subscribeCandles();
 
@@ -97,3 +96,28 @@ export const useCandles = (figiOrInstrumentId = "BBG004730RP0" /* GAZP */, inter
 
     return { data, isLoading, error };
 }
+
+export const useSharesFromStore = () => {
+    const [sharesFromStore, setShares] = useState([]);
+    const [isLoading, setIsLoading] = useState(false);
+
+    const load = useCallback(async () => {
+        try {
+            if (isLoading) return;
+            setIsLoading(true);
+            const response: any = await window.ipc.invoke('GET_SHARES_FROM_STORE');
+            setShares(response.shares)
+        } catch (error) {
+            console.error(`get shares error: ${error}`);
+            setShares([]);
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        load();
+    }, [])
+
+    return { sharesFromStore, isLoading }
+};
