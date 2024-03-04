@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"main/bot"
+	"main/bot/broker"
 	"main/bot/orderbook"
 	marketdata "main/grpcGW/grpcGW.marketdata"
 	"main/types"
@@ -18,7 +18,7 @@ import (
 
 // Обьявляем нвоый обработчик эндпоинта GetCandles
 func (s *Server) GetCandles(ctx context.Context, in *marketdata.GetCandlesRequest) (*marketdata.GetCandlesResponse, error) {
-	err := bot.Init(ctx, types.Tinkoff)
+	err := broker.Init(ctx, types.Tinkoff)
 	if err != nil {
 		fmt.Println("marketdata GetCandles request err", err)
 		return &marketdata.GetCandlesResponse{Candles: []*marketdata.OHLC{}}, err
@@ -27,7 +27,7 @@ func (s *Server) GetCandles(ctx context.Context, in *marketdata.GetCandlesReques
 	var res []*marketdata.OHLC
 
 	// Вызываем созданный ранее сервис
-	candles, err := bot.Broker.GetCandles(
+	candles, err := broker.Broker.GetCandles(
 		in.InstrumentId,
 		types.Interval(in.Interval),
 		in.Start.AsTime(),
@@ -93,7 +93,7 @@ func (s *Server) SubscribeCandles(in *marketdata.SubscribeCandlesRequest, stream
 	var err error
 
 	ctx := stream.Context()
-	err = bot.Init(ctx, types.Tinkoff)
+	err = broker.Init(ctx, types.Tinkoff)
 	if err != nil {
 		fmt.Println("marketdata SubscribeCandles request err", err)
 		return err
@@ -113,7 +113,7 @@ func (s *Server) SubscribeCandles(in *marketdata.SubscribeCandlesRequest, stream
 
 		fmt.Println("83 marketdata", ctx, &candlesCh, instrumentId, interval)
 
-		er := bot.Broker.SubscribeCandles(ctx, &candlesCh, instrumentId, types.Interval(interval))
+		er := broker.Broker.SubscribeCandles(ctx, &candlesCh, instrumentId, types.Interval(interval))
 		if er != nil {
 			fmt.Println("80 marketdata", er)
 
@@ -159,20 +159,20 @@ func (s *Server) SubscribeOrderbook(in *marketdata.SubscribeOrderbookRequest, st
 	var err error
 
 	ctx, _ := signal.NotifyContext(context.Background(), os.Interrupt)
-	err = bot.Init(ctx, types.Tinkoff)
+	err = broker.Init(ctx, types.Tinkoff)
 	if err != nil {
 		fmt.Println("marketdata SubscribeOrderbook request err", err)
 		return err
 	}
 
-	orderbookProvider := orderbook.NewOrederbookProvider()
+	orderbookProvider := orderbook.NewOrderbookProvider()
 	orderbookCh, err := orderbookProvider.GetOrCreate(in.InstrumentId)
 	if err != nil {
 		return err
 	}
 
 	streamCtx := stream.Context()
-	err = bot.Broker.SubscribeOrderbook(streamCtx, orderbookCh, in.InstrumentId, in.Depth)
+	err = broker.Broker.SubscribeOrderbook(streamCtx, orderbookCh, in.InstrumentId, in.Depth)
 
 	select {
 	case <-streamCtx.Done():

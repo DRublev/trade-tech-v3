@@ -3,13 +3,13 @@ package server
 import (
 	"context"
 	"fmt"
-	"main/bot"
+	"main/bot/broker"
 	accounts "main/grpcGW/grpcGW.accounts"
 	"main/types"
 )
 
 func (s *Server) GetAccounts(ctx context.Context, in *accounts.GetAccountsRequest) (*accounts.GetAccountsResponse, error) {
-	err := bot.Init(ctx, types.Tinkoff)
+	err := broker.Init(ctx, types.Tinkoff)
 	if err != nil {
 		fmt.Println("accounts GetAccounst request err", err)
 		return &accounts.GetAccountsResponse{Accounts: []*accounts.Account{}}, nil
@@ -17,7 +17,7 @@ func (s *Server) GetAccounts(ctx context.Context, in *accounts.GetAccountsReques
 
 	var res []*accounts.Account
 
-	accs, err := bot.Broker.GetAccounts()
+	accs, err := broker.Broker.GetAccounts()
 	if err != nil {
 		return &accounts.GetAccountsResponse{Accounts: res}, err
 	}

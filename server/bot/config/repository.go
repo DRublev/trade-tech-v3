@@ -44,5 +44,6 @@ func (cr *ConfigRepository) Get(key string) (*strategies.Config, error) {
 		"lotSize": 1,
 		"minSpread": 0.2,
 	}
+return nil, nil
 	return nil, errors.New("method is not implemented")
 }

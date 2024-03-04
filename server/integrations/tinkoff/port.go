@@ -287,6 +287,7 @@ func (c *TinkoffBrokerPort) SubscribeOrderbook(ctx context.Context, orderbookCh 
 
 	go func() {
 		<-backCtx.Done()
+		fmt.Printf("290 port %v\n", backCtx.Err())
 		unsubscribe()
 		sdk.Stop()
 	}()
@@ -304,7 +305,7 @@ func (c *TinkoffBrokerPort) SubscribeOrderbook(ctx context.Context, orderbookCh 
 		for {
 			select {
 			case <-ctx.Done():
-				unsubscribe()
+				// unsubscribe()
 
 				return
 			case orderbook, ok := <-orderbookChan:

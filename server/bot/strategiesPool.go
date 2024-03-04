@@ -6,6 +6,7 @@ import (
 	config "main/bot/config"
 	"main/bot/orders"
 	"main/bot/strategies"
+	"main/bot/broker"
 	"main/types"
 	"sync"
 
@@ -19,7 +20,7 @@ type IStrategyPool interface {
 
 type StrategiesMap struct {
 	sync.RWMutex
-	value map[string]*strategies.Strategy
+	value map[string]strategies.IStrategy
 }
 
 type StrategyPool struct {
@@ -40,7 +41,7 @@ func NewPool() *StrategyPool {
 		pool = &StrategyPool{}
 		pool.configRepository = &config.ConfigRepository{}
 		pool.strategies = StrategiesMap{
-			value: make(map[string]*strategies.Strategy),
+			value: make(map[string]strategies.IStrategy),
 		}
 	})
 
@@ -80,17 +81,18 @@ func (sp *StrategyPool) Start(key strategies.StrategyKey, instrumentId string) (
 	ordersStateCh := make(chan orders.OrderExecutionState)
 
 	okCh := make(chan bool, 1)
-	go func(ordersToPlaceCh chan *types.PlaceOrder, ordersStateCh *chan orders.OrderExecutionState) {
-		ok, err := strategy.Start(config, &ordersToPlaceCh, ordersStateCh)
+	go func(s strategies.IStrategy, ordersToPlaceCh chan *types.PlaceOrder, ordersStateCh *chan orders.OrderExecutionState) {
+		fmt.Printf("84 strategiesPool %v\n", s)
+		ok, err := s.Start(config, &ordersToPlaceCh, ordersStateCh)
 		if err != nil {
 			fmt.Println("Error starting strategy ", err)
 		}
 		okCh <- ok
-	}(ordersToPlaceCh, &ordersStateCh)
+	}(strategy, ordersToPlaceCh, &ordersStateCh)
 
 	ow := orders.NewOrderWatcher()
-	go func(source chan *types.PlaceOrder, ordersStateCh *chan orders.OrderExecutionState) {
-		err := ow.Register(ordersStateCh)
+	go func(o *orders.OrderWatcher, source chan *types.PlaceOrder, ordersStateCh *chan orders.OrderExecutionState) {
+		err := o.Register(ordersStateCh)
 		if err != nil {
 			fmt.Println("error registering notification channel!", err)
 			return
@@ -106,16 +108,16 @@ func (sp *StrategyPool) Start(key strategies.StrategyKey, instrumentId string) (
 				// TODO: Тут сделать WithIdempodentId
 				order.IdempodentID = types.IdempodentId(uuid.New().String())
 				
-				orderID, err := Broker.PlaceOrder(order)
+				orderID, err := broker.Broker.PlaceOrder(order)
 				if err != nil {
 					fmt.Printf("error placing order: %v\n", err)
 					continue
 				}
-				ow.Watch(order.IdempodentID)
-				ow.PairWithOrderId(order.IdempodentID, orderID)
+				o.Watch(order.IdempodentID)
+				o.PairWithOrderId(order.IdempodentID, orderID)
 			}
 		}
-	}(ordersToPlaceCh, &ordersStateCh)
+	}(ow, ordersToPlaceCh, &ordersStateCh)
 
 	return <-okCh, nil
 }

@@ -11,10 +11,13 @@ func (s *Server) Start(ctx context.Context, in *trade.StartRequest) (*trade.Star
 	strategyPool := bot.NewPool()
 
 	ok, err := strategyPool.Start(strategies.StrategyKey(in.Strategy), in.InstrumentId)
-
+	errMsg := ""
+	if err != nil {
+		errMsg = err.Error()
+	}
 	return &trade.StartResponse{
 		Ok:    ok,
-		Error: err.Error(),
+		Error: errMsg,
 	}, err
 }
 

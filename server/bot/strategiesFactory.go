@@ -1,20 +1,27 @@
 package bot
 
 import (
+	"context"
 	"errors"
+	"main/bot/broker"
 	"main/bot/strategies"
 	"main/bot/strategies/spread"
+	"main/types"
+	"os"
+	"os/signal"
 )
 
-func Assemble(key strategies.StrategyKey, config *strategies.Config) (*strategies.Strategy, error) {
+func Assemble(key strategies.StrategyKey, config *strategies.Config) (strategies.IStrategy, error) {
+	backCtx, _ := signal.NotifyContext(context.Background(), os.Interrupt)
+
+	err := broker.Init(backCtx, types.Tinkoff)
+	if err != nil {
+		return nil, err
+	}
 
 	switch key {
 	case strategies.Spread:
-		var s strategies.Strategy
-		instance := spread.New()
-		// TODO: Разобраться с типам
-		s = ((any)(*instance)).(strategies.Strategy)
-		return &s, nil
+		return spread.New(), nil
 	}
 
 	// TODO: Инициализировать стратегию в зависимости от ключа

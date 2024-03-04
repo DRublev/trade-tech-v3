@@ -3,14 +3,14 @@ package server
 import (
 	"context"
 	"fmt"
-	"main/bot"
+	"main/bot/broker"
 	shares "main/grpcGW/grpcGW.shares"
 	"main/types"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func (s *Server) GetShares(ctx context.Context, in *shares.GetInstrumentsRequest) (*shares.GetSharesResponse, error) {
-	err := bot.Init(ctx, types.Tinkoff)
+	err := broker.Init(ctx, types.Tinkoff)
 	if err != nil {
 		fmt.Println("shares GetShares request err", err)
 		return &shares.GetSharesResponse{Instruments: []*shares.Share{}}, err
@@ -18,7 +18,7 @@ func (s *Server) GetShares(ctx context.Context, in *shares.GetInstrumentsRequest
 
 	var res []*shares.Share
 
-	sharesArr, err := bot.Broker.GetShares(types.InstrumentStatus(in.InstrumentStatus))
+	sharesArr, err := broker.Broker.GetShares(types.InstrumentStatus(in.InstrumentStatus))
 
 	if err != nil {
 		return &shares.GetSharesResponse{Instruments: res}, err

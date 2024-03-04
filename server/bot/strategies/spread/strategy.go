@@ -74,13 +74,28 @@ func New() *SpreadStrategy {
 
 func (s *SpreadStrategy) Start(config *strategies.Config, ordersToPlaceCh *chan *types.PlaceOrder, orderStateChangeCh *chan orders.OrderExecutionState) (bool, error) {
 	// TODO: Нужен метод ConvertSerialsableToType[T](candidate) T, который конвертирует типы через json.Marshall
-	s.config = ((any)(*config)).(Config)
-	fmt.Printf("78 strategy %v\n", *config, s.config)
+	debugCfg := Config{
+		// InstrumentId: "BBG004730N88", // SBER
+		// "InstrumentId": "4c466956-d2ce-4a95-abb4-17947a65f18a", // TGLD
+
+		Config: strategies.Config{
+			InstrumentId: "BBG004730RP0", // GAZP
+			Balance: 200,
+		},
+		maxSharesToHold: 1,
+		nextOrderCooldownMs: 0,
+		lotSize: 1,
+		minSpread: 0.2,
+	}
+	s.config = debugCfg //((any)(*config)).(Config)
+	fmt.Printf("78 strategy %v\n", s.config)
 
 	// Создаем или получаем канал, в который будет постаупать инфа о стакане
-	obProvider := orderbook.NewOrederbookProvider()
+	obProvider := orderbook.NewOrderbookProvider()
+	fmt.Printf("95 strategy %v\n", obProvider)
 	ch, err := obProvider.GetOrCreate(s.config.InstrumentId)
 	if err != nil {
+		fmt.Printf("98 strategy %v\n", err)
 		return false, err
 	}
 
@@ -95,6 +110,7 @@ func (s *SpreadStrategy) Start(config *strategies.Config, ordersToPlaceCh *chan 
 		lastBuyPrice:             0,
 	})
 	if err != nil {
+		fmt.Printf("113 strategy %v\n", err)
 		return false, err
 	}
 
@@ -104,8 +120,10 @@ func (s *SpreadStrategy) Start(config *strategies.Config, ordersToPlaceCh *chan 
 	// Слушаем изменения в стакане
 	go func(ch *chan *types.Orderbook) {
 		for {
+			fmt.Printf("122 strategy %v\n", )
 			select {
 			case ob, ok := <-*ch:
+				fmt.Printf("123 strategy %v\n", ob)
 				if !ok {
 					fmt.Println("spread orderbook channel end")
 					return
@@ -114,7 +132,7 @@ func (s *SpreadStrategy) Start(config *strategies.Config, ordersToPlaceCh *chan 
 				go s.onOrderbook(ob)
 			}
 		}
-	}(s.obCh)
+	}(ch)
 
 	// Копируем выставляемые ордера в другой канал
 	go func(source *chan *types.PlaceOrder, target *chan *types.PlaceOrder) {
