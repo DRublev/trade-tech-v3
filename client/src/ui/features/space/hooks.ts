@@ -15,7 +15,7 @@ export const useGetShares = () => useIpcInoke("GET_SHARES");
 const useSubscribeCandles = () => useIpcInoke("SUBSCRIBE_CANDLES");
 const useListenCandles = () => useIpcListen("NEW_CANDLE");
 
-export const useCandles = (figiOrInstrumentId = "4c466956-d2ce-4a95-abb4-17947a65f18a" /* TGLD */, interval = 1) => {
+export const useCandles = (figiOrInstrumentId = "BBG004730RP0" /* GAZP */, interval = 1) => {
     const getCandles = useGetCandles();
     const subscribe = useSubscribeCandles();
 

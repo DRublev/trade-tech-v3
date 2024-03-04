@@ -36,7 +36,8 @@ func (cr *ConfigRepository) Get(key string) (*strategies.Config, error) {
 	fmt.Printf("18 repository %v  \n", key)
 	_ = map[string]any {
 		// InstrumentId: "BBG004730N88", // SBER
-		"InstrumentId": "4c466956-d2ce-4a95-abb4-17947a65f18a", // TGLD
+		// "InstrumentId": "4c466956-d2ce-4a95-abb4-17947a65f18a", // TGLD
+		"InstrumentId": "BBG004730RP0", // GAZP
 		"Balance": 200,
 		"maxSharesToHold": 1,
 		"nextOrderCooldownMs": 0,
