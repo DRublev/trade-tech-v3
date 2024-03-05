@@ -1,7 +1,6 @@
 package tinkoff
 
 import (
-	"fmt"
 	"main/types"
 	"math"
 

@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"main/bot/broker"
 	accounts "main/grpcGW/grpcGW.accounts"
@@ -30,6 +31,14 @@ func (s *Server) GetAccounts(ctx context.Context, in *accounts.GetAccountsReques
 	return &accounts.GetAccountsResponse{Accounts: res}, nil
 }
 
-// accountID, err := dbInstance.Get([]string{"accounts"})
+func (s *Server) SetAccount(ctx context.Context, in *accounts.SetAccountRequest) (*accounts.SetAccountResponse, error) {
+	if in.AccountId == "" {
+		return &accounts.SetAccountResponse{}, errors.New("accountId is empty")
+	}
 
-func (s *Server) SetAccount
+	content := []byte(in.AccountId + "\n")
+
+	err := dbInstance.Append([]string{"accounts"}, content)
+
+	return &accounts.SetAccountResponse{}, err
+}

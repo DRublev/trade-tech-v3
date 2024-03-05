@@ -332,6 +332,8 @@ func (c *TinkoffBrokerPort) SubscribeOrderbook(ctx context.Context, orderbookCh 
 	return nil
 }
 
+var accountId string
+
 func (c *TinkoffBrokerPort) PlaceOrder(order *types.PlaceOrder) (types.OrderId, error) {
 	// TODO: PlaceOrder -> TinkoffPlaceOrder
 	fmt.Printf("336 port %v\n", order)
@@ -348,20 +350,27 @@ func (c *TinkoffBrokerPort) PlaceOrder(order *types.PlaceOrder) (types.OrderId, 
 	}
 	
 	price := toQuotation(float64(order.Price))
+	if len(accountId) == 0 {
+		accountIDRaw, err := dbInstance.Get([]string{"accounts"})
+		if err != nil {
+			return "", err
+		}
+		accountId = string(accountIDRaw)
+	}
 
 	orderResp, err := oc.PostOrder(&investgo.PostOrderRequest{
 		InstrumentId: order.InstrumentID,
 		Quantity: order.Quantity,
 		Direction: direction,
 		Price: &price,
-		AccountId: sdk.Config.AccountId,
+		AccountId: accountId,
 		OrderType: investapi.OrderType_ORDER_TYPE_LIMIT,
 		OrderId: string(order.IdempodentID),
 	})
-if err!=nil {
-	fmt.Printf("362 port %v; accounId: %v\n", err, sdk.Config.AccountId)
-	return "", err
-}
+	if err!=nil {
+		fmt.Printf("362 port %v; accounId: %v\n", err, sdk.Config.AccountId)
+		return "", err
+	}
 fmt.Printf("364 port %v\n", orderResp)
 	return types.OrderId(orderResp.OrderId), err
 }
