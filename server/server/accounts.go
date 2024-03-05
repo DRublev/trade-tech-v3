@@ -32,10 +32,14 @@ func (s *Server) GetAccounts(ctx context.Context, in *accounts.GetAccountsReques
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 8fc68c3 (fix: Получение айдишника аккаунта и инит сдк)
 func (s *Server) SetAccount(ctx context.Context, in *accounts.SetAccountRequest) (*accounts.SetAccountResponse, error) {
 	if in.AccountId == "" {
 		return &accounts.SetAccountResponse{}, errors.New("accountId is empty")
 	}
+<<<<<<< HEAD
 
 	content := []byte(in.AccountId + "\n")
 
@@ -48,3 +52,12 @@ func (s *Server) SetAccount(ctx context.Context, in *accounts.SetAccountRequest)
 
 func (s *Server) SetAccount
 >>>>>>> eb34c9e (feat: Новый метод в accounts.proto, контракт в go)
+=======
+
+	content := []byte(in.AccountId + "\n")
+
+	err := dbInstance.Append([]string{"accounts"}, content)
+
+	return &accounts.SetAccountResponse{}, err
+}
+>>>>>>> 8fc68c3 (fix: Получение айдишника аккаунта и инит сдк)

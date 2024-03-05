@@ -350,6 +350,9 @@ func (c *TinkoffBrokerPort) PlaceOrder(order *types.PlaceOrder) (types.OrderId, 
 
 	price := toQuotation(float64(order.Price))
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 8fc68c3 (fix: Получение айдишника аккаунта и инит сдк)
 	if len(accountId) == 0 {
 		accountIDRaw, err := dbInstance.Get([]string{"accounts"})
 		if err != nil {
@@ -357,8 +360,11 @@ func (c *TinkoffBrokerPort) PlaceOrder(order *types.PlaceOrder) (types.OrderId, 
 		}
 		accountId = string(accountIDRaw)
 	}
+<<<<<<< HEAD
 =======
 >>>>>>> eb34c9e (feat: Новый метод в accounts.proto, контракт в go)
+=======
+>>>>>>> 8fc68c3 (fix: Получение айдишника аккаунта и инит сдк)
 
 	o := &investgo.PostOrderRequest{
 		InstrumentId: order.InstrumentID,
@@ -380,7 +386,7 @@ func (c *TinkoffBrokerPort) PlaceOrder(order *types.PlaceOrder) (types.OrderId, 
 }
 
 func (c *TinkoffBrokerPort) SubscribeOrders(cb func(types.OrderExecutionState)) error {
-	sdk, err := c.NewSdk()
+	sdk, err := c.GetSdk()
 	if err != nil {
 		fmt.Println("Cannot init sdk! ", err)
 		return err
