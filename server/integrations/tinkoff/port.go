@@ -349,6 +349,7 @@ func (c *TinkoffBrokerPort) PlaceOrder(order *types.PlaceOrder) (types.OrderId, 
 	}
 
 	price := toQuotation(float64(order.Price))
+<<<<<<< HEAD
 	if len(accountId) == 0 {
 		accountIDRaw, err := dbInstance.Get([]string{"accounts"})
 		if err != nil {
@@ -356,6 +357,8 @@ func (c *TinkoffBrokerPort) PlaceOrder(order *types.PlaceOrder) (types.OrderId, 
 		}
 		accountId = string(accountIDRaw)
 	}
+=======
+>>>>>>> eb34c9e (feat: Новый метод в accounts.proto, контракт в go)
 
 	o := &investgo.PostOrderRequest{
 		InstrumentId: order.InstrumentID,

@@ -31,6 +31,7 @@ func (s *Server) GetAccounts(ctx context.Context, in *accounts.GetAccountsReques
 	return &accounts.GetAccountsResponse{Accounts: res}, nil
 }
 
+<<<<<<< HEAD
 func (s *Server) SetAccount(ctx context.Context, in *accounts.SetAccountRequest) (*accounts.SetAccountResponse, error) {
 	if in.AccountId == "" {
 		return &accounts.SetAccountResponse{}, errors.New("accountId is empty")
@@ -42,3 +43,8 @@ func (s *Server) SetAccount(ctx context.Context, in *accounts.SetAccountRequest)
 
 	return &accounts.SetAccountResponse{}, err
 }
+=======
+// accountID, err := dbInstance.Get([]string{"accounts"})
+
+func (s *Server) SetAccount
+>>>>>>> eb34c9e (feat: Новый метод в accounts.proto, контракт в go)
