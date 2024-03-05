@@ -75,17 +75,17 @@ func New() *SpreadStrategy {
 func (s *SpreadStrategy) Start(config *strategies.Config, ordersToPlaceCh *chan *types.PlaceOrder, orderStateChangeCh *chan orders.OrderExecutionState) (bool, error) {
 	// TODO: Нужен метод ConvertSerialsableToType[T](candidate) T, который конвертирует типы через json.Marshall
 	debugCfg := Config{
-		// InstrumentId: "BBG004730N88", // SBER
-		// "InstrumentId": "4c466956-d2ce-4a95-abb4-17947a65f18a", // TGLD
-
+		
 		Config: strategies.Config{
-			InstrumentId: "BBG004730RP0", // GAZP
-			Balance: 200,
+			// InstrumentId: "BBG004730N88", // SBER
+			InstrumentId: "4c466956-d2ce-4a95-abb4-17947a65f18a", // TGLD
+			// InstrumentId: "BBG004730RP0", // GAZP
+			Balance: 20,
 		},
 		maxSharesToHold: 1,
 		nextOrderCooldownMs: 0,
 		lotSize: 1,
-		minSpread: 0.2,
+		minSpread: 0.1,
 	}
 	s.config = debugCfg //((any)(*config)).(Config)
 	fmt.Printf("78 strategy %v\n", s.config)
@@ -120,10 +120,8 @@ func (s *SpreadStrategy) Start(config *strategies.Config, ordersToPlaceCh *chan 
 	// Слушаем изменения в стакане
 	go func(ch *chan *types.Orderbook) {
 		for {
-			fmt.Printf("122 strategy %v\n", )
 			select {
 			case ob, ok := <-*ch:
-				fmt.Printf("123 strategy %v\n", ob)
 				if !ok {
 					fmt.Println("spread orderbook channel end")
 					return
@@ -201,6 +199,11 @@ func (s *SpreadStrategy) buy(wg *sync.WaitGroup, ob *types.Orderbook) {
 		return
 	}
 
+	// Аукцион закрытия, только заявки на продажу
+	if len(ob.Bids) == 0 {
+		return
+	}
+
 	minBuyPrice := ob.Bids[0].Price
 	leftBalance := s.state.Get().leftBalance - s.state.Get().notConfirmedBlockedMoney
 	if leftBalance < minBuyPrice {
@@ -235,6 +238,7 @@ func (s *SpreadStrategy) buy(wg *sync.WaitGroup, ob *types.Orderbook) {
 		Direction: types.Buy,
 	}
 	fmt.Printf("Order to place: %v\n", order)
+
 	s.toPlaceOrders <- order
 
 	newState := *s.state.Get()
@@ -255,7 +259,7 @@ func (s *SpreadStrategy) sell(wg *sync.WaitGroup, ob *types.Orderbook) {
 
 	state := *s.state.Get()
 	if state.holdingShares-state.pendingSellShares == 0 {
-		fmt.Println("Nothing to sale, hold 0 shares")
+		fmt.Println("Nothing to sell, hold 0 shares")
 		return
 	}
 	if state.holdingShares < 0 {

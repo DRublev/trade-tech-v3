@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"fmt"
 	bot "main/bot"
 	"main/bot/strategies"
 	trade "main/grpcGW/grpcGW.trade"
@@ -15,6 +16,7 @@ func (s *Server) Start(ctx context.Context, in *trade.StartRequest) (*trade.Star
 	if err != nil {
 		errMsg = err.Error()
 	}
+	fmt.Printf("18 trade %v\n", err)
 	return &trade.StartResponse{
 		Ok:    ok,
 		Error: errMsg,

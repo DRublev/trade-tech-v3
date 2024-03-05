@@ -2,7 +2,6 @@ package tinkoff
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"main/types"
 	"os"
@@ -10,10 +9,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/russianinvestments/invest-api-go-sdk/investgo"
 	investapi "github.com/russianinvestments/invest-api-go-sdk/proto"
 )
 
-const ENDPOINT = "sandbox-invest-public-api.tinkoff.ru:443"
+const ENDPOINT = "invest-public-api.tinkoff.ru:443"
 
 // https://github.com/RussianInvestments/invest-api-go-sdk
 
@@ -305,7 +305,7 @@ func (c *TinkoffBrokerPort) SubscribeOrderbook(ctx context.Context, orderbookCh 
 		for {
 			select {
 			case <-ctx.Done():
-				// unsubscribe()
+				unsubscribe()
 
 				return
 			case orderbook, ok := <-orderbookChan:
@@ -335,5 +335,34 @@ func (c *TinkoffBrokerPort) SubscribeOrderbook(ctx context.Context, orderbookCh 
 func (c *TinkoffBrokerPort) PlaceOrder(order *types.PlaceOrder) (types.OrderId, error) {
 	// TODO: PlaceOrder -> TinkoffPlaceOrder
 	fmt.Printf("336 port %v\n", order)
-	return "", errors.New("method not implemented")
+	sdk, err := c.NewSdk()
+	if err != nil {
+		fmt.Println("Cannot init sdk! ", err)
+		return "", err
+	}
+	oc := sdk.NewOrdersServiceClient()
+
+	direction := investapi.OrderDirection_ORDER_DIRECTION_BUY
+	if order.Direction == types.Sell {
+		direction = investapi.OrderDirection_ORDER_DIRECTION_SELL
+	}
+	
+	price := toQuotation(float64(order.Price))
+	fmt.Printf("351 port %v; price: { units: %v, nano: %v }\n", order.Price, price.Units, price.Nano)
+
+	orderResp, err := oc.PostOrder(&investgo.PostOrderRequest{
+		InstrumentId: order.InstrumentID,
+		Quantity: order.Quantity,
+		Direction: direction,
+		Price: &price,
+		AccountId: sdk.Config.AccountId,
+		OrderType: investapi.OrderType_ORDER_TYPE_LIMIT,
+		OrderId: string(order.IdempodentID),
+	})
+if err!=nil {
+	fmt.Printf("362 port %v; accounId: %v\n", err, sdk.Config.AccountId)
+	return "", err
+}
+fmt.Printf("364 port %v\n", orderResp)
+	return types.OrderId(orderResp.OrderId), err
 }

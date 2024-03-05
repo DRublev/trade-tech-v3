@@ -1,8 +1,6 @@
 package bot
 
 import (
-	"errors"
-	"fmt"
 	"main/bot/strategies"
 )
 
@@ -15,5 +13,6 @@ type ConfigRepository struct {
 
 func (cr *ConfigRepository) Get(key string) (*strategies.Config, error) {
 	// TODO: Возможно тут понадобится мьютекс
-	return nil, errors.New("method is not implemented")
+	return nil, nil
+	// return nil, errors.New("method is not implemented")
 }

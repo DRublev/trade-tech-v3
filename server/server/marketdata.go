@@ -79,6 +79,7 @@ func roundFloat(val float32, precision uint) float64 {
 	ratio := math.Pow(10, float64(precision))
 	return math.Round(float64(val)*ratio) / ratio
 }
+// TODO: Изменить сигнатуру на () [units, nano] и вынести в utils
 func toMDQuantFromNum(p float32) *marketdata.Quant {
 	units := math.Floor(float64(p))
 	nano := roundFloat(p-float32(units), 9)

@@ -3,10 +3,10 @@ package bot
 import (
 	"errors"
 	"fmt"
+	"main/bot/broker"
 	config "main/bot/config"
 	"main/bot/orders"
 	"main/bot/strategies"
-	"main/bot/broker"
 	"main/types"
 	"sync"
 
@@ -107,7 +107,7 @@ func (sp *StrategyPool) Start(key strategies.StrategyKey, instrumentId string) (
 				
 				// TODO: Тут сделать WithIdempodentId
 				order.IdempodentID = types.IdempodentId(uuid.New().String())
-				
+
 				orderID, err := broker.Broker.PlaceOrder(order)
 				if err != nil {
 					fmt.Printf("error placing order: %v\n", err)
