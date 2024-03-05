@@ -6,6 +6,7 @@ option go_package = "grpcGW.accounts";
 
 service Accounts {
     rpc GetAccounts(GetAccountsRequest) returns (GetAccountsResponse);
+    rpc SetAccount(SetAccountRequest) returns (SetAccountResponse);
 }
 
 message Account {
@@ -16,3 +17,8 @@ message GetAccountsRequest {}
 message GetAccountsResponse {
     repeated Account Accounts = 1;
 }
+
+message SetAccountRequest {
+    string AccountId = 1;
+}
+message SetAccountResponse {}

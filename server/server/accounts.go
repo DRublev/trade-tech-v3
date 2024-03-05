@@ -29,3 +29,7 @@ func (s *Server) GetAccounts(ctx context.Context, in *accounts.GetAccountsReques
 	fmt.Println("accounts GetAccounst request")
 	return &accounts.GetAccountsResponse{Accounts: res}, nil
 }
+
+// accountID, err := dbInstance.Get([]string{"accounts"})
+
+func (s *Server) SetAccount

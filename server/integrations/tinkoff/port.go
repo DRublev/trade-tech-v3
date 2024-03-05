@@ -20,7 +20,7 @@ const ENDPOINT = "invest-public-api.tinkoff.ru:443"
 // TODO: Пора разделять методы по файлам
 
 func (c *TinkoffBrokerPort) GetAccounts() ([]types.Account, error) {
-	sdk, err := c.NewSdk()
+	sdk, err := c.GetSdk()
 	if err != nil {
 		fmt.Println("Cannot init sdk! ", err)
 		return []types.Account{}, err
@@ -56,7 +56,7 @@ func (c *TinkoffBrokerPort) SetAccount(accountId string) error {
 
 func (c *TinkoffBrokerPort) GetCandles(instrumentId string, interval types.Interval, start time.Time, end time.Time) ([]types.OHLC, error) {
 	// Инициализируем investgo sdk
-	sdk, err := c.NewSdk()
+	sdk, err := c.GetSdk()
 	if err != nil {
 		fmt.Println("Cannot init sdk! ", err)
 		return []types.OHLC{}, err
@@ -82,7 +82,7 @@ func (c *TinkoffBrokerPort) GetCandles(instrumentId string, interval types.Inter
 }
 
 func (c *TinkoffBrokerPort) SubscribeCandles(ctx context.Context, ohlcCh *chan types.OHLC, instrumentId string, interval types.Interval) error {
-	sdk, err := c.NewSdk()
+	sdk, err := c.GetSdk()
 	if err != nil {
 		fmt.Println("Cannot init sdk! ", err)
 		return err
@@ -207,7 +207,7 @@ func (c *TinkoffBrokerPort) SubscribeCandles(ctx context.Context, ohlcCh *chan t
 }
 
 func (c *TinkoffBrokerPort) GetShares(instrumentStatus types.InstrumentStatus) ([]types.Share, error) {
-	sdk, err := c.NewSdk()
+	sdk, err := c.GetSdk()
 	if err != nil {
 		fmt.Println("Cannot init sdk! ", err)
 		return []types.Share{}, err
@@ -249,7 +249,7 @@ func (c *TinkoffBrokerPort) GetShares(instrumentStatus types.InstrumentStatus) (
 }
 
 func (c *TinkoffBrokerPort) SubscribeOrderbook(ctx context.Context, orderbookCh *chan *types.Orderbook, instrumentId string, depth int32) error {
-	sdk, err := c.NewSdk()
+	sdk, err := c.GetSdk()
 	if err != nil {
 		fmt.Println("Cannot init sdk! ", err)
 		return err
@@ -335,7 +335,7 @@ func (c *TinkoffBrokerPort) SubscribeOrderbook(ctx context.Context, orderbookCh 
 func (c *TinkoffBrokerPort) PlaceOrder(order *types.PlaceOrder) (types.OrderId, error) {
 	// TODO: PlaceOrder -> TinkoffPlaceOrder
 	fmt.Printf("336 port %v\n", order)
-	sdk, err := c.NewSdk()
+	sdk, err := c.GetSdk()
 	if err != nil {
 		fmt.Println("Cannot init sdk! ", err)
 		return "", err
@@ -348,7 +348,6 @@ func (c *TinkoffBrokerPort) PlaceOrder(order *types.PlaceOrder) (types.OrderId, 
 	}
 	
 	price := toQuotation(float64(order.Price))
-	fmt.Printf("351 port %v; price: { units: %v, nano: %v }\n", order.Price, price.Units, price.Nano)
 
 	orderResp, err := oc.PostOrder(&investgo.PostOrderRequest{
 		InstrumentId: order.InstrumentID,

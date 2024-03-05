@@ -3,6 +3,7 @@ package broker
 import (
 	"context"
 	"errors"
+	"main/db"
 	"main/integrations/tinkoff"
 	"main/types"
 )
@@ -15,9 +16,18 @@ func Init(ctx context.Context, key types.BrokerKey) error {
 	}
 	switch key {
 	case types.Tinkoff:
+		dbInstance := db.DB{}
 		tinkoffBroker := &tinkoff.TinkoffBrokerPort{}
+
 		Broker = tinkoffBroker
-		return nil
+
+		accountID, err := dbInstance.Get([]string{"accounts"})
+		if err != nil {
+			return err
+		}
+
+		_, err = tinkoffBroker.NewSdk(string(accountID))
+		return err
 	default:
 		return errors.New("unknown broker type")
 	}

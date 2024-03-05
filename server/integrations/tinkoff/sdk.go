@@ -33,10 +33,20 @@ func initialize(ctx context.Context, config investgo.Config, l investgo.Logger) 
 
 	return instance
 }
+func (c *TinkoffBrokerPort) GetSdk() (*investgo.Client, error) {
+	if instance == nil {
+		return nil, errors.New("sdk is not inited")
+	}
 
-func (c *TinkoffBrokerPort) NewSdk() (*investgo.Client, error) {
+	return instance, nil
+}
+func (c *TinkoffBrokerPort) NewSdk(accountId string) (*investgo.Client, error) {
 	if instance != nil {
 		return instance, nil
+	}
+
+	if len(accountId) == 0 {
+		return nil, errors.New("account id is empty")
 	}
 
 	token, err := getToken()
@@ -48,8 +58,7 @@ func (c *TinkoffBrokerPort) NewSdk() (*investgo.Client, error) {
 		Token:    token,
 		// TODO: Для прод енвы кидать другое название
 		AppName: "trade-tech-dev",
-		// TODO: Брать из другого места
-		AccountId: "2020306672",
+		AccountId: accountId, //"2020306672"
 	}
 
 	// TODO: Норм логгер надо бы
