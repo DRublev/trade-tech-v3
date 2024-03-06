@@ -3,7 +3,6 @@ package spread
 import (
 	"fmt"
 	"main/bot/orderbook"
-	"main/bot/orders"
 	"main/bot/strategies"
 	"main/types"
 	"sync"
@@ -72,20 +71,22 @@ func New() *SpreadStrategy {
 	return inst
 }
 
-func (s *SpreadStrategy) Start(config *strategies.Config, ordersToPlaceCh *chan *types.PlaceOrder, orderStateChangeCh *chan orders.OrderExecutionState) (bool, error) {
+func (s *SpreadStrategy) Start(config *strategies.Config, ordersToPlaceCh *chan *types.PlaceOrder, orderStateChangeCh *chan types.OrderExecutionState) (bool, error) {
 	// TODO: Нужен метод ConvertSerialsableToType[T](candidate) T, который конвертирует типы через json.Marshall
 	debugCfg := Config{
 		
 		Config: strategies.Config{
 			// InstrumentId: "BBG004730N88", // SBER
-			InstrumentId: "4c466956-d2ce-4a95-abb4-17947a65f18a", // TGLD
+			// InstrumentId: "4c466956-d2ce-4a95-abb4-17947a65f18a", // TGLD
 			// InstrumentId: "BBG004730RP0", // GAZP
-			Balance: 20,
+			// InstrumentId: "BBG004PYF2N3", // POLY
+			InstrumentId: "ba64a3c7-dd1d-4f19-8758-94aac17d971b", // FIXP
+			Balance: 400,
 		},
 		maxSharesToHold: 1,
 		nextOrderCooldownMs: 0,
 		lotSize: 1,
-		minSpread: 0.1,
+		minSpread: 0.2,
 	}
 	s.config = debugCfg //((any)(*config)).(Config)
 	fmt.Printf("78 strategy %v\n", s.config)
@@ -147,7 +148,7 @@ func (s *SpreadStrategy) Start(config *strategies.Config, ordersToPlaceCh *chan 
 	}(&s.toPlaceOrders, ordersToPlaceCh)
 
 	// Подписка на изменения в ордерах
-	go func(source *chan orders.OrderExecutionState) {
+	go func(source *chan types.OrderExecutionState) {
 		for {
 			select {
 			case state, ok := <-*source:
@@ -311,7 +312,7 @@ func (s *SpreadStrategy) checkForRottenSells(wg *sync.WaitGroup, ob *types.Order
 
 }
 
-func (s *SpreadStrategy) onOrderSateChange(state orders.OrderExecutionState) {
+func (s *SpreadStrategy) onOrderSateChange(state types.OrderExecutionState) {
 	// TODO: Обновлять последнюю цену покупки
 	// TODO: Обновлять Оставшийся баланс и остальной стейт
 	fmt.Printf("291 strategy %v  \n", state)

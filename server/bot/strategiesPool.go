@@ -78,10 +78,10 @@ func (sp *StrategyPool) Start(key strategies.StrategyKey, instrumentId string) (
 	sp.strategies.Unlock()
 
 	ordersToPlaceCh := make(chan *types.PlaceOrder)
-	ordersStateCh := make(chan orders.OrderExecutionState)
+	ordersStateCh := make(chan types.OrderExecutionState)
 
 	okCh := make(chan bool, 1)
-	go func(s strategies.IStrategy, ordersToPlaceCh chan *types.PlaceOrder, ordersStateCh *chan orders.OrderExecutionState) {
+	go func(s strategies.IStrategy, ordersToPlaceCh chan *types.PlaceOrder, ordersStateCh *chan types.OrderExecutionState) {
 		fmt.Printf("84 strategiesPool %v\n", s)
 		ok, err := s.Start(config, &ordersToPlaceCh, ordersStateCh)
 		if err != nil {
@@ -90,9 +90,9 @@ func (sp *StrategyPool) Start(key strategies.StrategyKey, instrumentId string) (
 		okCh <- ok
 	}(strategy, ordersToPlaceCh, &ordersStateCh)
 
-	ow := orders.NewOrderWatcher()
-	go func(o *orders.OrderWatcher, source chan *types.PlaceOrder, ordersStateCh *chan orders.OrderExecutionState) {
-		err := o.Register(ordersStateCh)
+	go func(source chan *types.PlaceOrder, ordersStateCh *chan types.OrderExecutionState) {
+		ow := orders.NewOrderWatcher(ordersStateCh)
+
 		if err != nil {
 			fmt.Println("error registering notification channel!", err)
 			return
@@ -113,11 +113,11 @@ func (sp *StrategyPool) Start(key strategies.StrategyKey, instrumentId string) (
 					fmt.Printf("error placing order: %v\n", err)
 					continue
 				}
-				o.Watch(order.IdempodentID)
-				o.PairWithOrderId(order.IdempodentID, orderID)
+				ow.Watch(order.IdempodentID)
+				ow.PairWithOrderId(order.IdempodentID, orderID)
 			}
 		}
-	}(ow, ordersToPlaceCh, &ordersStateCh)
+	}(ordersToPlaceCh, &ordersStateCh)
 
 	return <-okCh, nil
 }

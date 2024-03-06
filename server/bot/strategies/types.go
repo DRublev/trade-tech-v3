@@ -1,7 +1,6 @@
 package strategies
 
 import (
-	"main/bot/orders"
 	"main/types"
 )
 
@@ -28,7 +27,7 @@ type Config struct {
 }
 
 type IStrategy interface {
-	Start(config *Config, ordersToPlaceCh *chan *types.PlaceOrder, ordersStateCh *chan orders.OrderExecutionState) (bool, error)
+	Start(config *Config, ordersToPlaceCh *chan *types.PlaceOrder, ordersStateCh *chan types.OrderExecutionState) (bool, error)
 	Stop() (bool, error)
 }
 
