@@ -33,8 +33,22 @@ func initialize(ctx context.Context, config investgo.Config, l investgo.Logger) 
 
 	return instance
 }
+func (c *TinkoffBrokerPort) GetSdk() (*investgo.Client, error) {
+	if instance == nil {
+		return nil, errors.New("sdk is not inited")
+	}
 
+	return instance, nil
+}
+<<<<<<< HEAD
+<<<<<<< HEAD
 func (c *TinkoffBrokerPort) NewSdk() (*investgo.Client, error) {
+=======
+func (c *TinkoffBrokerPort) NewSdk(accountId string) (*investgo.Client, error) {
+>>>>>>> eb34c9e (feat: Новый метод в accounts.proto, контракт в go)
+=======
+func (c *TinkoffBrokerPort) NewSdk() (*investgo.Client, error) {
+>>>>>>> 8fc68c3 (fix: Получение айдишника аккаунта и инит сдк)
 	if instance != nil {
 		return instance, nil
 	}
@@ -48,8 +62,13 @@ func (c *TinkoffBrokerPort) NewSdk() (*investgo.Client, error) {
 		Token:    token,
 		// TODO: Для прод енвы кидать другое название
 		AppName: "trade-tech-dev",
-		// TODO: Брать из другого места
-		AccountId: "2020306672",
+<<<<<<< HEAD
+<<<<<<< HEAD
+=======
+		AccountId: accountId, //"2020306672"
+>>>>>>> eb34c9e (feat: Новый метод в accounts.proto, контракт в go)
+=======
+>>>>>>> 8fc68c3 (fix: Получение айдишника аккаунта и инит сдк)
 	}
 
 	// TODO: Норм логгер надо бы

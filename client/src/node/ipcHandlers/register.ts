@@ -37,5 +37,8 @@ ipcMain.handle(ipcEvents.SET_ACCOUNT, async (e, data) => {
     if (!data.id) return Promise.reject('id является обязательным параметром');
 
     storage.save('accountId', data.id);
-    return storage.save('accountId', data.id);
+    return new Promise((resolve, reject) => accountsService.setAccount({ AccountId: data.id }, (e, res) => {
+        if (e) return reject(e);
+        resolve({});
+    }));
 });
