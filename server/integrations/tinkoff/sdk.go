@@ -34,17 +34,9 @@ func initialize(ctx context.Context, config investgo.Config, l investgo.Logger) 
 	return instance
 }
 
-func isInited() bool {
-	return instance != nil
-}
-
-func getInstance() *investgo.Client {
-	return instance
-}
-
 func (c *TinkoffBrokerPort) NewSdk() (*investgo.Client, error) {
-	if isInited() {
-		return getInstance(), nil
+	if instance != nil {
+		return instance, nil
 	}
 
 	token, err := getToken()
@@ -56,6 +48,8 @@ func (c *TinkoffBrokerPort) NewSdk() (*investgo.Client, error) {
 		Token:    token,
 		// TODO: Для прод енвы кидать другое название
 		AppName: "trade-tech-dev",
+		// TODO: Брать из другого места
+		AccountId: "2020306672",
 	}
 
 	// TODO: Норм логгер надо бы

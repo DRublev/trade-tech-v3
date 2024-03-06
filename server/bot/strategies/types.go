@@ -1,6 +1,8 @@
 package strategies
 
-import "main/types"
+import (
+	"main/types"
+)
 
 type StrategyKey string
 
@@ -25,12 +27,11 @@ type Config struct {
 }
 
 type IStrategy interface {
-	Start(config *Config) (bool, error)
+	Start(config *Config, ordersToPlaceCh *chan *types.PlaceOrder, ordersStateCh *chan types.OrderExecutionState) (bool, error)
 	Stop() (bool, error)
 }
 
 type Strategy struct {
 	IStrategy
-	Key             StrategyKey
-	OrdersToPlaceCh *chan types.PlaceOrder
+	Key StrategyKey
 }

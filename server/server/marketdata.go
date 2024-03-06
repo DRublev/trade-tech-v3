@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"main/bot"
+	"main/bot/broker"
 	"main/bot/orderbook"
 	marketdata "main/grpcGW/grpcGW.marketdata"
 	"main/types"
+	"math"
 	"os"
 	"os/signal"
 	"sync"
@@ -17,7 +18,7 @@ import (
 
 // Обьявляем нвоый обработчик эндпоинта GetCandles
 func (s *Server) GetCandles(ctx context.Context, in *marketdata.GetCandlesRequest) (*marketdata.GetCandlesResponse, error) {
-	err := bot.Init(ctx, types.Tinkoff)
+	err := broker.Init(ctx, types.Tinkoff)
 	if err != nil {
 		fmt.Println("marketdata GetCandles request err", err)
 		return &marketdata.GetCandlesResponse{Candles: []*marketdata.OHLC{}}, err
@@ -26,7 +27,7 @@ func (s *Server) GetCandles(ctx context.Context, in *marketdata.GetCandlesReques
 	var res []*marketdata.OHLC
 
 	// Вызываем созданный ранее сервис
-	candles, err := bot.Broker.GetCandles(
+	candles, err := broker.Broker.GetCandles(
 		in.InstrumentId,
 		types.Interval(in.Interval),
 		in.Start.AsTime(),
@@ -74,11 +75,26 @@ func toMDQuant(q *types.Quant) *marketdata.Quant {
 	}
 }
 
+func roundFloat(val float32, precision uint) float64 {
+	ratio := math.Pow(10, float64(precision))
+	return math.Round(float64(val)*ratio) / ratio
+}
+// TODO: Изменить сигнатуру на () [units, nano] и вынести в utils
+func toMDQuantFromNum(p float32) *marketdata.Quant {
+	units := math.Floor(float64(p))
+	nano := roundFloat(p-float32(units), 9)
+
+	return &marketdata.Quant{
+		Units: int32(units),
+		Nano:  int32(nano),
+	}
+}
+
 func (s *Server) SubscribeCandles(in *marketdata.SubscribeCandlesRequest, stream marketdata.MarketData_SubscribeCandlesServer) error {
 	var err error
 
 	ctx := stream.Context()
-	err = bot.Init(ctx, types.Tinkoff)
+	err = broker.Init(ctx, types.Tinkoff)
 	if err != nil {
 		fmt.Println("marketdata SubscribeCandles request err", err)
 		return err
@@ -98,7 +114,7 @@ func (s *Server) SubscribeCandles(in *marketdata.SubscribeCandlesRequest, stream
 
 		fmt.Println("83 marketdata", ctx, &candlesCh, instrumentId, interval)
 
-		er := bot.Broker.SubscribeCandles(ctx, &candlesCh, instrumentId, types.Interval(interval))
+		er := broker.Broker.SubscribeCandles(ctx, &candlesCh, instrumentId, types.Interval(interval))
 		if er != nil {
 			fmt.Println("80 marketdata", er)
 
@@ -131,7 +147,7 @@ func toMDBidAsk(in []*types.BidAsk) []*marketdata.BidAsk {
 
 	for _, inItem := range in {
 		item := &marketdata.BidAsk{
-			Price:    toMDQuant(&inItem.Price),
+			Price:    toMDQuantFromNum(inItem.Price),
 			Quantity: inItem.Quantity,
 		}
 		items = append(items, item)
@@ -144,20 +160,20 @@ func (s *Server) SubscribeOrderbook(in *marketdata.SubscribeOrderbookRequest, st
 	var err error
 
 	ctx, _ := signal.NotifyContext(context.Background(), os.Interrupt)
-	err = bot.Init(ctx, types.Tinkoff)
+	err = broker.Init(ctx, types.Tinkoff)
 	if err != nil {
 		fmt.Println("marketdata SubscribeOrderbook request err", err)
 		return err
 	}
 
-	orderbookProvider := orderbook.NewOrederbookProvider()
+	orderbookProvider := orderbook.NewOrderbookProvider()
 	orderbookCh, err := orderbookProvider.GetOrCreate(in.InstrumentId)
 	if err != nil {
 		return err
 	}
 
 	streamCtx := stream.Context()
-	err = bot.Broker.SubscribeOrderbook(streamCtx, orderbookCh, in.InstrumentId, in.Depth)
+	err = broker.Broker.SubscribeOrderbook(streamCtx, orderbookCh, in.InstrumentId, in.Depth)
 
 	select {
 	case <-streamCtx.Done():

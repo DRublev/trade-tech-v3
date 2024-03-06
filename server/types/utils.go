@@ -1,5 +1,6 @@
 package types
 
+// TODO: Выпилить, это деталь реализации Тинькофф
 type Quant struct {
 	// Целая часть цены
 	Units int

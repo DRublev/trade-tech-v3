@@ -7,16 +7,22 @@ import style from '../../basicStyles.css';
 import Chart from "./chart/Chart";
 import s from './styles.css';
 import { useCandles } from './hooks';
-import { useGetShares } from './hooks';
 import { SharesPop } from './SharesPopUp';
+import { useIpcInoke } from '../../hooks';
 
 export const ControlsPanel = () => {
-
+    const startTrade = useIpcInoke('START_TRADE');
     const [isStarted, setIsStarted] = useState(false);
 
     const onStartClick = async () => {
         setIsStarted(!isStarted)
         //future logic
+        try {
+
+            await startTrade({});
+        } catch (e) {
+            console.log('24 SpaceRoute', e);
+        }
     }
 
     return (

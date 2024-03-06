@@ -23,5 +23,6 @@ type IBroker interface {
 	SubscribeCandles(context.Context, *chan OHLC, string, Interval) error
 	SubscribeOrderbook(context.Context, *chan *Orderbook, string, int32) error
 	GetShares(InstrumentStatus) ([]Share, error)
-	PlaceOrder(order Order) (string, error)
+	PlaceOrder(order *PlaceOrder) (OrderId, error)
+	SubscribeOrders(func(OrderExecutionState)) error
 }

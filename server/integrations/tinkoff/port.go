@@ -2,7 +2,6 @@ package tinkoff
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"main/types"
 	"os"
@@ -10,10 +9,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/russianinvestments/invest-api-go-sdk/investgo"
 	investapi "github.com/russianinvestments/invest-api-go-sdk/proto"
 )
 
-const ENDPOINT = "sandbox-invest-public-api.tinkoff.ru:443"
+const ENDPOINT = "invest-public-api.tinkoff.ru:443"
 
 // https://github.com/RussianInvestments/invest-api-go-sdk
 
@@ -287,8 +287,8 @@ func (c *TinkoffBrokerPort) SubscribeOrderbook(ctx context.Context, orderbookCh 
 
 	go func() {
 		<-backCtx.Done()
+		fmt.Printf("290 port %v\n", backCtx.Err())
 		unsubscribe()
-		sdk.Stop()
 	}()
 
 	orderbookChan, err := orderbookStream.SubscribeOrderBook([]string{instrumentId}, depth)
@@ -331,6 +331,111 @@ func (c *TinkoffBrokerPort) SubscribeOrderbook(ctx context.Context, orderbookCh 
 	return nil
 }
 
-func (c *TinkoffBrokerPort) PlaceOrder(order types.Order) (string, error) {
-	return "", errors.New("method not implemented")
+func (c *TinkoffBrokerPort) PlaceOrder(order *types.PlaceOrder) (types.OrderId, error) {
+	// TODO: PlaceOrder -> TinkoffPlaceOrder
+	fmt.Printf("336 port %v\n", order)
+	sdk, err := c.NewSdk()
+	if err != nil {
+		fmt.Println("Cannot init sdk! ", err)
+		return "", err
+	}
+	oc := sdk.NewOrdersServiceClient()
+
+	direction := investapi.OrderDirection_ORDER_DIRECTION_BUY
+	if order.Direction == types.Sell {
+		direction = investapi.OrderDirection_ORDER_DIRECTION_SELL
+	}
+
+	price := toQuotation(float64(order.Price))
+	fmt.Printf("351 port %v; price: { units: %v, nano: %v }\n", order.Price, price.Units, price.Nano)
+
+	o := &investgo.PostOrderRequest{
+		InstrumentId: order.InstrumentID,
+		Quantity:     order.Quantity,
+		Direction:    direction,
+		Price:        &price,
+		AccountId:    sdk.Config.AccountId,
+		OrderType:    investapi.OrderType_ORDER_TYPE_LIMIT,
+		OrderId:      string(order.IdempodentID),
+	}
+
+	orderResp, err := oc.PostOrder(o)
+	if err != nil {
+		fmt.Printf("362 port %v; accounId: %v\n%v\n", err, sdk.Config.AccountId, o)
+		return "", err
+	}
+	fmt.Printf("364 port %v\n", orderResp)
+	return types.OrderId(orderResp.OrderId), err
+}
+
+func (c *TinkoffBrokerPort) SubscribeOrders(cb func(types.OrderExecutionState)) error {
+	sdk, err := c.NewSdk()
+	if err != nil {
+		fmt.Println("Cannot init sdk! ", err)
+		return err
+	}
+
+	ordersStreamClient := sdk.NewOrdersStreamClient()
+
+	tradesStream, err := ordersStreamClient.TradesStream([]string{
+		sdk.Config.AccountId,
+	})
+	if err != nil {
+		fmt.Printf("382 port %v\n", err)
+		return err
+	}
+
+	wg := &sync.WaitGroup{}
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		err := tradesStream.Listen()
+
+		if err != nil {
+			fmt.Println("erorr in orderbooks stream", err)
+		}
+
+	}()
+
+	backCtx, _ := signal.NotifyContext(context.Background(), os.Interrupt)
+
+	go func() {
+		<-backCtx.Done()
+		fmt.Printf("408 port %v\n", backCtx.Err())
+		tradesStream.Stop()
+	}()
+	wg.Add(1)
+	go func(ctx context.Context, ts *investgo.TradesStream, cb func(types.OrderExecutionState)) {
+		defer wg.Done()
+
+		select {
+		case <-ctx.Done():
+			return
+		case tradeState := <-ts.Trades():
+			fmt.Printf("414 port new trade for %v\n", tradeState.OrderId)
+			lotsExecuted := 0
+			for _, t := range tradeState.Trades {
+				lotsExecuted += int(t.Quantity)
+			}
+			changeEvent := types.OrderExecutionState{
+				Id:           types.OrderId(tradeState.OrderId),
+				Direction:    types.OperationType(tradeState.Direction),
+				InstrumentId: tradeState.InstrumentUid,
+				LotsExecuted: lotsExecuted,
+				Status:       0, // TODO: Научитться определять статус заявки
+				// TODO: Научиться считать вот это все (из tradeState.Trades видимо)
+				// LotsRequested      int
+				// InitialOrderPrice  types.Money
+				// ExecutedOrderPrice types.Money
+				// InitialComission   types.Money
+				// ExecutedComission  types.Money
+			}
+			cb(changeEvent)
+		}
+	}(backCtx, tradesStream, cb)
+
+	wg.Wait()
+
+	return nil
 }

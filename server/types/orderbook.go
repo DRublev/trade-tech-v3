@@ -4,7 +4,7 @@ import "time"
 
 type BidAsk struct {
 	Quantity int64
-	Price    Quant
+	Price    float32
 }
 
 type Orderbook struct {

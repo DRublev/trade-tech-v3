@@ -3,9 +3,14 @@ package bot
 import (
 	"errors"
 	"fmt"
+	"main/bot/broker"
 	config "main/bot/config"
+	"main/bot/orders"
 	"main/bot/strategies"
+	"main/types"
 	"sync"
+
+	"github.com/google/uuid"
 )
 
 type IStrategyPool interface {
@@ -15,7 +20,7 @@ type IStrategyPool interface {
 
 type StrategiesMap struct {
 	sync.RWMutex
-	value map[string]*strategies.Strategy
+	value map[string]strategies.IStrategy
 }
 
 type StrategyPool struct {
@@ -36,7 +41,7 @@ func NewPool() *StrategyPool {
 		pool = &StrategyPool{}
 		pool.configRepository = &config.ConfigRepository{}
 		pool.strategies = StrategiesMap{
-			value: make(map[string]*strategies.Strategy),
+			value: make(map[string]strategies.IStrategy),
 		}
 	})
 
@@ -71,14 +76,48 @@ func (sp *StrategyPool) Start(key strategies.StrategyKey, instrumentId string) (
 	sp.strategies.Lock()
 	sp.strategies.value[sp.getMapKey(key, instrumentId)] = strategy
 	sp.strategies.Unlock()
+
+	ordersToPlaceCh := make(chan *types.PlaceOrder)
+	ordersStateCh := make(chan types.OrderExecutionState)
+
 	okCh := make(chan bool, 1)
-	go func() {
-		ok, err := strategy.Start(config)
+	go func(s strategies.IStrategy, ordersToPlaceCh chan *types.PlaceOrder, ordersStateCh *chan types.OrderExecutionState) {
+		fmt.Printf("84 strategiesPool %v\n", s)
+		ok, err := s.Start(config, &ordersToPlaceCh, ordersStateCh)
 		if err != nil {
 			fmt.Println("Error starting strategy ", err)
 		}
 		okCh <- ok
-	}()
+	}(strategy, ordersToPlaceCh, &ordersStateCh)
+
+	go func(source chan *types.PlaceOrder, ordersStateCh *chan types.OrderExecutionState) {
+		ow := orders.NewOrderWatcher(ordersStateCh)
+
+		if err != nil {
+			fmt.Println("error registering notification channel!", err)
+			return
+		}
+		for {
+			select {
+			case order, ok := <- ordersToPlaceCh:
+				if !ok {
+					fmt.Println("orders to place channel closed")
+					return
+				}
+				
+				// TODO: Тут сделать WithIdempodentId
+				order.IdempodentID = types.IdempodentId(uuid.New().String())
+
+				orderID, err := broker.Broker.PlaceOrder(order)
+				if err != nil {
+					fmt.Printf("error placing order: %v\n", err)
+					continue
+				}
+				ow.Watch(order.IdempodentID)
+				ow.PairWithOrderId(order.IdempodentID, orderID)
+			}
+		}
+	}(ordersToPlaceCh, &ordersStateCh)
 
 	return <-okCh, nil
 }
