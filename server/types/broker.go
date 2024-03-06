@@ -24,4 +24,5 @@ type IBroker interface {
 	SubscribeOrderbook(context.Context, *chan *Orderbook, string, int32) error
 	GetShares(InstrumentStatus) ([]Share, error)
 	PlaceOrder(order *PlaceOrder) (OrderId, error)
+	SubscribeOrders(func(OrderExecutionState)) error
 }
