@@ -1,127 +1,81 @@
-import React, { ComponentClass, FC, MutableRefObject, memo, useCallback, useMemo } from "react";
-import { scaleTime, scaleUtc } from "d3-scale";
-import {
-    ChartCanvas,
-    Chart as RFChart,
-    CrossHairCursor,
-    CandlestickSeries,
-    YAxis,
-    XAxis,
-    withDeviceRatio,
-    ZoomButtons,
-    OHLCTooltip,
-    WithRatioProps,
-    EdgeIndicator,
-    MouseCoordinateY,
-    BarSeries,
-    mouseBasedZoomAnchor,
-    discontinuousTimeScaleProviderBuilder,
-    lastVisibleItemBasedZoomAnchor,
-} from "react-financial-charts";
-import s from './styles.css';
+import React, { FC, MutableRefObject, RefObject, useCallback, useEffect, useRef } from "react";
+import { IChartApi, createChart } from 'lightweight-charts';
 import { useChartDimensions } from "./hooks";
 import { OHLCData } from "../../../../types";
+import { useCandles } from "../hooks";
 
+type ChartProps = {
+    containerRef: MutableRefObject<HTMLElement>;
 
-// TODO: Тоже вынести в хук
-const openCloseColor = (d: OHLCData) => d.close > d.open ? "rgba(181, 210, 193)" : "rgba(255, 127, 127)";
-const volumeColor = (d: OHLCData) => d.close > d.open ? "rgba(181, 210, 193, 0.6)" : "rgba(255, 127, 127, 0.6)";
-
-const candlesAppearance = {
-    wickStroke: openCloseColor,
-    fill: openCloseColor,
-    stroke: openCloseColor,
-    candleStrokeWidth: 1,
-    widthRatio: 0.8,
-    opacity: 1,
 };
 
-type Props = WithRatioProps & {
-    parentRef: MutableRefObject<HTMLElement>;
-    data?: OHLCData[];
-    isLoading?: boolean;
+type UseChartProps = {
+    containerRef: MutableRefObject<HTMLElement>;
+    initialData?: OHLCData[];
 }
 
-const Chart: FC<Props> = ({ parentRef, ratio, data: data, isLoading = false }) => {
-    const chartSize = useChartDimensions(parentRef);
+type ChartApi = {
+    setInitialPriceSeries: (initialData: OHLCData[]) => void;
+    updatePriceSeries: (newItem: OHLCData) => void;
+}
+const useChart = ({ containerRef, }: UseChartProps): [RefObject<HTMLDivElement>, ChartApi] => {
+    const chartSize = useChartDimensions(containerRef);
+    const chartRef = useRef();
+    let chart: IChartApi;
+    let candlesApi: ReturnType<IChartApi['addCandlestickSeries']>;
 
-    const xScale = scaleTime();
-    const yScale: any = scaleUtc();
+    useEffect(() => {
+        chart = createChart("chart-container", {
+            width: chartSize.width,
+            height: chartSize.height,
+        });
+        candlesApi = chart.addCandlestickSeries();
+    // TODO: Add volume series
 
-    const yExtents = useCallback((d: OHLCData) => [d.high, d.low], []);
+        chart.timeScale().fitContent();
 
-    // TODO: Возможно стоит масщтабировать на основе индексов
-    // чтобы самая правая свеча оказалась изначально по центру экрана
-    const xAccessor = (d: OHLCData) => d && d.date;
-    const max = useMemo(() => data.length && xAccessor(data[data.length - 1]), [data]);
-    const min = useMemo(() => data.length && xAccessor(data[Math.max(0, data.length - 50)]), [data]);
-    const xExtents = [min, max];
+        return () => {
+            chart.remove();
+        }
+    }, []);
 
-    const volumeSeries = useCallback((d: OHLCData) => d.volume, []);
+    const updatePriceSeries = useCallback((newItem: OHLCData) => {
+        console.log('43 Chart', 'new candle!', newItem);
 
-    const barChartHeight = useMemo(() => chartSize.height / 4, [chartSize.height]);
-    const chartHeight = useMemo(() => chartSize.height - barChartHeight, [chartSize.height, barChartHeight]);
+        if (!candlesApi) return;
+        candlesApi.update(newItem);
+    }, []);
 
-    const barChartOrigin = useCallback((_: number, __: number) => [0, chartSize.height - barChartHeight], [chartSize]);
+    const setInitialPriceSeries = useCallback((initialData: OHLCData[]) => {
+        if (!initialData || !candlesApi) return;
 
-    return (
-        <>
-            <ChartCanvas
-                ratio={ratio}
-                height={chartSize.height}
-                width={chartSize.width}
-                seriesName="Data"
-                data={data}
+        candlesApi.setData(initialData);
+    }, []);
 
-                padding={{ top: 100, bottom: 100, right: 0, left: 0 }}
-                xScale={xScale}
-                xAccessor={xAccessor}
-                xExtents={xExtents}
+    useEffect(() => {
+        if (chart) {
+            chart.applyOptions({
+                width: chartSize.width,
+                height: chartSize.height,
+            });
+        }
+    }, [chartSize]);
 
-                zoomAnchor={lastVisibleItemBasedZoomAnchor}
-            >
-                <RFChart id={2} height={barChartHeight} origin={barChartOrigin} yExtents={volumeSeries} yScale={yScale}>
-                    <BarSeries fillStyle={volumeColor} yAccessor={volumeSeries} />
-                </RFChart>
-                <RFChart id={3} height={chartHeight} yExtents={yExtents} >
-                    {/* TODO: Вынести в тему (сделать хук useChatTheme или useChartConfig) */}
-                    <XAxis showGridLines gridLinesStrokeStyle="#5d5d5d" strokeStyle="#fff" showTicks={false} showTickLabel={false} />
-                    <YAxis showGridLines gridLinesStrokeStyle="#5d5d5d" strokeStyle="#fff" tickStrokeStyle="#fff" tickLabelFill="#fff" />
-
-                    <MouseCoordinateY displayFormat={d => d.toFixed(2)} />
-                    <CandlestickSeries {...candlesAppearance} />
-
-                    <OHLCTooltip className={s.ohlTooltipText} origin={[8, 16]} />
-                    <EdgeIndicator
-                        itemType="last"
-                        rectWidth={40}
-                        fill={openCloseColor}
-                        lineStroke={openCloseColor}
-                        yAccessor={d => d.close}
-                    />
-
-                    <ZoomButtons />
-                </RFChart>
-                <CrossHairCursor strokeStyle="#e1e1e1" />
-            </ChartCanvas>
-        </>
-    );
+    return [chartRef, { updatePriceSeries, setInitialPriceSeries }];
 };
 
-export default memo(withDeviceRatio()(Chart as unknown as ComponentClass<Props, any>));
 
-const debugData: OHLCData[] = [
-    { date: new Date("2010-01-04"), open: 25.436282332605284, high: 25.835021381744056, low: 25.411360259406774, close: 25.710416, volume: 38409100 },
-    { date: new Date("2010-01-05"), open: 25.627344939513726, high: 25.83502196495549, low: 25.452895407434543, close: 25.718722, volume: 49749600 },
-    { date: new Date("2010-01-06"), open: 25.65226505944465, high: 25.81840750861228, low: 25.353210976925574, close: 25.560888, volume: 58182400 },
-    { date: new Date("2010-01-07"), open: 25.444587793771767, high: 25.502739021094353, low: 25.079077898061875, close: 25.295062, volume: 50559700 },
-    { date: new Date("2010-01-08"), open: 25.153841756996414, high: 25.6522649488092, low: 25.120612602739726, close: 25.46951, volume: 51197400 },
-    { date: new Date("2010-01-11"), open: 25.511044730573705, high: 25.55258096597291, low: 25.02092861663475, close: 25.145534, volume: 68754700 },
-    { date: new Date("2010-01-12"), open: 25.045848646491518, high: 25.253525666777517, low: 24.84647870701696, close: 24.979392, volume: 65912100 },
-    { date: new Date("2010-01-13"), open: 25.13722727051071, high: 25.353211377924218, low: 24.929550244151567, close: 25.211991, volume: 51863500 },
-    { date: new Date("2010-01-14"), open: 25.178761733851413, high: 25.83502196495549, low: 25.137227159471163, close: 25.718722, volume: 63228100 },
-    { date: new Date("2010-01-15"), open: 25.818406945612217, high: 25.95132023748152, low: 25.51104412745638, close: 25.635652, volume: 79913200 },
-    { date: new Date("2010-01-19"), open: 25.544274163987136, high: 25.95132113440514, low: 25.486124596784563, close: 25.835022, volume: 46575700 },
-    { date: new Date("2010-01-20"), open: 25.59411494568944, high: 25.702108656795026, low: 25.17876090842236, close: 25.41136, volume: 54849500 },
-    { date: new Date("2010-01-21"), open: 25.427975689088637, high: 25.51935191837554, low: 24.92124291902699, close: 24.92955, volume: 73086700 },
-];
+const Chart: FC<ChartProps> = ({ containerRef }) => {
+    const [ref, api] = useChart({ containerRef });
+    // TODO: Прокидывать id выбранного инструмента
+    const { initialData, isLoading } = useCandles(api.updatePriceSeries);
+
+    useEffect(() => {
+        api.setInitialPriceSeries(initialData)
+    }, [initialData])
+
+    // TODO: Запилить лоадер
+    return <div id="chart-container" ref={ref} />
+}
+
+export default Chart;

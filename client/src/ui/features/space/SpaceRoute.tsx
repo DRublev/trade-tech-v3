@@ -6,7 +6,6 @@ import { PlayIcon, StopIcon } from '@radix-ui/react-icons';
 import style from '../../basicStyles.css';
 import Chart from "./chart";
 import s from './styles.css';
-import { useCandles } from './hooks';
 import { SharesPop } from './SharesPopUp';
 import { useIpcInoke } from '../../hooks';
 
