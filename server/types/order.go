@@ -30,7 +30,6 @@ type PlaceOrder struct {
 type IdempodentId string
 type OrderId string
 
-
 type ExecutionStatus byte
 
 const (
@@ -48,10 +47,11 @@ type OrderExecutionState struct {
 	Status             ExecutionStatus
 	LotsRequested      int
 	LotsExecuted       int
-	InitialOrderPrice  Money
-	ExecutedOrderPrice Money
-	InitialComission   Money
-	ExecutedComission  Money
+	InitialOrderPrice  float64
+	// Полная стоимость (цена за лот * лот * количество акций в сделке)
+	ExecutedOrderPrice float64
+	InitialComission   float64
+	ExecutedComission  float64
 	Direction          OperationType
 	InstrumentId       string
 }
