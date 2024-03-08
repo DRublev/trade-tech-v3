@@ -1,6 +1,6 @@
 import { MutableRefObject, useSyncExternalStore } from "react";
 
-const sizeStep = 100; // px
+const sizeStep = 50; // px
 
 const sizeSelector = (size: number) => (size ? Math.floor(size / sizeStep) * sizeStep : 1)
 

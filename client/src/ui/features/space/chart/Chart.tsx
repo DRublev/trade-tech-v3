@@ -1,5 +1,5 @@
 import React, { FC, MutableRefObject, RefObject, useCallback, useEffect, useRef } from "react";
-import { IChartApi, createChart } from 'lightweight-charts';
+import { ColorType, IChartApi, createChart } from 'lightweight-charts';
 import { useChartDimensions } from "./hooks";
 import { OHLCData } from "../../../../types";
 import { useCandles } from "../hooks";
@@ -18,48 +18,85 @@ type ChartApi = {
     setInitialPriceSeries: (initialData: OHLCData[]) => void;
     updatePriceSeries: (newItem: OHLCData) => void;
 }
+
+const chartTheme = {
+    rightPriceScale: {
+        scaleMargins: {
+            top: 0.1,
+            bottom: 0.1,
+        },
+        textColor: '#fff'
+    },
+    crosshair: {
+        mode: 1,
+    },
+    layout: {
+        textColor: '#fff',
+        background: {
+            type: ColorType.Solid,
+            color: 'transparent',
+        },
+    },
+    grid: {
+        vertLines: { color: '#5a6169' },
+        horzLines: { color: '#5a6169' },
+    },
+};
+
+const candleSeriesTheme = {
+    upColor: '#b5d2c1',
+    wickUpColor: '#b5d2c1',
+    downColor: '#ff7f7f',
+    wickDownColor: '#ff7f7f',
+    borderVisible: false,
+}
+
 const useChart = ({ containerRef, }: UseChartProps): [RefObject<HTMLDivElement>, ChartApi] => {
     const chartSize = useChartDimensions(containerRef);
     const chartRef = useRef();
-    let chart: IChartApi;
-    let candlesApi: ReturnType<IChartApi['addCandlestickSeries']>;
+    const chartApiRef = useRef<IChartApi>();
+    const candlesApiRef = useRef<ReturnType<IChartApi['addCandlestickSeries']>>();
 
     useEffect(() => {
-        chart = createChart("chart-container", {
+        chartApiRef.current = createChart("chart-container", {
             width: chartSize.width,
             height: chartSize.height,
+            ...chartTheme,
         });
-        candlesApi = chart.addCandlestickSeries();
-    // TODO: Add volume series
+        chartApiRef.current.timeScale().fitContent();
+        candlesApiRef.current = chartApiRef.current.addCandlestickSeries(candleSeriesTheme);
+        candlesApiRef.current.priceScale().applyOptions({
+            autoScale: true,
+            scaleMargins: {
+                top: 0.1,
+                bottom: 0.2,
+            },
+        });
 
-        chart.timeScale().fitContent();
-
-        return () => {
-            chart.remove();
-        }
+        // TODO: Add volume series
     }, []);
 
     const updatePriceSeries = useCallback((newItem: OHLCData) => {
         console.log('43 Chart', 'new candle!', newItem);
 
-        if (!candlesApi) return;
-        candlesApi.update(newItem);
-    }, []);
+        if (!candlesApiRef.current) return;
+        candlesApiRef.current.update(newItem);
+    }, [candlesApiRef.current]);
 
     const setInitialPriceSeries = useCallback((initialData: OHLCData[]) => {
-        if (!initialData || !candlesApi) return;
+        if (!initialData || !candlesApiRef.current) return;
 
-        candlesApi.setData(initialData);
-    }, []);
+        candlesApiRef.current.setData(initialData);
+    }, [candlesApiRef.current]);
 
     useEffect(() => {
-        if (chart) {
-            chart.applyOptions({
+        if (chartApiRef.current) {
+            chartApiRef.current.applyOptions({
                 width: chartSize.width,
                 height: chartSize.height,
             });
         }
-    }, [chartSize]);
+    }, [chartSize.width, chartApiRef.current]);
 
     return [chartRef, { updatePriceSeries, setInitialPriceSeries }];
 };
