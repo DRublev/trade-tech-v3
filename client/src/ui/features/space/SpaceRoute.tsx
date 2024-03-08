@@ -4,7 +4,7 @@ import * as Toolbar from '@radix-ui/react-toolbar';
 import { Button, Card, Flex } from "@radix-ui/themes";
 import { PlayIcon, StopIcon } from '@radix-ui/react-icons';
 import style from '../../basicStyles.css';
-import Chart from "./chart/Chart";
+import Chart from "./chart";
 import s from './styles.css';
 import { useCandles } from './hooks';
 import { SharesPop } from './SharesPopUp';
@@ -47,16 +47,11 @@ export const ControlsPanel = () => {
 
 export const SpaceRoute = () => {
     const chartContainer = useRef();
-    // TODO: Прокидывать id выбранного инструмента
-    const { data, isLoading } = useCandles();
 
     return (
         <Layout>
             <Card ref={chartContainer} className={s.chartContainer}>
-                {/* TODO: Запилить лоадер для графика
-                    Может быть прокидывать isLoading внутрь и разруливать внутри Chart
-                */}
-                {isLoading ? 'loading candles...' : <Chart parentRef={chartContainer} data={data} />}
+                <Chart containerRef={chartContainer} />
             </Card>
             <ControlsPanel />
         </Layout>
