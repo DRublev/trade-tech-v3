@@ -13,7 +13,7 @@ type Config struct {
 	strategies.Config
 
 	// Минимальная разница bid-ask, при которой выставлять ордер
-	minSpread float32
+	minProfit float32
 
 	// Сколько мс ждать после исполнения итерации покупка-продажа перед следующей
 	nextOrderCooldownMs int32
@@ -23,6 +23,10 @@ type Config struct {
 
 	// Лотность инструмента
 	lotSize int32
+
+	// Если цена пошла ниже чем цена покупки - stopLossAfter, продать по лучшей цене
+	// Нужно чтобы  выходить из позиции, когда акция пошла вниз
+	stopLossAfter float32
 }
 
 type State struct {
@@ -86,7 +90,8 @@ func (s *SpreadStrategy) Start(config *strategies.Config, ordersToPlaceCh *chan 
 		maxSharesToHold: 1,
 		nextOrderCooldownMs: 0,
 		lotSize: 1,
-		minSpread: 0.2,
+		minProfit: 0.1,
+		stopLossAfter: 0,
 	}
 	s.config = debugCfg //((any)(*config)).(Config)
 	fmt.Printf("78 strategy %v\n", s.config)
@@ -269,9 +274,11 @@ func (s *SpreadStrategy) sell(wg *sync.WaitGroup, ob *types.Orderbook) {
 	}
 
 	minAskPrice := ob.Asks[0].Price
-	shouldMakeSell := minAskPrice-s.state.Get().lastBuyPrice >= s.config.minSpread
+	isGoodPrice := minAskPrice-s.state.Get().lastBuyPrice >= s.config.minProfit
+	hasStopLossBroken := s.config.stopLossAfter != 0 && ob.Bids[0].Price <= s.state.Get().lastBuyPrice - s.config.stopLossAfter
+	shouldMakeSell := isGoodPrice || hasStopLossBroken
 	if !shouldMakeSell {
-		fmt.Printf("Not a good deal. asks[0].price: %v; lastBuyPrice: %v; minSpread: %v\n", minAskPrice, s.state.Get().lastBuyPrice, s.config.minSpread)
+		fmt.Printf("Not a good deal. asks[0].price: %v; lastBuyPrice: %v; minProfit: %v\n", minAskPrice, s.state.Get().lastBuyPrice, s.config.minProfit)
 		return
 	}
 
@@ -280,19 +287,24 @@ func (s *SpreadStrategy) sell(wg *sync.WaitGroup, ob *types.Orderbook) {
 		fmt.Println("isSelling mutex cannot be locked")
 		return
 	}
-	defer s.isBuying.Unlock()
+	defer s.isSelling.Unlock()
+
+	price := minAskPrice
+	if hasStopLossBroken {
+		price = ob.Bids[0].Price
+		fmt.Printf("Stop loss broken. stop loss: %v; current buy price: %v\n", s.state.Get().lastBuyPrice - s.config.stopLossAfter, price)
+	}
+	
 
 	order := &types.PlaceOrder{
 		InstrumentID: s.config.InstrumentId,
 		Quantity: int64(state.holdingShares),
 		Direction: types.Sell,
-		Price: types.Price(minAskPrice),
+		Price: types.Price(price),
 	}
 	fmt.Printf("Order to place: %v\n", order)
 	s.toPlaceOrders <- order
 
-	s.state.Lock()
-	defer s.state.Unlock()
 	state = *s.state.Get()
 	state.pendingSellShares += state.holdingShares
 	s.state.Set(state)
@@ -315,5 +327,19 @@ func (s *SpreadStrategy) checkForRottenSells(wg *sync.WaitGroup, ob *types.Order
 func (s *SpreadStrategy) onOrderSateChange(state types.OrderExecutionState) {
 	// TODO: Обновлять последнюю цену покупки
 	// TODO: Обновлять Оставшийся баланс и остальной стейт
-	fmt.Printf("291 strategy %v  \n", state)
+	fmt.Printf("291 strategy %v %v \n", state, state.ExecutedOrderPrice)
+	newState := s.state.Get()
+	
+	if state.Direction == types.Buy {
+		newState.holdingShares += int32(state.LotsExecuted)
+		newState.pendingBuyShares -= int32(state.LotsExecuted)
+		newState.notConfirmedBlockedMoney -= float32(state.ExecutedOrderPrice)
+		newState.leftBalance -= float32(state.ExecutedOrderPrice)
+	}
+	if state.Direction == types.Sell {
+		newState.pendingSellShares -= int32(state.LotsExecuted)
+		newState.leftBalance += float32(state.ExecutedOrderPrice)
+	}
+fmt.Printf("331 strategy %v\n", newState)
+	s.state.Set(*newState)
 }

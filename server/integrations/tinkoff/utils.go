@@ -5,10 +5,12 @@ import (
 	"math"
 
 	investapi "github.com/russianinvestments/invest-api-go-sdk/proto"
+	"github.com/shopspring/decimal"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 const nanoPrecision = 1_000_000_000
+const BILLION int64 = 1_000_000_000
 
 // TODO: Вынести на уровень аппа
 func quantToNumber(q types.Quant) float64 {
@@ -19,6 +21,25 @@ func toQuant(iq *investapi.Quotation) types.Quant {
 	return types.Quant{
 		Units: int(iq.Units),
 		Nano:  int(iq.Nano),
+	}
+}
+
+// FloatToQuotation - Перевод float в Quotation, step - шаг цены для инструмента (min_price_increment)
+func FloatToQuotation(number float64, step *investapi.Quotation) investapi.Quotation {
+	// делим дробь на дробь и округляем до ближайшего целого
+	k := math.Round(number / step.ToFloat())
+	// целое умножаем на дробный шаг и получаем готовое дробное значение
+	roundedNumber := step.ToFloat() * k
+	// разделяем дробную и целую части
+	decNumber := decimal.NewFromFloat(roundedNumber)
+
+	intPart := decNumber.IntPart()
+	fracPart := decNumber.Sub(decimal.NewFromInt(intPart))
+
+	nano := fracPart.Mul(decimal.NewFromInt(BILLION)).IntPart()
+	return investapi.Quotation{
+		Units: intPart,
+		Nano:  int32(nano),
 	}
 }
 

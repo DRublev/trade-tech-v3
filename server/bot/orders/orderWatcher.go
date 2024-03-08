@@ -81,7 +81,7 @@ func (ow *OrderWatcher) notify(state types.OrderExecutionState) {
 		return
 	}
 
-	fmt.Println("state for order %v changed: %v", idempodentID, state)
+	fmt.Printf("state for order %v changed: %v\n", idempodentID, state)
 
 	*ow.notifyCh <- state
 }

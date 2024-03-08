@@ -347,8 +347,12 @@ func (c *TinkoffBrokerPort) PlaceOrder(order *types.PlaceOrder) (types.OrderId, 
 	if order.Direction == types.Sell {
 		direction = investapi.OrderDirection_ORDER_DIRECTION_SELL
 	}
-
-	price := toQuotation(float64(order.Price))
+fmt.Printf("350 port %v\n", direction)
+	// TODO: Брать из инструмента
+	price := FloatToQuotation(float64(order.Price), &investapi.Quotation{
+		Units: 0,
+		Nano: 10000000,
+	})
 	if len(accountId) == 0 {
 		accountIDRaw, err := dbInstance.Get([]string{"accounts"})
 		if err != nil {
@@ -418,20 +422,22 @@ func (c *TinkoffBrokerPort) SubscribeOrders(cb func(types.OrderExecutionState)) 
 		defer wg.Done()
 
 		select {
-		case <-ctx.Done():
-			return
 		case tradeState := <-ts.Trades():
 			fmt.Printf("414 port new trade for %v\n", tradeState.OrderId)
 			lotsExecuted := 0
+			var executedPrice float64 = 0
 			for _, t := range tradeState.Trades {
 				lotsExecuted += int(t.Quantity)
+				executedPrice += t.Price.ToFloat() * float64(t.Quantity)
 			}
+			
 			changeEvent := types.OrderExecutionState{
 				Id:           types.OrderId(tradeState.OrderId),
 				Direction:    types.OperationType(tradeState.Direction),
 				InstrumentId: tradeState.InstrumentUid,
 				LotsExecuted: lotsExecuted,
 				Status:       0, // TODO: Научитться определять статус заявки
+				ExecutedOrderPrice: executedPrice,
 				// TODO: Научиться считать вот это все (из tradeState.Trades видимо)
 				// LotsRequested      int
 				// InitialOrderPrice  types.Money
@@ -439,7 +445,7 @@ func (c *TinkoffBrokerPort) SubscribeOrders(cb func(types.OrderExecutionState)) 
 				// InitialComission   types.Money
 				// ExecutedComission  types.Money
 			}
-			cb(changeEvent)
+			go cb(changeEvent)
 		}
 	}(backCtx, tradesStream, cb)
 
