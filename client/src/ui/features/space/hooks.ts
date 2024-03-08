@@ -2,8 +2,6 @@ import { GetCandlesRequest } from "../../../../grpcGW/marketData";
 import { useIpcInoke, useIpcListen } from "../../hooks";
 import { OHLCData } from "../../../types";
 import { useState, useEffect, useCallback } from "react";
-import { GetInstrumentsRequest } from "../../../../grpcGW/shares";
-import { GetSharesResponse } from "../../../../grpcGW/shares";
 
 type GetCandlesResponse = OHLCData[];
 
@@ -14,13 +12,14 @@ export const useGetShares = () => useIpcInoke("GET_SHARES");
 const useSubscribeCandles = () => useIpcInoke("SUBSCRIBE_CANDLES");
 const useListenCandles = () => useIpcListen("NEW_CANDLE");
 // BBG004730RP0 GAZP
-export const useCandles = (figiOrInstrumentId = "4c466956-d2ce-4a95-abb4-17947a65f18a" /* TGLD */, interval = 1) => {
+// "4c466956-d2ce-4a95-abb4-17947a65f18a" TGLD
+export const useCandles = (onNewCandle: (d: OHLCData) => void, figiOrInstrumentId = "BBG004PYF2N3" /* POLY */, interval = 1) => {
     const getCandles = useGetCandles();
     const subscribe = useSubscribeCandles();
 
-    const [onCandles, off] = useListenCandles();
+    const [registerCandleCb, unregisterCandleCb] = useListenCandles();
 
-    const [data, setData] = useState<OHLCData[]>([]);
+    const [initialData, setInitialData] = useState<OHLCData[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
 
@@ -39,10 +38,10 @@ export const useCandles = (figiOrInstrumentId = "4c466956-d2ce-4a95-abb4-17947a6
                 end: now,
             });
 
-            console.log("39 hooks", candles);
+            console.log("39 hooks", candles.length);
 
             // TODO: Чтобы избежать лагов графика стоит ограничивать размер candles в N айтемов, в зависимости от размера окна и интервала
-            setData(candles.filter(d => d));
+            setInitialData(candles);
         } catch (e) {
             setError(e);
         } finally {
@@ -59,42 +58,25 @@ export const useCandles = (figiOrInstrumentId = "4c466956-d2ce-4a95-abb4-17947a6
     }
 
     const handleNewCandle = useCallback((e: Event, candle: OHLCData) => {
-        if (!candle) return;
+        if (!candle || !candle.time) return;
 
-        setData((prevData) => {
-            if (!prevData.length) return [candle];
-
-            const lastCandleDate = prevData[prevData.length - 1].date;
-
-            if (lastCandleDate.getMinutes() === candle.date.getMinutes()) {
-                prevData[prevData.length - 1] = candle;
-                return [...prevData];
-            }
-
-            return [...prevData, candle];
-        });
-
-    }, [figiOrInstrumentId])
+        onNewCandle(candle);
+    }, []);
 
     useEffect(() => {
-        onCandles(handleNewCandle);
-
-
-
+        registerCandleCb(handleNewCandle);
     }, [handleNewCandle]);
 
     useEffect(() => {
-        console.log("86 hooks",);
-
         getInitialCandels();
         subscribeCandles();
 
         return () => {
-            off(handleNewCandle);
+            unregisterCandleCb(handleNewCandle);
         }
     }, [figiOrInstrumentId]);
 
-    return { data, isLoading, error };
+    return { initialData, isLoading, error };
 }
 
 export const useSharesFromStore = () => {

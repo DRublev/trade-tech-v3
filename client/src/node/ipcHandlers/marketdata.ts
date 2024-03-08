@@ -4,6 +4,7 @@ import { marketdataService } from "../grpc/marketdata";
 import { Quant } from "./types";
 import { OHLC } from "../../../grpcGW/marketData";
 import { OHLCData } from "../../types";
+import { UTCTimestamp } from "lightweight-charts";
 
 const nanoPrecision = 1_000_000_000;
 const quantToNumber = (q: Quant): number => {
@@ -16,7 +17,7 @@ const candleToOhlc = (candle: OHLC): OHLCData => ({
     low: quantToNumber(candle.low),
     close: quantToNumber(candle.close),
     volume: candle.volume,
-    date: candle.time,
+    time: candle.time.valueOf() as UTCTimestamp,
 })
 
 ipcMain.handle(ipcEvents.GET_CANDLES, async (e, req) => {
@@ -49,21 +50,12 @@ ipcMain.handle(ipcEvents.SUBSCRIBE_CANDLES, async (e, req) => {
 
     const [win] = BrowserWindow.getAllWindows()
 
-    const res = new Promise(async (resolve, reject) => {
+    const res = new Promise((resolve, reject) => {
         try {
             // TODO: Хорошо бы это делать в воркере или background процессе
             const stream = marketdataService.subscribeCandles({ instrumentId, interval })
-            stream.on('data', candle => {
-                console.log("53 marketdata", candle);
-                win.webContents.send(ipcEvents.NEW_CANDLE, {
-                    ...candle,
-                    open: quantToNumber(candle.open),
-                    high: quantToNumber(candle.high),
-                    low: quantToNumber(candle.low),
-                    close: quantToNumber(candle.close),
-                    // TODO: Пофиксить на беке
-                    date: candle.time
-                });
+            stream.on('data', (candle: OHLC) => {
+                win.webContents.send(ipcEvents.NEW_CANDLE, candleToOhlc(candle));
             });
             stream.on('end', () => {
                 resolve(true);
