@@ -2,6 +2,8 @@ package strategies
 
 import "sync"
 
+// IStrategyState Интерфейс для типа состояния стратегии
+// T - тип конкретного состояния, специфичен для стратегии
 type IStrategyState[T any] interface {
 	Get() *T
 	Set(state T) error
@@ -9,6 +11,8 @@ type IStrategyState[T any] interface {
 	Restore() error
 }
 
+// StrategyState Контракт для состояния стратегии
+// T - тип конкретного состояния, специфичен для стратегии
 type StrategyState[T any] struct {
 	IStrategyState[T]
 	sync.RWMutex

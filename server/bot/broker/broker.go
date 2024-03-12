@@ -9,8 +9,10 @@ import (
 	"main/types"
 )
 
+// Broker Инстанс брокера
 var Broker types.IBroker
 
+// Init Конструктор для брокера. Создает инстанс брокера, исходя из ключа
 func Init(ctx context.Context, key types.BrokerKey) error {
 	if Broker != nil {
 		return nil

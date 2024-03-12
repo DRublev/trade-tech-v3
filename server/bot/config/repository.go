@@ -4,13 +4,11 @@ import (
 	"main/bot/strategies"
 )
 
-type IConfigRepository interface {
-}
-
+// ConfigRepository Репозиторий для доступа к конфигам стратегии
 type ConfigRepository struct {
-	IConfigRepository
 }
 
+// Get Получить конфиг стратегии по ее ключу
 func (cr *ConfigRepository) Get(key string) (*strategies.Config, error) {
 	// TODO: Возможно тут понадобится мьютекс
 	return nil, nil

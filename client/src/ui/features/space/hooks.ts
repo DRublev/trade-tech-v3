@@ -11,9 +11,11 @@ export const useGetShares = () => useIpcInoke("GET_SHARES");
 // TODO: Нужен хук который сам бы хендлил отписку
 const useSubscribeCandles = () => useIpcInoke("SUBSCRIBE_CANDLES");
 const useListenCandles = () => useIpcListen("NEW_CANDLE");
-// BBG004730RP0 GAZP
+// "BBG004730RP0" /* GAZP */
 // "4c466956-d2ce-4a95-abb4-17947a65f18a" TGLD
-export const useCandles = (onNewCandle: (d: OHLCData) => void, figiOrInstrumentId = "BBG004PYF2N3" /* POLY */, interval = 1) => {
+// "BBG004730ZJ9" /* VTBR */
+// "BBG004PYF2N3" /* POLY */
+export const useCandles = (onNewCandle: (d: OHLCData) => void, figiOrInstrumentId = "4c466956-d2ce-4a95-abb4-17947a65f18a" /* TGLD */, interval = 1) => {
     const getCandles = useGetCandles();
     const subscribe = useSubscribeCandles();
 
@@ -38,7 +40,7 @@ export const useCandles = (onNewCandle: (d: OHLCData) => void, figiOrInstrumentI
                 end: now,
             });
 
-            console.log("39 hooks", candles.length);
+            console.log("39 hooks", new Date(candles[candles.length - 1].time));
 
             // TODO: Чтобы избежать лагов графика стоит ограничивать размер candles в N айтемов, в зависимости от размера окна и интервала
             setInitialData(candles);

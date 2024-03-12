@@ -166,7 +166,7 @@ func (s *Server) SubscribeOrderbook(in *marketdata.SubscribeOrderbookRequest, st
 		return err
 	}
 
-	orderbookProvider := orderbook.NewOrderbookProvider()
+	orderbookProvider := orderbook.NewProvider()
 	orderbookCh, err := orderbookProvider.GetOrCreate(in.InstrumentId)
 	if err != nil {
 		return err
