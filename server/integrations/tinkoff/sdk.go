@@ -41,7 +41,7 @@ func (c *TinkoffBrokerPort) GetSdk() (*investgo.Client, error) {
 	return instance, nil
 }
 
-func (c *TinkoffBrokerPort) NewSdk(accountID string) (*investgo.Client, error) {
+func (c *TinkoffBrokerPort) NewSdk(accountID *string) (*investgo.Client, error) {
 	if instance != nil {
 		return instance, nil
 	}
@@ -55,7 +55,9 @@ func (c *TinkoffBrokerPort) NewSdk(accountID string) (*investgo.Client, error) {
 		Token:    token,
 		// TODO: Для прод енвы кидать другое название
 		AppName: "trade-tech-dev",
-		AccountId: accountID,
+	}
+	if accountID != nil {
+		config.AccountId = *accountID
 	}
 
 	// TODO: Норм логгер надо бы

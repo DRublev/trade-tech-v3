@@ -349,23 +349,24 @@ func (c *TinkoffBrokerPort) PlaceOrder(order *types.PlaceOrder) (types.OrderID, 
 	// TODO: Брать из инструмента
 	price := FloatToQuotation(float64(order.Price), &investapi.Quotation{
 		Units: 0,
-		Nano: 10000000, // Ok
+		Nano:  10000000, // Ok
 		// Nano: 10000, // VTBR
 	})
 	if len(accountId) == 0 {
 		accountIDRaw, err := dbInstance.Get([]string{"accounts"})
-		if err != nil {
-			return "", err
+		if err == nil {
+			accountId = string(accountIDRaw)
+		} else {
+			accountId = sdk.Config.AccountId
 		}
-		accountId = string(accountIDRaw)
 	}
-fmt.Printf("363 port %v; %v\n", order.Price, price)
+	fmt.Printf("363 port %v; %v\n", order.Price, price)
 	o := &investgo.PostOrderRequest{
 		InstrumentId: order.InstrumentID,
 		Quantity:     order.Quantity,
 		Direction:    direction,
 		Price:        &price,
-		AccountId:    sdk.Config.AccountId,
+		AccountId:    accountId,
 		OrderType:    investapi.OrderType_ORDER_TYPE_LIMIT,
 		OrderId:      string(order.IdempodentID),
 	}
@@ -388,8 +389,16 @@ func (c *TinkoffBrokerPort) SubscribeOrders(cb func(types.OrderExecutionState)) 
 
 	ordersStreamClient := sdk.NewOrdersStreamClient()
 
+	if len(accountId) == 0 {
+		accountIDRaw, err := dbInstance.Get([]string{"accounts"})
+		if err == nil {
+			accountId = string(accountIDRaw)
+		} else {
+			accountId = sdk.Config.AccountId
+		}
+	}
 	tradesStream, err := ordersStreamClient.TradesStream([]string{
-		sdk.Config.AccountId,
+		accountId,
 	})
 	if err != nil {
 		fmt.Printf("382 port %v\n", err)
@@ -429,13 +438,13 @@ func (c *TinkoffBrokerPort) SubscribeOrders(cb func(types.OrderExecutionState)) 
 				lotsExecuted += int(t.Quantity)
 				executedPrice += t.Price.ToFloat() * float64(t.Quantity)
 			}
-			
+
 			changeEvent := types.OrderExecutionState{
-				ID:           types.OrderID(tradeState.OrderId),
-				Direction:    types.OperationType(tradeState.Direction),
-				InstrumentID: tradeState.InstrumentUid,
-				LotsExecuted: lotsExecuted,
-				Status:       0, // TODO: Научитться определять статус заявки
+				ID:                 types.OrderID(tradeState.OrderId),
+				Direction:          types.OperationType(tradeState.Direction),
+				InstrumentID:       tradeState.InstrumentUid,
+				LotsExecuted:       lotsExecuted,
+				Status:             0, // TODO: Научитться определять статус заявки
 				ExecutedOrderPrice: executedPrice,
 				// TODO: Научиться считать вот это все (из tradeState.Trades видимо)
 				// LotsRequested      int
@@ -467,15 +476,15 @@ func (c *TinkoffBrokerPort) GetOrderState(orderID types.OrderID) (types.OrderExe
 		return types.OrderExecutionState{}, err
 	}
 	var status types.ExecutionStatus = types.Unspecified
-	if (state.LotsExecuted == state.LotsRequested) {
+	if state.LotsExecuted == state.LotsRequested {
 		status = types.Fill
 	}
 	orderState := types.OrderExecutionState{
-		ID:           types.OrderID(state.OrderId),
-		Direction:    types.OperationType(state.Direction),
-		InstrumentID: state.InstrumentUid,
-		LotsExecuted: int(state.LotsExecuted),
-		Status:       status, // TODO: Научитться определять статус заявки
+		ID:                 types.OrderID(state.OrderId),
+		Direction:          types.OperationType(state.Direction),
+		InstrumentID:       state.InstrumentUid,
+		LotsExecuted:       int(state.LotsExecuted),
+		Status:             status, // TODO: Научитться определять статус заявки
 		ExecutedOrderPrice: state.ExecutedOrderPrice.ToFloat(),
 	}
 
