@@ -15,8 +15,6 @@ import (
 
 const ENDPOINT = "invest-public-api.tinkoff.ru:443"
 
-// https://github.com/RussianInvestments/invest-api-go-sdk
-
 // TODO: Пора разделять методы по файлам
 
 func (c *TinkoffBrokerPort) GetAccounts() ([]types.Account, error) {
@@ -333,7 +331,7 @@ func (c *TinkoffBrokerPort) SubscribeOrderbook(ctx context.Context, orderbookCh 
 
 var accountId string
 
-func (c *TinkoffBrokerPort) PlaceOrder(order *types.PlaceOrder) (types.OrderId, error) {
+func (c *TinkoffBrokerPort) PlaceOrder(order *types.PlaceOrder) (types.OrderID, error) {
 	// TODO: PlaceOrder -> TinkoffPlaceOrder
 	fmt.Printf("336 port %v\n", order)
 	sdk, err := c.GetSdk()
@@ -347,11 +345,12 @@ func (c *TinkoffBrokerPort) PlaceOrder(order *types.PlaceOrder) (types.OrderId, 
 	if order.Direction == types.Sell {
 		direction = investapi.OrderDirection_ORDER_DIRECTION_SELL
 	}
-fmt.Printf("350 port %v\n", direction)
+
 	// TODO: Брать из инструмента
 	price := FloatToQuotation(float64(order.Price), &investapi.Quotation{
 		Units: 0,
-		Nano: 10000000,
+		Nano: 10000000, // Ok
+		// Nano: 10000, // VTBR
 	})
 	if len(accountId) == 0 {
 		accountIDRaw, err := dbInstance.Get([]string{"accounts"})
@@ -360,7 +359,7 @@ fmt.Printf("350 port %v\n", direction)
 		}
 		accountId = string(accountIDRaw)
 	}
-
+fmt.Printf("363 port %v; %v\n", order.Price, price)
 	o := &investgo.PostOrderRequest{
 		InstrumentId: order.InstrumentID,
 		Quantity:     order.Quantity,
@@ -377,7 +376,7 @@ fmt.Printf("350 port %v\n", direction)
 		return "", err
 	}
 	fmt.Printf("364 port %v\n", orderResp)
-	return types.OrderId(orderResp.OrderId), err
+	return types.OrderID(orderResp.OrderId), err
 }
 
 func (c *TinkoffBrokerPort) SubscribeOrders(cb func(types.OrderExecutionState)) error {
@@ -432,9 +431,9 @@ func (c *TinkoffBrokerPort) SubscribeOrders(cb func(types.OrderExecutionState)) 
 			}
 			
 			changeEvent := types.OrderExecutionState{
-				Id:           types.OrderId(tradeState.OrderId),
+				ID:           types.OrderID(tradeState.OrderId),
 				Direction:    types.OperationType(tradeState.Direction),
-				InstrumentId: tradeState.InstrumentUid,
+				InstrumentID: tradeState.InstrumentUid,
 				LotsExecuted: lotsExecuted,
 				Status:       0, // TODO: Научитться определять статус заявки
 				ExecutedOrderPrice: executedPrice,
@@ -452,4 +451,33 @@ func (c *TinkoffBrokerPort) SubscribeOrders(cb func(types.OrderExecutionState)) 
 	wg.Wait()
 
 	return nil
+}
+
+func (c *TinkoffBrokerPort) GetOrderState(orderID types.OrderID) (types.OrderExecutionState, error) {
+	sdk, err := c.GetSdk()
+	if err != nil {
+		fmt.Println("Cannot init sdk! ", err)
+		return types.OrderExecutionState{}, err
+	}
+
+	oc := sdk.NewOrdersServiceClient()
+	state, err := oc.GetOrderState(sdk.Config.AccountId, string(orderID))
+	if err != nil {
+		fmt.Printf("Cannot get order state %v\n", err)
+		return types.OrderExecutionState{}, err
+	}
+	var status types.ExecutionStatus = types.Unspecified
+	if (state.LotsExecuted == state.LotsRequested) {
+		status = types.Fill
+	}
+	orderState := types.OrderExecutionState{
+		ID:           types.OrderID(state.OrderId),
+		Direction:    types.OperationType(state.Direction),
+		InstrumentID: state.InstrumentUid,
+		LotsExecuted: int(state.LotsExecuted),
+		Status:       status, // TODO: Научитться определять статус заявки
+		ExecutedOrderPrice: state.ExecutedOrderPrice.ToFloat(),
+	}
+
+	return orderState, nil
 }

@@ -23,4 +23,5 @@ go.work
 client/storage
 storage
 
-.vscode
+.vscode/
+.vscode/*

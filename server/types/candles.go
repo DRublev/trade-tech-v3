@@ -4,8 +4,10 @@ import (
 	"time"
 )
 
+// Interval  Интервал на графике (минута, 5 минут, час и тп)
 type Interval byte
 
+// OHLC Педставление свечи
 type OHLC struct {
 	// Цена открытия
 	Open Quant

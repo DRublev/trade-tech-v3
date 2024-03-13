@@ -8,6 +8,7 @@ type Quant struct {
 	Nano int
 }
 
+// TODO: Избавиться от Quant, завязаться на Price
 type Money struct {
 	Quant
 	Currency string

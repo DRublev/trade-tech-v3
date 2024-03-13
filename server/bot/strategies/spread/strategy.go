@@ -81,23 +81,28 @@ func (s *SpreadStrategy) Start(config *strategies.Config, ordersToPlaceCh *chan 
 		
 		Config: strategies.Config{
 			// InstrumentId: "BBG004730N88", // SBER
-			// InstrumentId: "4c466956-d2ce-4a95-abb4-17947a65f18a", // TGLD
+			InstrumentId: "4c466956-d2ce-4a95-abb4-17947a65f18a", // TGLD
 			// InstrumentId: "BBG004730RP0", // GAZP
 			// InstrumentId: "BBG004PYF2N3", // POLY
-			InstrumentId: "ba64a3c7-dd1d-4f19-8758-94aac17d971b", // FIXP
+			// InstrumentId: "ba64a3c7-dd1d-4f19-8758-94aac17d971b", // FIXP
+			// InstrumentId: "BBG004730ZJ9", // VTBR
 			Balance: 400,
 		},
 		maxSharesToHold: 1,
 		nextOrderCooldownMs: 0,
 		lotSize: 1,
-		minProfit: 0.1,
-		stopLossAfter: 0,
+		minProfit: 0,
+		stopLossAfter: 0.02,
+		// VTBR
+		// lotSize: 10_000,
+		// minProfit: 0.00002,
+		// stopLossAfter: 0.00002,
 	}
 	s.config = debugCfg //((any)(*config)).(Config)
 	fmt.Printf("78 strategy %v\n", s.config)
 
 	// Создаем или получаем канал, в который будет постаупать инфа о стакане
-	obProvider := orderbook.NewOrderbookProvider()
+	obProvider := orderbook.NewProvider()
 	fmt.Printf("95 strategy %v\n", obProvider)
 	ch, err := obProvider.GetOrCreate(s.config.InstrumentId)
 	if err != nil {
@@ -176,7 +181,6 @@ func (s *SpreadStrategy) Stop() (bool, error) {
 
 func (s *SpreadStrategy) onOrderbook(ob *types.Orderbook) {
 	wg := &sync.WaitGroup{}
-
 	wg.Add(1)
 	go s.checkForRottenBuys(wg, ob)
 	wg.Add(1)
@@ -212,7 +216,7 @@ func (s *SpreadStrategy) buy(wg *sync.WaitGroup, ob *types.Orderbook) {
 
 	minBuyPrice := ob.Bids[0].Price
 	leftBalance := s.state.Get().leftBalance - s.state.Get().notConfirmedBlockedMoney
-	if leftBalance < minBuyPrice {
+	if leftBalance < (minBuyPrice * float32(s.config.lotSize)) {
 		fmt.Printf("Not enough money to enter position. First bid price: %v; Left money: %v\n", minBuyPrice, leftBalance)
 		return
 	}
@@ -331,14 +335,16 @@ func (s *SpreadStrategy) onOrderSateChange(state types.OrderExecutionState) {
 	newState := s.state.Get()
 	
 	if state.Direction == types.Buy {
-		newState.holdingShares += int32(state.LotsExecuted)
-		newState.pendingBuyShares -= int32(state.LotsExecuted)
+		newState.holdingShares += int32(state.LotsExecuted / int(s.config.lotSize))
+		newState.pendingBuyShares -= int32(state.LotsExecuted / int(s.config.lotSize))
 		newState.notConfirmedBlockedMoney -= float32(state.ExecutedOrderPrice)
 		newState.leftBalance -= float32(state.ExecutedOrderPrice)
+		fmt.Printf("338 strategy %v\n", state.ExecutedOrderPrice)
 	}
 	if state.Direction == types.Sell {
-		newState.pendingSellShares -= int32(state.LotsExecuted)
+		newState.pendingSellShares -= int32(state.LotsExecuted / int(s.config.lotSize))
 		newState.leftBalance += float32(state.ExecutedOrderPrice)
+		newState.holdingShares += int32(state.LotsExecuted / int(s.config.lotSize))
 	}
 fmt.Printf("331 strategy %v\n", newState)
 	s.state.Set(*newState)

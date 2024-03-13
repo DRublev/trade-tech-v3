@@ -11,6 +11,7 @@ import (
 	"runtime"
 )
 
+// DB Контракт для базы данных. Чтобы скрыть детали реализации (как именно храним инфу)
 type DB struct{}
 
 func (d *DB) getStoragePath(storageName []string) (string, error) {
@@ -26,6 +27,8 @@ func (d *DB) getStoragePath(storageName []string) (string, error) {
 	return p, nil
 }
 
+
+// Prune Очистить директорию с данными
 func (d *DB) Prune(storageName []string) error {
 	storageFile, err := d.getStoragePath(storageName)
 	if err != nil {
@@ -41,6 +44,7 @@ func (d *DB) Prune(storageName []string) error {
 	return err
 }
 
+// Append Добавить данные в конец стореджа
 func (d *DB) Append(storageName []string, content []byte) error {
 	storageFile, err := d.getStoragePath(storageName)
 	fmt.Println("Appending to ", storageFile)
@@ -67,6 +71,7 @@ func (d *DB) Append(storageName []string, content []byte) error {
 	return err
 }
 
+// Get Получить данные из стореджа
 func (d *DB) Get(storageName []string) ([]byte, error) {
 	var result []byte
 	storageFile, err := d.getStoragePath(storageName)
