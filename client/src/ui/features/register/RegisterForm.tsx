@@ -16,13 +16,13 @@ import { InfoCircledIcon } from "@radix-ui/react-icons";
 // TODO: Эту херь нужно вынести в отдельный компонент с хуком и рефом
 import * as Toast from '@radix-ui/react-toast';
 
-import s from "./RegisterForm.css";
+import s from "./styles.css";
 
 export const RegisterForm = () => {
     const register = useRegister();
     const navigate = useNavigate();
     const [alertOpen, setAlertOpen] = useState(false);
-    const [alert, setAlert] = useState(null)
+    const [alert, setAlert] = useState(null);
 
 
     const handleSubmit: FormEventHandler<HTMLFormElement> = useCallback(
@@ -51,7 +51,7 @@ export const RegisterForm = () => {
         <Toast.Provider>
             <Container>
                 <img src="/static/images/logo.svg" className={s.logo} />
-                <Card size="3" variant="surface" className={s.card}>
+                <Card size="3" variant="ghost" className={s.card}>
                     <Form.Root onSubmit={handleSubmit}>
                         <Flex direction="column" gap="3">
                             <Form.Field name="token">
