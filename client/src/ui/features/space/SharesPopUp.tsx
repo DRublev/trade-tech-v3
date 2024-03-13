@@ -5,7 +5,6 @@ import React, { useCallback, useState } from "react"
 import { PopoverWindow } from "../../components/PopoverWindow"
 import style from '../../basicStyles.css';
 import { Quatation, Share } from "../../../../grpcGW/shares";
-import { quantToNumber } from '../../../node/ipcHandlers/marketdata';
 import { useSharesFromStore } from './hooks';
 import { SerarchInput } from '../../components/SearchInput';
 
@@ -73,7 +72,7 @@ export const SharesPop = () => {
     }
 
     return (
-        <PopoverWindow triger={SharesTriggerButton()}>
+        <PopoverWindow trigger={SharesTriggerButton()}>
             {SharesPopUpContent()}
         </PopoverWindow>
     )

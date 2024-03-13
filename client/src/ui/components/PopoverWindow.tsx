@@ -1,16 +1,16 @@
-import React from "react"
+import React, { FC } from "react"
 import * as Popover from '@radix-ui/react-popover';
 
 type Props = {
     children?: React.ReactNode
-    triger?: React.ReactNode
+    trigger?: React.ReactNode
 };
 
-export const PopoverWindow = ({ children, triger }) => {
+export const PopoverWindow: FC<Props> = ({ children, trigger }) => {
     return (
         <Popover.Root>
             <Popover.Trigger style={{ border: 'none', backgroundColor: 'inherit', color: 'white' }}>
-                {triger}
+                {trigger}
             </Popover.Trigger>
             <Popover.Portal>
                 <Popover.Content style={{ backgroundColor: '#18191B', color: 'white' }}>

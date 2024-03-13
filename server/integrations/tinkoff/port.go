@@ -109,17 +109,85 @@ func (c *TinkoffBrokerPort) SubscribeCandles(ctx context.Context, ohlcCh *chan t
 
 	go func() {
 		<-backCtx.Done()
+		fmt.Println("114 port ", "subscription context closed for candles")
 		candlesStream.UnSubscribeCandle([]string{instrumentId}, investapi.SubscriptionInterval(interval), false)
 		sdk.Stop()
 	}()
 
 	// Собирать свечи руками исходя из последних сделок, для выходных дней
-	lastPriceCh := make(chan *investapi.LastPrice)
+	// lastPriceCh := make(chan *investapi.LastPrice)
 	// lastPriceCh, err := candlesStream.SubscribeLastPrice([]string{instrumentId})
 	// if err != nil {
 	// 	fmt.Println("Cannot subscribe ", err)
 	// 	return err
 	// }
+
+	wg.Add(1)
+	go func(ctx context.Context, ohlcCh *chan types.OHLC, candlesCh <-chan *investapi.Candle) {
+		defer wg.Done()
+
+		// candles := make(map[int]types.OHLC)
+
+		for {
+			select {
+			case <-ctx.Done():
+				fmt.Println("candles context closed for ", instrumentId)
+				err := candlesStream.UnSubscribeCandle([]string{instrumentId}, investapi.SubscriptionInterval(interval), false)
+				if err != nil {
+					fmt.Println("Cannot unsubscribe ", instrumentId, err)
+				}
+				return
+			case candle, ok := <-candlesCh:
+				if !ok {
+					fmt.Println("stream done for ", instrumentId)
+					return
+				}
+
+				ohlc := toOHLC(candle)
+				fmt.Println("146 port ", "new candle")
+				*ohlcCh <- ohlc
+				// Врубать только для дебага графика в выходные!
+				// case lastPrice, ok := <-lastPriceCh:
+				// 	if !ok {
+				// 		fmt.Println("stream done for ", instrumentId)
+				// 		return
+				// 	}
+				// 	dealTime := lastPrice.Time.AsTime()
+				// 	if candle, exists := candles[dealTime.Minute()]; !exists {
+				// 		candles[dealTime.Minute()] = types.OHLC{
+				// 			Time:   dealTime,
+				// 			Open:   toQuant(lastPrice.Price),
+				// 			Close:  toQuant(lastPrice.Price),
+				// 			Low:    toQuant(lastPrice.Price),
+				// 			High:   toQuant(lastPrice.Price),
+				// 			Volume: 0,
+				// 		}
+				// 	} else {
+				// 		c := types.OHLC{
+				// 			Time:   dealTime,
+				// 			Open:   toQuant(lastPrice.Price),
+				// 			Close:  toQuant(lastPrice.Price),
+				// 			Low:    candle.Low,
+				// 			High:   candle.High,
+				// 			Volume: 0,
+				// 		}
+				// 		l := quantToNumber(candle.Low)
+				// 		h := quantToNumber(candle.High)
+				// 		if l > lastPrice.Price.ToFloat() {
+				// 			c.Low = toQuant(lastPrice.Price)
+				// 		}
+				// 		if h < lastPrice.Price.ToFloat() {
+				// 			c.High = toQuant(lastPrice.Price)
+				// 		}
+				// 		candles[dealTime.Minute()] = c
+				// 	}
+
+				// 	*ohlcCh <- candles[dealTime.Minute()]
+
+				// 	fmt.Println("164 port", lastPrice, candles[dealTime.Minute()])
+			}
+		}
+	}(backCtx, ohlcCh, candlesCh)
 
 	wg.Add(1)
 	go func() {
@@ -134,72 +202,7 @@ func (c *TinkoffBrokerPort) SubscribeCandles(ctx context.Context, ohlcCh *chan t
 
 	}()
 
-	wg.Add(1)
-	go func(ctx context.Context) {
-		defer wg.Done()
-
-		candles := make(map[int]types.OHLC)
-
-		for {
-			select {
-			case <-ctx.Done():
-				fmt.Println("context closed for ", instrumentId)
-				err := candlesStream.UnSubscribeCandle([]string{instrumentId}, investapi.SubscriptionInterval(interval), false)
-				if err != nil {
-					fmt.Println("Cannot unsubscribe ", instrumentId, err)
-				}
-				return
-			case candle, ok := <-candlesCh:
-				if !ok {
-					fmt.Println("stream done for ", instrumentId)
-					return
-				}
-				ohlc := toOHLC(candle)
-				*ohlcCh <- ohlc
-			// Врубать только для дебага графика в выходные!
-			case lastPrice, ok := <-lastPriceCh:
-				if !ok {
-					fmt.Println("stream done for ", instrumentId)
-					return
-				}
-				dealTime := lastPrice.Time.AsTime()
-				if candle, exists := candles[dealTime.Minute()]; !exists {
-					candles[dealTime.Minute()] = types.OHLC{
-						Time:   dealTime,
-						Open:   toQuant(lastPrice.Price),
-						Close:  toQuant(lastPrice.Price),
-						Low:    toQuant(lastPrice.Price),
-						High:   toQuant(lastPrice.Price),
-						Volume: 0,
-					}
-				} else {
-					c := types.OHLC{
-						Time:   dealTime,
-						Open:   toQuant(lastPrice.Price),
-						Close:  toQuant(lastPrice.Price),
-						Low:    candle.Low,
-						High:   candle.High,
-						Volume: 0,
-					}
-					l := quantToNumber(candle.Low)
-					h := quantToNumber(candle.High)
-					if l > lastPrice.Price.ToFloat() {
-						c.Low = toQuant(lastPrice.Price)
-					}
-					if h < lastPrice.Price.ToFloat() {
-						c.High = toQuant(lastPrice.Price)
-					}
-					candles[dealTime.Minute()] = c
-				}
-
-				*ohlcCh <- candles[dealTime.Minute()]
-
-				fmt.Println("164 port", lastPrice, candles[dealTime.Minute()])
-			}
-		}
-	}(ctx)
-
-	wg.Wait()
+	// wg.Wait()
 
 	return nil
 }
