@@ -2,7 +2,6 @@ package tinkoff
 
 import (
 	"context"
-	"fmt"
 	"main/types"
 	"os"
 	"os/signal"
@@ -11,6 +10,7 @@ import (
 
 	"github.com/russianinvestments/invest-api-go-sdk/investgo"
 	investapi "github.com/russianinvestments/invest-api-go-sdk/proto"
+	log "github.com/sirupsen/logrus"
 )
 
 const ENDPOINT = "invest-public-api.tinkoff.ru:443"
@@ -18,33 +18,36 @@ const ENDPOINT = "invest-public-api.tinkoff.ru:443"
 // TODO: Пора разделять методы по файлам
 
 func (c *TinkoffBrokerPort) GetAccounts() ([]types.Account, error) {
+	sdkL.Info("GetAccounts")
 	sdk, err := c.GetSdk()
 	if err != nil {
-		fmt.Println("Cannot init sdk! ", err)
+		sdkL.Errorf("Cannot init sdk: %v", err)
 		return []types.Account{}, err
 	}
 
+	sdkL.Trace("Creating new users service client")
 	us := sdk.NewUsersServiceClient()
+	sdkL.Trace("Requesting accounts")
 	accountsRes, err := us.GetAccounts()
-
 	if err != nil {
-		fmt.Println(err)
-		fmt.Println("Cannot get accounts ", err)
+		sdkL.Errorf("Failed getting accounts: %v", err)
 		return []types.Account{}, err
 	}
 	accounts := []types.Account{}
 
 	for _, acc := range accountsRes.Accounts {
-		isOpen := acc.Status == 2                                 //pb.AccountStatus_ACCOUNT_STATUS_OPEN
-		hasAccess := acc.AccessLevel == 1 || acc.AccessLevel == 2 //AccessLevel_ACCOUNT_ACCESS_LEVEL_FULL_ACCESS || AccessLevel_ACCOUNT_ACCESS_LEVEL_READ_ONLY
+		//pb.AccountStatus_ACCOUNT_STATUS_OPEN
+		isOpen := acc.Status == 2
+		//AccessLevel_ACCOUNT_ACCESS_LEVEL_FULL_ACCESS || AccessLevel_ACCOUNT_ACCESS_LEVEL_READ_ONLY
+		hasAccess := acc.AccessLevel == 1 || acc.AccessLevel == 2
+		// pb.AccountType_ACCOUNT_TYPE_TINKOFF
 		isValidType := acc.Type == 1
-		fmt.Println(acc) // pb.AccountType_ACCOUNT_TYPE_TINKOFF
 
 		if isOpen && hasAccess && isValidType {
 			accounts = append(accounts, types.Account{Id: acc.GetId(), Name: acc.GetName()})
 		}
 	}
-
+	sdkL.Infof("Found %v accounts", len(accounts))
 	return accounts, nil
 }
 
@@ -52,37 +55,40 @@ func (c *TinkoffBrokerPort) SetAccount(accountId string) error {
 	return nil
 }
 
-func (c *TinkoffBrokerPort) GetCandles(instrumentId string, interval types.Interval, start time.Time, end time.Time) ([]types.OHLC, error) {
-	// Инициализируем investgo sdk
+func (c *TinkoffBrokerPort) GetCandles(instrumentID string, interval types.Interval, start time.Time, end time.Time) ([]types.OHLC, error) {
+	sdkL.Infof("Getting candles for %v", instrumentID)
 	sdk, err := c.GetSdk()
 	if err != nil {
-		fmt.Println("Cannot init sdk! ", err)
+		sdkL.Errorf("Cannot init sdk: %v", err)
 		return []types.OHLC{}, err
 	}
 
-	// Сервис для работы с катировками
+	sdkL.Trace("Creating new marketdata service client")
 	candlesService := sdk.NewMarketDataServiceClient()
 
-	// Получаем свечи по инструменту за определенный промежуток времени и интервал (переодичность)
-	candlesRes, err := candlesService.GetCandles(instrumentId, investapi.CandleInterval(interval), start, end)
+	sdkL.Tracef("Requesting candles, instrument: %v; from: %v; to: %v; interval: %v", instrumentID, start, end, interval)
+	candlesRes, err := candlesService.GetCandles(instrumentID, investapi.CandleInterval(interval), start, end)
 	if err != nil {
-		fmt.Println("Cannot get candles", err)
+		sdkL.Errorf("Failed getting candles: %v", err)
 		return []types.OHLC{}, err
 	}
 
 	candles := []types.OHLC{}
 
-	// Конвертируем в нужный тип
+	sdkL.Tracef("Mapping %v candles", len(candlesRes.Candles))
 	for _, candle := range candlesRes.Candles {
 		candles = append(candles, toOHLC(candle))
 	}
+
 	return candles, nil
 }
 
-func (c *TinkoffBrokerPort) SubscribeCandles(ctx context.Context, ohlcCh *chan types.OHLC, instrumentId string, interval types.Interval) error {
+func (c *TinkoffBrokerPort) SubscribeCandles(ctx context.Context, ohlcCh *chan types.OHLC, instrumentID string, interval types.Interval) error {
+	sdkL.Infof("Subscribe candles for %v", instrumentID)
+
 	sdk, err := c.GetSdk()
 	if err != nil {
-		fmt.Println("Cannot init sdk! ", err)
+		sdkL.Errorf("Cannot init sdk: %v", err)
 		return err
 	}
 
@@ -91,100 +97,56 @@ func (c *TinkoffBrokerPort) SubscribeCandles(ctx context.Context, ohlcCh *chan t
 	// TODO: Эту штуку нужно переиспользовать в других эндпоинтах
 	candlesStreamService := sdk.NewMarketDataStreamClient()
 
+	sdkL.Trace("Creating new candles stream")
 	candlesStream, err := candlesStreamService.MarketDataStream()
 	if err != nil {
-		fmt.Println("Cannot create stream ", err)
+		sdkL.Errorf("Failed creating new marketdata stream: %v", err)
 		return err
 	}
 
 	wg := &sync.WaitGroup{}
 
-	// TODO: Докинуть обработку стакана и вообще вынести эту логику в некий Subscriber (глянуть паттерны)
+	sdkL.Tracef("Subscribing for candles, instrument: %v", instrumentID)
+
 	// Стрим не работает по выходным, см https://t.me/c/1436923108/53910/59213
-	candlesCh, err := candlesStream.SubscribeCandle([]string{instrumentId}, investapi.SubscriptionInterval_SUBSCRIPTION_INTERVAL_ONE_MINUTE, false)
+	candlesCh, err := candlesStream.SubscribeCandle([]string{instrumentID}, investapi.SubscriptionInterval_SUBSCRIPTION_INTERVAL_ONE_MINUTE, false)
 	if err != nil {
-		fmt.Println("Cannot subscribe ", err)
+		sdkL.Errorf("Failed to subscribe for candles for %v: %v", instrumentID, err)
 		return err
 	}
 
 	go func() {
 		<-backCtx.Done()
-		fmt.Println("114 port ", "subscription context closed for candles")
-		candlesStream.UnSubscribeCandle([]string{instrumentId}, investapi.SubscriptionInterval(interval), false)
-		sdk.Stop()
-	}()
 
-	// Собирать свечи руками исходя из последних сделок, для выходных дней
-	// lastPriceCh := make(chan *investapi.LastPrice)
-	// lastPriceCh, err := candlesStream.SubscribeLastPrice([]string{instrumentId})
-	// if err != nil {
-	// 	fmt.Println("Cannot subscribe ", err)
-	// 	return err
-	// }
+		sdkL.Infof("Unsubscribing from candles for %v", instrumentID)
+		err := candlesStream.UnSubscribeCandle([]string{instrumentID}, investapi.SubscriptionInterval(interval), false)
+		if err != nil {
+			sdkL.Errorf("Failed to unsubscribe from candles: %v", err)
+		}
+	}()
 
 	wg.Add(1)
 	go func(ctx context.Context, ohlcCh *chan types.OHLC, candlesCh <-chan *investapi.Candle) {
 		defer wg.Done()
 
-		// candles := make(map[int]types.OHLC)
-
 		for {
 			select {
 			case <-ctx.Done():
-				fmt.Println("candles context closed for ", instrumentId)
-				err := candlesStream.UnSubscribeCandle([]string{instrumentId}, investapi.SubscriptionInterval(interval), false)
+				sdkL.Infof("Unsubscribing from candles for %v", instrumentID)
+				err := candlesStream.UnSubscribeCandle([]string{instrumentID}, investapi.SubscriptionInterval(interval), false)
 				if err != nil {
-					fmt.Println("Cannot unsubscribe ", instrumentId, err)
+					sdkL.Warnf("Failed unsubscribing: %v", err)
 				}
 				return
 			case candle, ok := <-candlesCh:
 				if !ok {
-					fmt.Println("stream done for ", instrumentId)
+					sdkL.Infof("Candles stream is done, %v", instrumentID)
 					return
 				}
 
 				ohlc := toOHLC(candle)
-				fmt.Println("146 port ", "new candle")
+				sdkL.Tracef("Notifying about new candle. Candle time: %v", ohlc.Time)
 				*ohlcCh <- ohlc
-				// Врубать только для дебага графика в выходные!
-				// case lastPrice, ok := <-lastPriceCh:
-				// 	if !ok {
-				// 		fmt.Println("stream done for ", instrumentId)
-				// 		return
-				// 	}
-				// 	dealTime := lastPrice.Time.AsTime()
-				// 	if candle, exists := candles[dealTime.Minute()]; !exists {
-				// 		candles[dealTime.Minute()] = types.OHLC{
-				// 			Time:   dealTime,
-				// 			Open:   toQuant(lastPrice.Price),
-				// 			Close:  toQuant(lastPrice.Price),
-				// 			Low:    toQuant(lastPrice.Price),
-				// 			High:   toQuant(lastPrice.Price),
-				// 			Volume: 0,
-				// 		}
-				// 	} else {
-				// 		c := types.OHLC{
-				// 			Time:   dealTime,
-				// 			Open:   toQuant(lastPrice.Price),
-				// 			Close:  toQuant(lastPrice.Price),
-				// 			Low:    candle.Low,
-				// 			High:   candle.High,
-				// 			Volume: 0,
-				// 		}
-				// 		l := quantToNumber(candle.Low)
-				// 		h := quantToNumber(candle.High)
-				// 		if l > lastPrice.Price.ToFloat() {
-				// 			c.Low = toQuant(lastPrice.Price)
-				// 		}
-				// 		if h < lastPrice.Price.ToFloat() {
-				// 			c.High = toQuant(lastPrice.Price)
-				// 		}
-				// 		candles[dealTime.Minute()] = c
-				// 	}
-
-				// 	*ohlcCh <- candles[dealTime.Minute()]
-
-				// 	fmt.Println("164 port", lastPrice, candles[dealTime.Minute()])
 			}
 		}
 	}(backCtx, ohlcCh, candlesCh)
@@ -192,14 +154,12 @@ func (c *TinkoffBrokerPort) SubscribeCandles(ctx context.Context, ohlcCh *chan t
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
+
+		sdkL.Trace("Start listening candles stream")
 		err := candlesStream.Listen()
-
-		fmt.Println("117 port", "listen end")
-
 		if err != nil {
-			fmt.Println("erorr in candles stream", err)
+			sdkL.Errorf("Failed to listen candles stream: %v", err)
 		}
-
 	}()
 
 	// wg.Wait()
@@ -208,17 +168,20 @@ func (c *TinkoffBrokerPort) SubscribeCandles(ctx context.Context, ohlcCh *chan t
 }
 
 func (c *TinkoffBrokerPort) GetShares(instrumentStatus types.InstrumentStatus) ([]types.Share, error) {
+	sdkL.Info("Get shares")
 	sdk, err := c.GetSdk()
 	if err != nil {
-		fmt.Println("Cannot init sdk! ", err)
+		sdkL.Errorf("Cannot init sdk: %v", err)
 		return []types.Share{}, err
 	}
 
+	sdkL.Trace("Creating new instrument service client")
 	instrumentService := sdk.NewInstrumentsServiceClient()
 
+	sdkL.Trace("Sending get shares request")
 	sharesRes, err := instrumentService.Shares(investapi.InstrumentStatus(instrumentStatus))
 	if err != nil {
-		fmt.Println("Cannot get shares", err)
+		sdkL.Errorf("Failed getting shares: %v", err)
 		return []types.Share{}, err
 	}
 
@@ -246,22 +209,30 @@ func (c *TinkoffBrokerPort) GetShares(instrumentStatus types.InstrumentStatus) (
 		}
 	}
 
+	sdkL.Infof("Got %v shares", len(shares))
 	return shares, nil
 }
 
-func (c *TinkoffBrokerPort) SubscribeOrderbook(ctx context.Context, orderbookCh *chan *types.Orderbook, instrumentId string, depth int32) error {
+func (c *TinkoffBrokerPort) SubscribeOrderbook(ctx context.Context, orderbookCh *chan *types.Orderbook, instrumentID string, depth int32) error {
+	sdkL.WithFields(log.Fields{
+		"instrumentID": instrumentID,
+		"depth":        depth,
+	}).Infof("Subscribe for orderbook")
+
 	sdk, err := c.GetSdk()
 	if err != nil {
-		fmt.Println("Cannot init sdk! ", err)
+		sdkL.Errorf("Cannot init sdk: %v", err)
 		return err
 	}
 
 	backCtx, _ := signal.NotifyContext(context.Background(), os.Interrupt)
 
 	streamService := sdk.NewMarketDataStreamClient()
+
+	sdkL.Trace("Creating new marketdata stream")
 	orderbookStream, err := streamService.MarketDataStream()
 	if err != nil {
-		fmt.Println("Cannot create stream ", err)
+		sdkL.Errorf("Failed creating marketdata stream: %v", err)
 		return err
 	}
 
@@ -270,31 +241,34 @@ func (c *TinkoffBrokerPort) SubscribeOrderbook(ctx context.Context, orderbookCh 
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
+
+		sdkL.Trace("Start listening orderbook stream")
 		err := orderbookStream.Listen()
-
 		if err != nil {
-			fmt.Println("erorr in orderbooks stream", err)
+			sdkL.Errorf("Failed to listen orderbook stream: %v", err)
 		}
-
 	}()
 
 	unsubscribe := func() {
-		err := orderbookStream.UnSubscribeOrderBook([]string{instrumentId}, depth)
+		sdkL.Infof("Unsubscribing from orderbook for %v", instrumentID)
+		err := orderbookStream.UnSubscribeOrderBook([]string{instrumentID}, depth)
 		if err != nil {
-			fmt.Println("Cannot unsubscribe ", instrumentId, err)
+			sdkL.Errorf("Failed to unsubscribe from orderbook: %v", err)
 		}
 		close(*orderbookCh)
 	}
 
 	go func() {
 		<-backCtx.Done()
-		fmt.Printf("290 port %v\n", backCtx.Err())
+
+		sdkL.Trace("SubscribeOrderbook context is closed")
 		unsubscribe()
 	}()
 
-	orderbookChan, err := orderbookStream.SubscribeOrderBook([]string{instrumentId}, depth)
+	sdkL.Tracef("Subscribing for orderbook for %v", instrumentID)
+	orderbookChan, err := orderbookStream.SubscribeOrderBook([]string{instrumentID}, depth)
 	if err != nil {
-		fmt.Println("Cannot subscribe ", err)
+		sdkL.Errorf("Failed to subscribe for orderbook: %v", err)
 		return err
 	}
 
@@ -306,15 +280,14 @@ func (c *TinkoffBrokerPort) SubscribeOrderbook(ctx context.Context, orderbookCh 
 			select {
 			case <-ctx.Done():
 				unsubscribe()
-
 				return
 			case orderbook, ok := <-orderbookChan:
 				if !ok {
-					fmt.Println("stream done for ", instrumentId)
+					sdkL.Errorf("Orderbook stream is done for %v", instrumentID)
 					return
 				}
 				item := types.Orderbook{
-					InstrumentId: instrumentId,
+					InstrumentId: instrumentID,
 					Depth:        depth,
 					Time:         orderbook.Time.AsTime(),
 					LimitUp:      toQuant(orderbook.LimitUp),
@@ -322,6 +295,7 @@ func (c *TinkoffBrokerPort) SubscribeOrderbook(ctx context.Context, orderbookCh 
 					Bids:         toBidAsk(orderbook.Bids),
 					Asks:         toBidAsk(orderbook.Asks),
 				}
+				sdkL.Tracef("New orderbook item. Time: %v", orderbook.Time)
 				*orderbookCh <- &item
 			}
 		}
@@ -332,14 +306,16 @@ func (c *TinkoffBrokerPort) SubscribeOrderbook(ctx context.Context, orderbookCh 
 	return nil
 }
 
-var accountId string
+var accountID string
 
 func (c *TinkoffBrokerPort) PlaceOrder(order *types.PlaceOrder) (types.OrderID, error) {
-	// TODO: PlaceOrder -> TinkoffPlaceOrder
-	fmt.Printf("336 port %v\n", order)
+	sdkL.WithFields(log.Fields{
+		"instrumentID": order.InstrumentID,
+		"direction":    order.Direction,
+	}).Infof("Placing order")
 	sdk, err := c.GetSdk()
 	if err != nil {
-		fmt.Println("Cannot init sdk! ", err)
+		sdkL.Errorf("Cannot init sdk: %v", err)
 		return "", err
 	}
 	oc := sdk.NewOrdersServiceClient()
@@ -355,56 +331,67 @@ func (c *TinkoffBrokerPort) PlaceOrder(order *types.PlaceOrder) (types.OrderID, 
 		Nano:  10000000, // Ok
 		// Nano: 10000, // VTBR
 	})
-	if len(accountId) == 0 {
+
+	if len(accountID) == 0 {
+		sdkL.Trace("No accountID")
 		accountIDRaw, err := dbInstance.Get([]string{"accounts"})
 		if err == nil {
-			accountId = string(accountIDRaw)
+			sdkL.Trace("Got accountID from db")
+			accountID = string(accountIDRaw)
 		} else {
-			accountId = sdk.Config.AccountId
+			sdkL.Trace("Got accountID from sdk")
+			accountID = sdk.Config.AccountId
 		}
 	}
-	fmt.Printf("363 port %v; %v\n", order.Price, price)
+
 	o := &investgo.PostOrderRequest{
 		InstrumentId: order.InstrumentID,
 		Quantity:     order.Quantity,
 		Direction:    direction,
 		Price:        &price,
-		AccountId:    accountId,
+		AccountId:    accountID,
 		OrderType:    investapi.OrderType_ORDER_TYPE_LIMIT,
 		OrderId:      string(order.IdempodentID),
 	}
 
+	sdkL.Tracef("Placing order %v", order)
 	orderResp, err := oc.PostOrder(o)
 	if err != nil {
-		fmt.Printf("362 port %v; accounId: %v\n%v\n", err, sdk.Config.AccountId, o)
+		sdkL.Errorf("Failed to place order: %v", err)
 		return "", err
 	}
-	fmt.Printf("364 port %v\n", orderResp)
+
+	sdkL.Tracef("Order placed, id: %v", orderResp.OrderId)
 	return types.OrderID(orderResp.OrderId), err
 }
 
 func (c *TinkoffBrokerPort) SubscribeOrders(cb func(types.OrderExecutionState)) error {
+	sdkL.Info("Subscribing for order states")
 	sdk, err := c.GetSdk()
 	if err != nil {
-		fmt.Println("Cannot init sdk! ", err)
+		sdkL.Errorf("Cannot init sdk: %v", err)
 		return err
 	}
 
 	ordersStreamClient := sdk.NewOrdersStreamClient()
 
-	if len(accountId) == 0 {
+	if len(accountID) == 0 {
+		sdkL.Trace("No accountID")
 		accountIDRaw, err := dbInstance.Get([]string{"accounts"})
 		if err == nil {
-			accountId = string(accountIDRaw)
+			sdkL.Trace("Got accountID from db")
+			accountID = string(accountIDRaw)
 		} else {
-			accountId = sdk.Config.AccountId
+			sdkL.Trace("Got accountID from sdk")
+			accountID = sdk.Config.AccountId
 		}
 	}
+	sdkL.Trace("Creating new trades stream")
 	tradesStream, err := ordersStreamClient.TradesStream([]string{
-		accountId,
+		accountID,
 	})
 	if err != nil {
-		fmt.Printf("382 port %v\n", err)
+		sdkL.Errorf("Failed to create tradees stream: %v", err)
 		return err
 	}
 
@@ -413,28 +400,31 @@ func (c *TinkoffBrokerPort) SubscribeOrders(cb func(types.OrderExecutionState)) 
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
+
+		sdkL.Trace("Start listening trades stream")
 		err := tradesStream.Listen()
-
 		if err != nil {
-			fmt.Println("erorr in orderbooks stream", err)
+			sdkL.Errorf("Failed to listen trades stream: %v", err)
 		}
-
 	}()
 
 	backCtx, _ := signal.NotifyContext(context.Background(), os.Interrupt)
 
 	go func() {
 		<-backCtx.Done()
-		fmt.Printf("408 port %v\n", backCtx.Err())
+
+		sdkL.Info("Unsubscribing from trades stream")
 		tradesStream.Stop()
 	}()
+
 	wg.Add(1)
 	go func(ctx context.Context, ts *investgo.TradesStream, cb func(types.OrderExecutionState)) {
 		defer wg.Done()
 
 		select {
 		case tradeState := <-ts.Trades():
-			fmt.Printf("414 port new trade for %v\n", tradeState.OrderId)
+			sdkL.Infof("New state of order: %v; direction: %v", tradeState.OrderId, tradeState.Direction)
+
 			lotsExecuted := 0
 			var executedPrice float64 = 0
 			for _, t := range tradeState.Trades {
@@ -456,6 +446,7 @@ func (c *TinkoffBrokerPort) SubscribeOrders(cb func(types.OrderExecutionState)) 
 				// InitialComission   types.Money
 				// ExecutedComission  types.Money
 			}
+			sdkL.Tracef("Order state changed, notifying: %v", changeEvent)
 			go cb(changeEvent)
 		}
 	}(backCtx, tradesStream, cb)
@@ -466,16 +457,31 @@ func (c *TinkoffBrokerPort) SubscribeOrders(cb func(types.OrderExecutionState)) 
 }
 
 func (c *TinkoffBrokerPort) GetOrderState(orderID types.OrderID) (types.OrderExecutionState, error) {
+	sdkL.Info("Getting state of order %v", orderID)
 	sdk, err := c.GetSdk()
 	if err != nil {
-		fmt.Println("Cannot init sdk! ", err)
+		sdkL.Errorf("Failed to create tradees stream: %v", err)
 		return types.OrderExecutionState{}, err
 	}
 
 	oc := sdk.NewOrdersServiceClient()
-	state, err := oc.GetOrderState(sdk.Config.AccountId, string(orderID))
+
+	if len(accountID) == 0 {
+		sdkL.Trace("No accountID")
+		accountIDRaw, err := dbInstance.Get([]string{"accounts"})
+		if err == nil {
+			sdkL.Trace("Got accountID from db")
+			accountID = string(accountIDRaw)
+		} else {
+			sdkL.Trace("Got accountID from sdk")
+			accountID = sdk.Config.AccountId
+		}
+	}
+
+	sdkL.Trace("Sending get order state request")
+	state, err := oc.GetOrderState(accountID, string(orderID))
 	if err != nil {
-		fmt.Printf("Cannot get order state %v\n", err)
+		sdkL.Errorf("Failed to get order state: %v", err)
 		return types.OrderExecutionState{}, err
 	}
 	var status types.ExecutionStatus = types.Unspecified
@@ -491,5 +497,6 @@ func (c *TinkoffBrokerPort) GetOrderState(orderID types.OrderID) (types.OrderExe
 		ExecutedOrderPrice: state.ExecutedOrderPrice.ToFloat(),
 	}
 
+	sdkL.Infof("Got order state %v", orderState)
 	return orderState, nil
 }

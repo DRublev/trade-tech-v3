@@ -2,12 +2,13 @@ package orderbook
 
 import (
 	"context"
-	"fmt"
 	"main/bot/broker"
 	"main/types"
 	"os"
 	"os/signal"
 	"sync"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type orderbookChannels struct {
@@ -30,25 +31,26 @@ func NewProvider() *Provider {
 	}
 
 	onceOp.Do(func() {
+		log.Info("Creating orderbook provider")
+		op := &Provider{}
+		op.channels = orderbookChannels{
+			value: make(map[string]*chan *types.Orderbook),
+		}
 	})
-	op := &Provider{}
-	op.channels = orderbookChannels{
-		value: make(map[string]*chan *types.Orderbook),
-	}
-	fmt.Printf("32 Provider %v\n", op)
+
 	return op
 }
 
 // GetOrCreate Подписывается на стакан для инструмента instrumentID
 // Возвращает канал для стакана или создает новый
 func (op *Provider) GetOrCreate(instrumentID string) (*chan *types.Orderbook, error) {
-	fmt.Printf("36 orderbookProvider %v\n", op)
+	log.Infof("Getting orderbook channel for %v", instrumentID)
 	op.channels.RLock()
 	ch, exists := op.channels.value[instrumentID]
 	op.channels.RUnlock()
 
 	if !exists {
-		fmt.Printf("Creating orderbook channel for %v\n", instrumentID)
+		log.Tracef("No channel found for %v, creating a new one", instrumentID)
 		op.channels.Lock()
 		newCh := make(chan *types.Orderbook)
 		op.channels.value[instrumentID] = &newCh

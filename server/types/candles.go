@@ -1,6 +1,7 @@
 package types
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -19,4 +20,8 @@ type OHLC struct {
 	Close  Quant
 	Time   time.Time
 	Volume int64
+}
+
+func (o *OHLC) String() string {
+	return fmt.Sprintf("OHLC: t %v; o %v; h %v; l %v; c %v; v %v", o.Time, o.Open, o.High, o.Low, o.Close, o.Volume)
 }
