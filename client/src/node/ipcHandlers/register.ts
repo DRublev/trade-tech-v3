@@ -15,12 +15,8 @@ ipcMain.handle(ipcEvents.REGISTER, async (e, data: Payload) => {
     if (!token) return Promise.reject("token является обязательным параметром");
 
     await storage.save('isSandbox', isSandbox ? 1 : 0);
-    await storage.save('isAuthorised', true);
 
-    return new Promise((resolve, reject) => authService.setToken({ Token: token, IsSandbox: isSandbox }, (err, res) => {
-        if (err) return reject(err);
-        resolve(res);
-    }));
+    return authService.setToken({ Token: token, IsSandbox: isSandbox });
 });
 
 ipcMain.handle(ipcEvents.GET_ACCOUNTS, async (e) => {

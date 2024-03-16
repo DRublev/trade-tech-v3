@@ -1,4 +1,5 @@
-import { ChannelCredentials, Client, credentials } from "@grpc/grpc-js";
+import { Client } from "@grpc/grpc-js";
+import { DEFAULT_ADDRESS, DEFAULT_CREDS } from "./constants";
 
 type UnpackedCallback<T> = T extends (err: infer E, result: infer U) => void
     ? U
@@ -10,24 +11,19 @@ type Promisify<T> = {
     : never;
 };
 
-const DEFAULT_ADDRESS = "0.0.0.0:50051";
-const DEFAULT_CREDS = credentials.createInsecure();
-
-export const createService = <T>(
+export const createService = <T extends Client>(
     ClientClass: typeof Client,
-    address: string = DEFAULT_ADDRESS,
-    creds: ChannelCredentials = DEFAULT_CREDS
 ): Promisify<T> => {
-    const service = new ClientClass(address, creds);
-    const promisified = Object.keys(service).reduce((p: T, v: string) => {
-        p[v] = (request: any) =>
+    const service = new ClientClass(DEFAULT_ADDRESS, DEFAULT_CREDS)
+    const promisified: Promisify<T> = {} as any;
+    for (const v in service) {
+        promisified[v] = (request: any) =>
             new Promise((resolve, reject) => {
-                p[v](request, (err: Error, result: any) => {
+                service[v](request, (err: Error, result: any) => {
                     if (err) return reject(err);
                     resolve(result);
                 });
             });
-        return p;
-    }, {}) as unknown as Promisify<T>;
+    }
     return promisified;
 };

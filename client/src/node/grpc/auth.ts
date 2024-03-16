@@ -1,4 +1,5 @@
-import { credentials } from "@grpc/grpc-js";
 import { AuthClient } from "../../../grpcGW/auth";
+import type { AuthClient as IAuthClient } from "../../../grpcGW/auth";
+import { createService } from "./utils";
 
-export const authService = new AuthClient("0.0.0.0:50051", credentials.createInsecure());
+export const authService = createService<IAuthClient>(AuthClient,);

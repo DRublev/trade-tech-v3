@@ -23,12 +23,8 @@ export async function getShares(req: GetInstrumentsRequest): Promise<GetSharesRe
 
     if (!instrumentStatus) return Promise.reject('InstrumentStatus обязательный параметр');
 
-    const hasToken = await new Promise((resolve) => authService.hasToken({}, (err, res) => {
-        if (err) return resolve(false);
-
-        resolve(res.HasToken);
-    }));
-    if (!hasToken) return Promise.reject('Not authorized');
+    const { HasToken } = await authService.hasToken({});
+    if (!HasToken) return Promise.reject('Not authorized');
 
     const res: GetSharesResponse = await new Promise((resolve, reject) => {
         sharesService.getShares({
