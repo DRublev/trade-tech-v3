@@ -79,6 +79,7 @@ func roundFloat(val float32, precision uint) float64 {
 	ratio := math.Pow(10, float64(precision))
 	return math.Round(float64(val)*ratio) / ratio
 }
+
 // TODO: Изменить сигнатуру на () [units, nano] и вынести в utils
 func toMDQuantFromNum(p float32) *marketdata.Quant {
 	units := math.Floor(float64(p))
@@ -91,54 +92,57 @@ func toMDQuantFromNum(p float32) *marketdata.Quant {
 }
 
 func (s *Server) SubscribeCandles(in *marketdata.SubscribeCandlesRequest, stream marketdata.MarketData_SubscribeCandlesServer) error {
-	var err error
-
+	fmt.Println("95 marketdata ")
 	ctx := stream.Context()
-	err = broker.Init(ctx, types.Tinkoff)
+	bCtx, _ := signal.NotifyContext(context.Background(), os.Interrupt)
+
+	err := broker.Init(bCtx, types.Tinkoff)
 	if err != nil {
 		fmt.Println("marketdata SubscribeCandles request err", err)
 		return err
 	}
 
+	candlesCh := make(chan types.OHLC)
+	fmt.Println("83 marketdata", in.InstrumentId, in.Interval)
+
 	wg := &sync.WaitGroup{}
 
 	wg.Add(1)
-	go func(ctx context.Context, instrumentId string, interval int32) {
+	go func(ctx context.Context, ch *chan types.OHLC) {
 		defer wg.Done()
-		candlesCh := make(chan types.OHLC)
-		if ctx == nil {
-			fmt.Println("78 marketdata", "ctx is nil")
-
-			return
-		}
-
-		fmt.Println("83 marketdata", ctx, &candlesCh, instrumentId, interval)
-
-		er := broker.Broker.SubscribeCandles(ctx, &candlesCh, instrumentId, types.Interval(interval))
-		if er != nil {
-			fmt.Println("80 marketdata", er)
-
-			return
-		}
-
-		for c := range candlesCh {
-			fmt.Println("New candle ", c.Time)
-			err = stream.Send(&marketdata.OHLC{
-				Open:   toMDQuant(&c.Open),
-				High:   toMDQuant(&c.High),
-				Low:    toMDQuant(&c.Low),
-				Close:  toMDQuant(&c.Close),
-				Time:   timestamppb.New(c.Time),
-				Volume: c.Volume,
-			})
-			if err != nil {
+		for {
+			select {
+			case <-ctx.Done():
+				fmt.Println("108 marketdata ", "context closed candles")
 				return
+			case c, ok := <-*ch:
+				if !ok {
+					fmt.Println("120 marketdata ", "stream is done")
+					return
+				}
+				fmt.Println("New candle ", c.Time)
+				err = stream.Send(&marketdata.OHLC{
+					Open:   toMDQuant(&c.Open),
+					High:   toMDQuant(&c.High),
+					Low:    toMDQuant(&c.Low),
+					Close:  toMDQuant(&c.Close),
+					Time:   timestamppb.New(c.Time),
+					Volume: c.Volume,
+				})
+				if err != nil {
+					fmt.Printf("135 marketdata %v\n", err)
+				}
 			}
 		}
-	}(ctx, in.InstrumentId, in.Interval)
+	}(bCtx, &candlesCh)
+
+	err = broker.Broker.SubscribeCandles(ctx, &candlesCh, in.InstrumentId, types.Interval(in.Interval))
+	if err != nil {
+		fmt.Println("80 marketdata", err)
+		return err
+	}
 
 	wg.Wait()
-
 	return err
 }
 

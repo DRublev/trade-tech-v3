@@ -3,6 +3,7 @@ import { ipcEvents } from "../../ipcEvents";
 import { sharesService } from "../grpc/instruments";
 import storage from '../Storage';
 import { GetInstrumentsRequest, GetSharesResponse } from "../../../grpcGW/shares";
+import { authService } from "../grpc/auth";
 
 ipcMain.handle(ipcEvents.GET_SHARES, (e, req) => getShares(req))
 
@@ -21,6 +22,9 @@ export async function getShares(req: GetInstrumentsRequest): Promise<GetSharesRe
     const { instrumentStatus } = req;
 
     if (!instrumentStatus) return Promise.reject('InstrumentStatus обязательный параметр');
+
+    const { HasToken } = await authService.hasToken({});
+    if (!HasToken) return Promise.reject('Not authorized');
 
     const res: GetSharesResponse = await new Promise((resolve, reject) => {
         sharesService.getShares({

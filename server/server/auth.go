@@ -33,7 +33,7 @@ func (s *Server) SetToken(ctx context.Context, in *auth.SetTokenRequest) (*auth.
 
 func (s *Server) HasToken(ctx context.Context, in *auth.HasTokenRequest) (*auth.HasTokenResponse, error) {
 	encrypted, err := dbInstance.Get([]string{"auth"})
-	if err != nil {
+	if err != nil && !os.IsNotExist(err) {
 		return &auth.HasTokenResponse{HasToken: false}, err
 	}
 

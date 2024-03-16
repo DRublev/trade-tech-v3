@@ -109,17 +109,85 @@ func (c *TinkoffBrokerPort) SubscribeCandles(ctx context.Context, ohlcCh *chan t
 
 	go func() {
 		<-backCtx.Done()
+		fmt.Println("114 port ", "subscription context closed for candles")
 		candlesStream.UnSubscribeCandle([]string{instrumentId}, investapi.SubscriptionInterval(interval), false)
 		sdk.Stop()
 	}()
 
 	// Собирать свечи руками исходя из последних сделок, для выходных дней
-	lastPriceCh := make(chan *investapi.LastPrice)
+	// lastPriceCh := make(chan *investapi.LastPrice)
 	// lastPriceCh, err := candlesStream.SubscribeLastPrice([]string{instrumentId})
 	// if err != nil {
 	// 	fmt.Println("Cannot subscribe ", err)
 	// 	return err
 	// }
+
+	wg.Add(1)
+	go func(ctx context.Context, ohlcCh *chan types.OHLC, candlesCh <-chan *investapi.Candle) {
+		defer wg.Done()
+
+		// candles := make(map[int]types.OHLC)
+
+		for {
+			select {
+			case <-ctx.Done():
+				fmt.Println("candles context closed for ", instrumentId)
+				err := candlesStream.UnSubscribeCandle([]string{instrumentId}, investapi.SubscriptionInterval(interval), false)
+				if err != nil {
+					fmt.Println("Cannot unsubscribe ", instrumentId, err)
+				}
+				return
+			case candle, ok := <-candlesCh:
+				if !ok {
+					fmt.Println("stream done for ", instrumentId)
+					return
+				}
+
+				ohlc := toOHLC(candle)
+				fmt.Println("146 port ", "new candle")
+				*ohlcCh <- ohlc
+				// Врубать только для дебага графика в выходные!
+				// case lastPrice, ok := <-lastPriceCh:
+				// 	if !ok {
+				// 		fmt.Println("stream done for ", instrumentId)
+				// 		return
+				// 	}
+				// 	dealTime := lastPrice.Time.AsTime()
+				// 	if candle, exists := candles[dealTime.Minute()]; !exists {
+				// 		candles[dealTime.Minute()] = types.OHLC{
+				// 			Time:   dealTime,
+				// 			Open:   toQuant(lastPrice.Price),
+				// 			Close:  toQuant(lastPrice.Price),
+				// 			Low:    toQuant(lastPrice.Price),
+				// 			High:   toQuant(lastPrice.Price),
+				// 			Volume: 0,
+				// 		}
+				// 	} else {
+				// 		c := types.OHLC{
+				// 			Time:   dealTime,
+				// 			Open:   toQuant(lastPrice.Price),
+				// 			Close:  toQuant(lastPrice.Price),
+				// 			Low:    candle.Low,
+				// 			High:   candle.High,
+				// 			Volume: 0,
+				// 		}
+				// 		l := quantToNumber(candle.Low)
+				// 		h := quantToNumber(candle.High)
+				// 		if l > lastPrice.Price.ToFloat() {
+				// 			c.Low = toQuant(lastPrice.Price)
+				// 		}
+				// 		if h < lastPrice.Price.ToFloat() {
+				// 			c.High = toQuant(lastPrice.Price)
+				// 		}
+				// 		candles[dealTime.Minute()] = c
+				// 	}
+
+				// 	*ohlcCh <- candles[dealTime.Minute()]
+
+				// 	fmt.Println("164 port", lastPrice, candles[dealTime.Minute()])
+			}
+		}
+	}(backCtx, ohlcCh, candlesCh)
 
 	wg.Add(1)
 	go func() {
@@ -134,72 +202,7 @@ func (c *TinkoffBrokerPort) SubscribeCandles(ctx context.Context, ohlcCh *chan t
 
 	}()
 
-	wg.Add(1)
-	go func(ctx context.Context) {
-		defer wg.Done()
-
-		candles := make(map[int]types.OHLC)
-
-		for {
-			select {
-			case <-ctx.Done():
-				fmt.Println("context closed for ", instrumentId)
-				err := candlesStream.UnSubscribeCandle([]string{instrumentId}, investapi.SubscriptionInterval(interval), false)
-				if err != nil {
-					fmt.Println("Cannot unsubscribe ", instrumentId, err)
-				}
-				return
-			case candle, ok := <-candlesCh:
-				if !ok {
-					fmt.Println("stream done for ", instrumentId)
-					return
-				}
-				ohlc := toOHLC(candle)
-				*ohlcCh <- ohlc
-			// Врубать только для дебага графика в выходные!
-			case lastPrice, ok := <-lastPriceCh:
-				if !ok {
-					fmt.Println("stream done for ", instrumentId)
-					return
-				}
-				dealTime := lastPrice.Time.AsTime()
-				if candle, exists := candles[dealTime.Minute()]; !exists {
-					candles[dealTime.Minute()] = types.OHLC{
-						Time:   dealTime,
-						Open:   toQuant(lastPrice.Price),
-						Close:  toQuant(lastPrice.Price),
-						Low:    toQuant(lastPrice.Price),
-						High:   toQuant(lastPrice.Price),
-						Volume: 0,
-					}
-				} else {
-					c := types.OHLC{
-						Time:   dealTime,
-						Open:   toQuant(lastPrice.Price),
-						Close:  toQuant(lastPrice.Price),
-						Low:    candle.Low,
-						High:   candle.High,
-						Volume: 0,
-					}
-					l := quantToNumber(candle.Low)
-					h := quantToNumber(candle.High)
-					if l > lastPrice.Price.ToFloat() {
-						c.Low = toQuant(lastPrice.Price)
-					}
-					if h < lastPrice.Price.ToFloat() {
-						c.High = toQuant(lastPrice.Price)
-					}
-					candles[dealTime.Minute()] = c
-				}
-
-				*ohlcCh <- candles[dealTime.Minute()]
-
-				fmt.Println("164 port", lastPrice, candles[dealTime.Minute()])
-			}
-		}
-	}(ctx)
-
-	wg.Wait()
+	// wg.Wait()
 
 	return nil
 }
@@ -349,23 +352,24 @@ func (c *TinkoffBrokerPort) PlaceOrder(order *types.PlaceOrder) (types.OrderID, 
 	// TODO: Брать из инструмента
 	price := FloatToQuotation(float64(order.Price), &investapi.Quotation{
 		Units: 0,
-		Nano: 10000000, // Ok
+		Nano:  10000000, // Ok
 		// Nano: 10000, // VTBR
 	})
 	if len(accountId) == 0 {
 		accountIDRaw, err := dbInstance.Get([]string{"accounts"})
-		if err != nil {
-			return "", err
+		if err == nil {
+			accountId = string(accountIDRaw)
+		} else {
+			accountId = sdk.Config.AccountId
 		}
-		accountId = string(accountIDRaw)
 	}
-fmt.Printf("363 port %v; %v\n", order.Price, price)
+	fmt.Printf("363 port %v; %v\n", order.Price, price)
 	o := &investgo.PostOrderRequest{
 		InstrumentId: order.InstrumentID,
 		Quantity:     order.Quantity,
 		Direction:    direction,
 		Price:        &price,
-		AccountId:    sdk.Config.AccountId,
+		AccountId:    accountId,
 		OrderType:    investapi.OrderType_ORDER_TYPE_LIMIT,
 		OrderId:      string(order.IdempodentID),
 	}
@@ -388,8 +392,16 @@ func (c *TinkoffBrokerPort) SubscribeOrders(cb func(types.OrderExecutionState)) 
 
 	ordersStreamClient := sdk.NewOrdersStreamClient()
 
+	if len(accountId) == 0 {
+		accountIDRaw, err := dbInstance.Get([]string{"accounts"})
+		if err == nil {
+			accountId = string(accountIDRaw)
+		} else {
+			accountId = sdk.Config.AccountId
+		}
+	}
 	tradesStream, err := ordersStreamClient.TradesStream([]string{
-		sdk.Config.AccountId,
+		accountId,
 	})
 	if err != nil {
 		fmt.Printf("382 port %v\n", err)
@@ -429,13 +441,13 @@ func (c *TinkoffBrokerPort) SubscribeOrders(cb func(types.OrderExecutionState)) 
 				lotsExecuted += int(t.Quantity)
 				executedPrice += t.Price.ToFloat() * float64(t.Quantity)
 			}
-			
+
 			changeEvent := types.OrderExecutionState{
-				ID:           types.OrderID(tradeState.OrderId),
-				Direction:    types.OperationType(tradeState.Direction),
-				InstrumentID: tradeState.InstrumentUid,
-				LotsExecuted: lotsExecuted,
-				Status:       0, // TODO: Научитться определять статус заявки
+				ID:                 types.OrderID(tradeState.OrderId),
+				Direction:          types.OperationType(tradeState.Direction),
+				InstrumentID:       tradeState.InstrumentUid,
+				LotsExecuted:       lotsExecuted,
+				Status:             0, // TODO: Научитться определять статус заявки
 				ExecutedOrderPrice: executedPrice,
 				// TODO: Научиться считать вот это все (из tradeState.Trades видимо)
 				// LotsRequested      int
@@ -467,15 +479,15 @@ func (c *TinkoffBrokerPort) GetOrderState(orderID types.OrderID) (types.OrderExe
 		return types.OrderExecutionState{}, err
 	}
 	var status types.ExecutionStatus = types.Unspecified
-	if (state.LotsExecuted == state.LotsRequested) {
+	if state.LotsExecuted == state.LotsRequested {
 		status = types.Fill
 	}
 	orderState := types.OrderExecutionState{
-		ID:           types.OrderID(state.OrderId),
-		Direction:    types.OperationType(state.Direction),
-		InstrumentID: state.InstrumentUid,
-		LotsExecuted: int(state.LotsExecuted),
-		Status:       status, // TODO: Научитться определять статус заявки
+		ID:                 types.OrderID(state.OrderId),
+		Direction:          types.OperationType(state.Direction),
+		InstrumentID:       state.InstrumentUid,
+		LotsExecuted:       int(state.LotsExecuted),
+		Status:             status, // TODO: Научитться определять статус заявки
 		ExecutedOrderPrice: state.ExecutedOrderPrice.ToFloat(),
 	}
 

@@ -53,7 +53,7 @@ func toQuotation(n float64) investapi.Quotation {
 
 	return investapi.Quotation{
 		Units: int64(units),
-		Nano: int32(nano),
+		Nano:  int32(nano),
 	}
 }
 
