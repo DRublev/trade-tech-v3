@@ -92,11 +92,6 @@ func New() *SpreadStrategy {
 var l *log.Entry
 
 func (s *SpreadStrategy) Start(config *strategies.Config, ordersToPlaceCh *chan *types.PlaceOrder, orderStateChangeCh *chan types.OrderExecutionState) (bool, error) {
-	l = log.WithFields(log.Fields{
-		"strategy":   "spread",
-		"instrument": config.InstrumentId,
-	})
-
 	// TODO: Нужен метод ConvertSerialsableToType[T](candidate) T, который конвертирует типы через json.Marshall
 	debugCfg := Config{
 
@@ -119,6 +114,12 @@ func (s *SpreadStrategy) Start(config *strategies.Config, ordersToPlaceCh *chan 
 		// minProfit: 0.00002,
 		// stopLossAfter: 0.00002,
 	}
+
+	l = log.WithFields(log.Fields{
+		"strategy":   "spread",
+		"instrument": debugCfg.InstrumentId,
+	})
+
 	s.config = debugCfg //((any)(*config)).(Config)
 	l.Infof("Starting strategy with config: %v", s.config)
 

@@ -313,6 +313,7 @@ func (c *TinkoffBrokerPort) PlaceOrder(order *types.PlaceOrder) (types.OrderID, 
 		"instrumentID": order.InstrumentID,
 		"direction":    order.Direction,
 	}).Infof("Placing order")
+
 	sdk, err := c.GetSdk()
 	if err != nil {
 		sdkL.Errorf("Cannot init sdk: %v", err)
@@ -332,24 +333,30 @@ func (c *TinkoffBrokerPort) PlaceOrder(order *types.PlaceOrder) (types.OrderID, 
 		// Nano: 10000, // VTBR
 	})
 
-	if len(accountID) == 0 {
-		sdkL.Trace("No accountID")
+	// TODO: Вынести как отдельную сущность с провайдером/репозиторием
+	var accId string
+	accountIdOkCh := make(chan struct{}, 1)
+	if len(accId) == 0 {
+		sdkL.WithField("method", "PlaceOrder").Trace("No accountID")
 		accountIDRaw, err := dbInstance.Get([]string{"accounts"})
 		if err == nil {
-			sdkL.Trace("Got accountID from db")
-			accountID = string(accountIDRaw)
+			sdkL.WithField("method", "PlaceOrder").Trace("Got accountID from db")
+			accId = string(accountIDRaw)
+			accountIdOkCh <- struct{}{}
 		} else {
-			sdkL.Trace("Got accountID from sdk")
-			accountID = sdk.Config.AccountId
+			sdkL.WithField("method", "PlaceOrder").Trace("Got accountID from sdk")
+			accId = sdk.Config.AccountId
+			accountIdOkCh <- struct{}{}
 		}
 	}
+	<-accountIdOkCh
 
 	o := &investgo.PostOrderRequest{
 		InstrumentId: order.InstrumentID,
 		Quantity:     order.Quantity,
 		Direction:    direction,
 		Price:        &price,
-		AccountId:    accountID,
+		AccountId:    accId,
 		OrderType:    investapi.OrderType_ORDER_TYPE_LIMIT,
 		OrderId:      string(order.IdempodentID),
 	}
@@ -375,17 +382,22 @@ func (c *TinkoffBrokerPort) SubscribeOrders(cb func(types.OrderExecutionState)) 
 
 	ordersStreamClient := sdk.NewOrdersStreamClient()
 
+	accountIdOkCh := make(chan struct{}, 1)
 	if len(accountID) == 0 {
 		sdkL.Trace("No accountID")
 		accountIDRaw, err := dbInstance.Get([]string{"accounts"})
 		if err == nil {
 			sdkL.Trace("Got accountID from db")
 			accountID = string(accountIDRaw)
+			accountIdOkCh <- struct{}{}
 		} else {
 			sdkL.Trace("Got accountID from sdk")
 			accountID = sdk.Config.AccountId
+			accountIdOkCh <- struct{}{}
 		}
 	}
+	<-accountIdOkCh
+
 	sdkL.Trace("Creating new trades stream")
 	tradesStream, err := ordersStreamClient.TradesStream([]string{
 		accountID,
@@ -402,6 +414,7 @@ func (c *TinkoffBrokerPort) SubscribeOrders(cb func(types.OrderExecutionState)) 
 		defer wg.Done()
 
 		sdkL.Trace("Start listening trades stream")
+
 		err := tradesStream.Listen()
 		if err != nil {
 			sdkL.Errorf("Failed to listen trades stream: %v", err)
@@ -466,17 +479,21 @@ func (c *TinkoffBrokerPort) GetOrderState(orderID types.OrderID) (types.OrderExe
 
 	oc := sdk.NewOrdersServiceClient()
 
+	accountIdOkCh := make(chan struct{}, 1)
 	if len(accountID) == 0 {
 		sdkL.Trace("No accountID")
 		accountIDRaw, err := dbInstance.Get([]string{"accounts"})
 		if err == nil {
 			sdkL.Trace("Got accountID from db")
 			accountID = string(accountIDRaw)
+			accountIdOkCh <- struct{}{}
 		} else {
 			sdkL.Trace("Got accountID from sdk")
 			accountID = sdk.Config.AccountId
+			accountIdOkCh <- struct{}{}
 		}
 	}
+	<-accountIdOkCh
 
 	sdkL.Trace("Sending get order state request")
 	state, err := oc.GetOrderState(accountID, string(orderID))
