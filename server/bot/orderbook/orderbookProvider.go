@@ -30,13 +30,13 @@ func NewProvider() *Provider {
 		return op
 	}
 
-	onceOp.Do(func() {
-		log.Info("Creating orderbook provider")
-		op := &Provider{}
-		op.channels = orderbookChannels{
-			value: make(map[string]*chan *types.Orderbook),
-		}
-	})
+	// onceOp.Do(func() {
+	log.Info("Creating orderbook provider")
+	op := &Provider{}
+	op.channels = orderbookChannels{
+		value: make(map[string]*chan *types.Orderbook),
+	}
+	// })
 
 	return op
 }
@@ -45,6 +45,7 @@ func NewProvider() *Provider {
 // Возвращает канал для стакана или создает новый
 func (op *Provider) GetOrCreate(instrumentID string) (*chan *types.Orderbook, error) {
 	log.Infof("Getting orderbook channel for %v", instrumentID)
+
 	op.channels.RLock()
 	ch, exists := op.channels.value[instrumentID]
 	op.channels.RUnlock()
