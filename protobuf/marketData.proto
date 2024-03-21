@@ -11,8 +11,25 @@ service MarketData {
     // Название нашего эндпоинта
     rpc GetCandles(GetCandlesRequest) returns (GetCandlesResponse);
     rpc SubscribeCandles(SubscribeCandlesRequest) returns (stream OHLC);
+    rpc SubscribeOrders(SubscribeOrderRequest) returns (stream OrderState);
     rpc SubscribeOrderbook(SubscribeOrderbookRequest) returns (stream Orderbook);
 }
+
+message OrderState {
+    string IdempodentID = 1;
+    int32 ExecutionStatus = 2;
+    int32 OperationType = 3;
+    int32 LotsRequested = 4;
+    int32 LotsExecuted = 5;
+    double PricePerLot = 6;
+    google.protobuf.Timestamp time = 7;
+    string InstrumentID = 8;
+    string Strategy = 9;
+}
+
+message SubscribeOrderRequest {
+}
+
 
 
 // Что ждем от клиента

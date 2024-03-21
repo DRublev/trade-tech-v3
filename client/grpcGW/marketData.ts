@@ -21,6 +21,21 @@ import { Timestamp } from "./google/protobuf/timestamp";
 
 export const protobufPackage = "marketData";
 
+export interface OrderState {
+  IdempodentID: string;
+  ExecutionStatus: number;
+  OperationType: number;
+  LotsRequested: number;
+  LotsExecuted: number;
+  PricePerLot: number;
+  time: Date | undefined;
+  InstrumentID: string;
+  Strategy: string;
+}
+
+export interface SubscribeOrderRequest {
+}
+
 /** Что ждем от клиента */
 export interface GetCandlesRequest {
   instrumentId: string;
@@ -72,6 +87,238 @@ export interface SubscribeOrderbookRequest {
   instrumentId: string;
   depth: number;
 }
+
+function createBaseOrderState(): OrderState {
+  return {
+    IdempodentID: "",
+    ExecutionStatus: 0,
+    OperationType: 0,
+    LotsRequested: 0,
+    LotsExecuted: 0,
+    PricePerLot: 0,
+    time: undefined,
+    InstrumentID: "",
+    Strategy: "",
+  };
+}
+
+export const OrderState = {
+  encode(message: OrderState, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.IdempodentID !== "") {
+      writer.uint32(10).string(message.IdempodentID);
+    }
+    if (message.ExecutionStatus !== 0) {
+      writer.uint32(16).int32(message.ExecutionStatus);
+    }
+    if (message.OperationType !== 0) {
+      writer.uint32(24).int32(message.OperationType);
+    }
+    if (message.LotsRequested !== 0) {
+      writer.uint32(32).int32(message.LotsRequested);
+    }
+    if (message.LotsExecuted !== 0) {
+      writer.uint32(40).int32(message.LotsExecuted);
+    }
+    if (message.PricePerLot !== 0) {
+      writer.uint32(49).double(message.PricePerLot);
+    }
+    if (message.time !== undefined) {
+      Timestamp.encode(toTimestamp(message.time), writer.uint32(58).fork()).ldelim();
+    }
+    if (message.InstrumentID !== "") {
+      writer.uint32(66).string(message.InstrumentID);
+    }
+    if (message.Strategy !== "") {
+      writer.uint32(74).string(message.Strategy);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): OrderState {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseOrderState();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.IdempodentID = reader.string();
+          continue;
+        case 2:
+          if (tag !== 16) {
+            break;
+          }
+
+          message.ExecutionStatus = reader.int32();
+          continue;
+        case 3:
+          if (tag !== 24) {
+            break;
+          }
+
+          message.OperationType = reader.int32();
+          continue;
+        case 4:
+          if (tag !== 32) {
+            break;
+          }
+
+          message.LotsRequested = reader.int32();
+          continue;
+        case 5:
+          if (tag !== 40) {
+            break;
+          }
+
+          message.LotsExecuted = reader.int32();
+          continue;
+        case 6:
+          if (tag !== 49) {
+            break;
+          }
+
+          message.PricePerLot = reader.double();
+          continue;
+        case 7:
+          if (tag !== 58) {
+            break;
+          }
+
+          message.time = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
+          continue;
+        case 8:
+          if (tag !== 66) {
+            break;
+          }
+
+          message.InstrumentID = reader.string();
+          continue;
+        case 9:
+          if (tag !== 74) {
+            break;
+          }
+
+          message.Strategy = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): OrderState {
+    return {
+      IdempodentID: isSet(object.IdempodentID) ? globalThis.String(object.IdempodentID) : "",
+      ExecutionStatus: isSet(object.ExecutionStatus) ? globalThis.Number(object.ExecutionStatus) : 0,
+      OperationType: isSet(object.OperationType) ? globalThis.Number(object.OperationType) : 0,
+      LotsRequested: isSet(object.LotsRequested) ? globalThis.Number(object.LotsRequested) : 0,
+      LotsExecuted: isSet(object.LotsExecuted) ? globalThis.Number(object.LotsExecuted) : 0,
+      PricePerLot: isSet(object.PricePerLot) ? globalThis.Number(object.PricePerLot) : 0,
+      time: isSet(object.time) ? fromJsonTimestamp(object.time) : undefined,
+      InstrumentID: isSet(object.InstrumentID) ? globalThis.String(object.InstrumentID) : "",
+      Strategy: isSet(object.Strategy) ? globalThis.String(object.Strategy) : "",
+    };
+  },
+
+  toJSON(message: OrderState): unknown {
+    const obj: any = {};
+    if (message.IdempodentID !== "") {
+      obj.IdempodentID = message.IdempodentID;
+    }
+    if (message.ExecutionStatus !== 0) {
+      obj.ExecutionStatus = Math.round(message.ExecutionStatus);
+    }
+    if (message.OperationType !== 0) {
+      obj.OperationType = Math.round(message.OperationType);
+    }
+    if (message.LotsRequested !== 0) {
+      obj.LotsRequested = Math.round(message.LotsRequested);
+    }
+    if (message.LotsExecuted !== 0) {
+      obj.LotsExecuted = Math.round(message.LotsExecuted);
+    }
+    if (message.PricePerLot !== 0) {
+      obj.PricePerLot = message.PricePerLot;
+    }
+    if (message.time !== undefined) {
+      obj.time = message.time.toISOString();
+    }
+    if (message.InstrumentID !== "") {
+      obj.InstrumentID = message.InstrumentID;
+    }
+    if (message.Strategy !== "") {
+      obj.Strategy = message.Strategy;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<OrderState>, I>>(base?: I): OrderState {
+    return OrderState.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<OrderState>, I>>(object: I): OrderState {
+    const message = createBaseOrderState();
+    message.IdempodentID = object.IdempodentID ?? "";
+    message.ExecutionStatus = object.ExecutionStatus ?? 0;
+    message.OperationType = object.OperationType ?? 0;
+    message.LotsRequested = object.LotsRequested ?? 0;
+    message.LotsExecuted = object.LotsExecuted ?? 0;
+    message.PricePerLot = object.PricePerLot ?? 0;
+    message.time = object.time ?? undefined;
+    message.InstrumentID = object.InstrumentID ?? "";
+    message.Strategy = object.Strategy ?? "";
+    return message;
+  },
+};
+
+function createBaseSubscribeOrderRequest(): SubscribeOrderRequest {
+  return {};
+}
+
+export const SubscribeOrderRequest = {
+  encode(_: SubscribeOrderRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): SubscribeOrderRequest {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseSubscribeOrderRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(_: any): SubscribeOrderRequest {
+    return {};
+  },
+
+  toJSON(_: SubscribeOrderRequest): unknown {
+    const obj: any = {};
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<SubscribeOrderRequest>, I>>(base?: I): SubscribeOrderRequest {
+    return SubscribeOrderRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<SubscribeOrderRequest>, I>>(_: I): SubscribeOrderRequest {
+    const message = createBaseSubscribeOrderRequest();
+    return message;
+  },
+};
 
 function createBaseGetCandlesRequest(): GetCandlesRequest {
   return { instrumentId: "", interval: 0, start: undefined, end: undefined };
@@ -840,6 +1087,15 @@ export const MarketDataService = {
     responseSerialize: (value: OHLC) => Buffer.from(OHLC.encode(value).finish()),
     responseDeserialize: (value: Buffer) => OHLC.decode(value),
   },
+  subscribeOrders: {
+    path: "/marketData.MarketData/SubscribeOrders",
+    requestStream: false,
+    responseStream: true,
+    requestSerialize: (value: SubscribeOrderRequest) => Buffer.from(SubscribeOrderRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer) => SubscribeOrderRequest.decode(value),
+    responseSerialize: (value: OrderState) => Buffer.from(OrderState.encode(value).finish()),
+    responseDeserialize: (value: Buffer) => OrderState.decode(value),
+  },
   subscribeOrderbook: {
     path: "/marketData.MarketData/SubscribeOrderbook",
     requestStream: false,
@@ -856,6 +1112,7 @@ export interface MarketDataServer extends UntypedServiceImplementation {
   /** Название нашего эндпоинта */
   getCandles: handleUnaryCall<GetCandlesRequest, GetCandlesResponse>;
   subscribeCandles: handleServerStreamingCall<SubscribeCandlesRequest, OHLC>;
+  subscribeOrders: handleServerStreamingCall<SubscribeOrderRequest, OrderState>;
   subscribeOrderbook: handleServerStreamingCall<SubscribeOrderbookRequest, Orderbook>;
 }
 
@@ -882,6 +1139,12 @@ export interface MarketDataClient extends Client {
     metadata?: Metadata,
     options?: Partial<CallOptions>,
   ): ClientReadableStream<OHLC>;
+  subscribeOrders(request: SubscribeOrderRequest, options?: Partial<CallOptions>): ClientReadableStream<OrderState>;
+  subscribeOrders(
+    request: SubscribeOrderRequest,
+    metadata?: Metadata,
+    options?: Partial<CallOptions>,
+  ): ClientReadableStream<OrderState>;
   subscribeOrderbook(
     request: SubscribeOrderbookRequest,
     options?: Partial<CallOptions>,

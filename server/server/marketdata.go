@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/signal"
 	"sync"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -97,6 +98,41 @@ func toMDQuantFromNum(p float32) *marketdata.Quant {
 		Units: int32(units),
 		Nano:  int32(nano),
 	}
+}
+func (s *Server) SubscribeOrders(in *marketdata.SubscribeOrderRequest, stream marketdata.MarketData_SubscribeOrdersServer) error {
+	mdL.Info("SubscribeOrders requested")
+
+	bCtx, _ := signal.NotifyContext(context.Background(), os.Interrupt)
+
+	err := broker.Init(bCtx, types.Tinkoff)
+	if err != nil {
+		mdL.Errorf("Cannot init broker: %v", err)
+		return err
+	}
+
+	mdL.Trace("Requesting broker for subscribing to orderState")
+	err = broker.Broker.SubscribeOrders(func(st types.OrderExecutionState) {
+		err = stream.Send(&marketdata.OrderState{
+			IdempodentID:    string(st.IdempodentID),
+			ExecutionStatus: int32(st.Status),
+			OperationType:   int32(st.Direction),
+			LotsRequested:   int32(st.LotsRequested),
+			LotsExecuted:    int32(st.LotsExecuted),
+			InstrumentID:    st.InstrumentID,
+			Strategy:        "",
+			Time:            timestamppb.New(time.Now()),
+		})
+		if err != nil {
+			mdL.Warnf("Failed sending orderState to stream: %v", err)
+		}
+	})
+	if err != nil {
+		mdL.Errorf("Failed subscribing orderState: %v", err)
+		return err
+	}
+
+	mdL.Info("SubscribeOrders responding")
+	return err
 }
 
 func (s *Server) SubscribeCandles(in *marketdata.SubscribeCandlesRequest, stream marketdata.MarketData_SubscribeCandlesServer) error {
