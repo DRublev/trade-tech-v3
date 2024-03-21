@@ -2,8 +2,8 @@ import { BrowserWindow, ipcMain, ipcRenderer } from "electron";
 import { ipcEvents } from "../../ipcEvents";
 import { marketdataService } from "../grpc/marketdata";
 import { Quant } from "./types";
-import { OHLC } from "../../../grpcGW/marketData";
-import { OHLCData } from "../../types";
+import { OHLC, OrderState } from '../../../grpcGW/marketData';
+import { OHLCData, OrderState as Order } from "../../types";
 import { UTCTimestamp } from "lightweight-charts";
 
 const nanoPrecision = 1_000_000_000;
@@ -18,6 +18,17 @@ const candleToOhlc = (candle: OHLC): OHLCData => ({
     close: quantToNumber(candle.close),
     volume: candle.volume,
     time: candle.time.valueOf() as UTCTimestamp,
+})
+const toOrderState = (candle: OrderState): Order => ({
+    id: candle.IdempodentID,
+    instrumentId: candle.InstrumentID,
+    price: candle.PricePerLot,
+    status: candle.ExecutionStatus,
+    lotsRequested: candle.LotsRequested,
+    lotsExecuted: candle.LotsExecuted,
+    operationType: candle.OperationType,
+    time: candle.time.valueOf() as UTCTimestamp,
+    strategy: candle.Strategy,
 })
 
 ipcMain.handle(ipcEvents.GET_CANDLES, async (e, req) => {
@@ -39,6 +50,37 @@ ipcMain.handle(ipcEvents.GET_CANDLES, async (e, req) => {
             resolve(candles.map(candleToOhlc))
         });
     });
+    return res;
+});
+
+ipcMain.handle(ipcEvents.SUBSCRIBE_ORDER, async (e, req) => {
+    const {instrumentId} = req;
+
+    if (!instrumentId) return Promise.reject('InstrumentId обязательный параметр');
+
+    const [win] = BrowserWindow.getAllWindows()
+
+    const res = new Promise((resolve, reject) => {
+        try {
+            // TODO: Хорошо бы это делать в воркере или background процессе
+            const stream = marketdataService.subscribeOrders({})
+            stream.on('data', (order: OrderState) => {
+                win.webContents.send(ipcEvents.NEW_ORDER, toOrderState(order));
+            });
+            stream.on('end', () => {
+                resolve(true);
+            });
+            stream.on('error', (err) => {
+                console.log('Error with order sending.', err);
+                reject(err);
+            })
+            resolve(true);
+        } catch (e) {
+            reject(e);
+        }
+    });
+
+    // TODO: Возвращать метод/строку для отписки
     return res;
 });
 

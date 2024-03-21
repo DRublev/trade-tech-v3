@@ -120,6 +120,7 @@ func (s *Server) SubscribeOrders(in *marketdata.SubscribeOrderRequest, stream ma
 			LotsExecuted:    int32(st.LotsExecuted),
 			InstrumentID:    st.InstrumentID,
 			Strategy:        "",
+			PricePerLot:     st.ExecutedOrderPrice / float64(st.LotsExecuted),
 			Time:            timestamppb.New(time.Now()),
 		})
 		if err != nil {
