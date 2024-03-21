@@ -23,9 +23,9 @@ function orderToMarkerMapper(order: OrderState): SeriesMarker<Time> {
     return {
         time: order.time,
         position: order.operationType === 1 ? 'belowBar' : 'aboveBar',
-        shape: order.operationType === 1 ? 'arrowUp' : 'arrowDown',
+        shape: 'circle',
         color: order.operationType === 1 ? 'green' : 'red',
-        text: order.lotsExecuted.toString(),
+        text: `${order.lotsExecuted} x ${order.price}`,
         size: 2,
     }
 }
