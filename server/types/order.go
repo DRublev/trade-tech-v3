@@ -45,6 +45,17 @@ type PlaceOrder struct {
 	InstrumentID string
 }
 
+func (o *PlaceOrder) String() string {
+	return fmt.Sprintf(
+		"PlaceOrder. IdempodentId: %v; InstrumentID: %v;\nDirection: %v; Price: %v; Quantity: %v",
+		o.IdempodentID,
+		o.InstrumentID,
+		o.Direction,
+		o.Price,
+		o.Quantity,
+	)
+}
+
 // IdempodentID Абстракция для ID идемподентности
 // Он нужен для сопоставления генерируемых ботом PlaceOrder и выставленных брокером Order
 type IdempodentID string
@@ -102,9 +113,9 @@ type OrderExecutionState struct {
 	InstrumentID       string
 }
 
-func (s *OrderExecutionState) String() string {
+func (s OrderExecutionState) String() string {
 	return fmt.Sprintf(
-		"%v ID: %v; IdempodentID: %v; Status: %v;\nLots requested %v, executed %v\n;Price initial %v; executed %v;\nComission initial %v; executed %v",
+		"OrderExecutionState. %v ID: %v; IdempodentID: %v; Status: %v;\nLots requested %v, executed %v\n;Price initial %v; executed %v;\nComission initial %v; executed %v",
 		s.Direction,
 		s.ID,
 		s.IdempodentID,

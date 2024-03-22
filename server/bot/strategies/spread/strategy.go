@@ -97,18 +97,18 @@ func (s *SpreadStrategy) Start(config *strategies.Config, ordersToPlaceCh *chan 
 
 		Config: strategies.Config{
 			// InstrumentId: "BBG004730N88", // SBER
-			InstrumentId: "4c466956-d2ce-4a95-abb4-17947a65f18a", // TGLD
+			// InstrumentId: "4c466956-d2ce-4a95-abb4-17947a65f18a", // TGLD
 			// InstrumentId: "BBG004730RP0", // GAZP
-			// InstrumentId: "BBG004PYF2N3", // POLY
+			InstrumentId: "BBG004PYF2N3", // POLY
 			// InstrumentId: "ba64a3c7-dd1d-4f19-8758-94aac17d971b", // FIXP
 			// InstrumentId: "BBG004730ZJ9", // VTBR
-			Balance: 400,
+			Balance: 450,
 		},
 		maxSharesToHold:     1,
 		nextOrderCooldownMs: 0,
 		lotSize:             1,
-		minProfit:           0,
-		stopLossAfter:       0.02,
+		minProfit:           0.34,
+		stopLossAfter:       1,
 		// VTBR
 		// lotSize: 10_000,
 		// minProfit: 0.00002,
@@ -316,8 +316,8 @@ func (s *SpreadStrategy) sell(wg *sync.WaitGroup, ob *types.Orderbook) {
 	l.Tracef("Min ask price %v", minAskPrice)
 
 	isGoodPrice := minAskPrice-state.lastBuyPrice >= s.config.minProfit
-	hasStopLossBroken := s.config.stopLossAfter != 0 && ob.Bids[0].Price <= s.state.Get().lastBuyPrice-s.config.stopLossAfter
-
+	hasStopLossBroken := s.config.stopLossAfter != float32(0) && ob.Bids[0].Price <= state.lastBuyPrice-s.config.stopLossAfter
+fmt.Printf("320 strategy %v <= %v - %v (%vis %v\n", ob.Bids[0].Price, state.lastBuyPrice, s.config.stopLossAfter, state.lastBuyPrice-s.config.stopLossAfter, hasStopLossBroken)
 	shouldMakeSell := isGoodPrice || hasStopLossBroken
 	if !shouldMakeSell {
 		l.WithField("lastBuyPrice", state.lastBuyPrice).Tracef("Not a good deal")
@@ -383,9 +383,9 @@ func (s *SpreadStrategy) onOrderSateChange(state types.OrderExecutionState) {
 	// TODO: Обновлять последнюю цену покупки
 	// TODO: Обновлять Оставшийся баланс и остальной стейт
 
-	l.Info("Order state changed %v", state)
+	l.Infof("Order state changed %v", state)
 
-	newState := s.state.Get()
+	newState := *s.state.Get()
 
 	if state.Direction == types.Buy {
 		l.Trace("Updating state after buy order executed")
@@ -403,17 +403,16 @@ func (s *SpreadStrategy) onOrderSateChange(state types.OrderExecutionState) {
 	if state.Direction == types.Sell {
 		l.Trace("Updating state after sell order executed")
 
-		newState.pendingSellShares -= int32(state.LotsExecuted / int(s.config.lotSize))
+		newState.pendingSellShares -= int32(state.LotsExecuted) // int32(state.LotsExecuted / int(s.config.lotSize))
 		newState.leftBalance += float32(state.ExecutedOrderPrice)
-		newState.holdingShares += int32(state.LotsExecuted / int(s.config.lotSize))
+		newState.holdingShares += int32(state.LotsExecuted)//int32(state.LotsExecuted / int(s.config.lotSize))
 		l.Tracef(
 			"Lots executed %v of %v; Executed sell price %v",
-			state.ExecutedOrderPrice,
 			state.LotsExecuted,
 			state.LotsRequested,
+			state.ExecutedOrderPrice,
 		)
 	}
+	s.state.Set(newState)
 	l.WithField("state", s.state.Get()).Info("State updated")
-
-	s.state.Set(*newState)
 }
