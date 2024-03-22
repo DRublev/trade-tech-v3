@@ -348,6 +348,8 @@ func (c *TinkoffBrokerPort) PlaceOrder(order *types.PlaceOrder) (types.OrderID, 
 			accId = sdk.Config.AccountId
 			accountIdOkCh <- struct{}{}
 		}
+	} else {
+		accountIdOkCh <- struct{}{}
 	}
 	<-accountIdOkCh
 
@@ -382,25 +384,28 @@ func (c *TinkoffBrokerPort) SubscribeOrders(cb func(types.OrderExecutionState)) 
 
 	ordersStreamClient := sdk.NewOrdersStreamClient()
 
+	var accId string
 	accountIdOkCh := make(chan struct{}, 1)
-	if len(accountID) == 0 {
-		sdkL.Trace("No accountID")
+	if len(accId) == 0 {
+		sdkL.WithField("method", "SubscribeOrders").Trace("No accountID")
 		accountIDRaw, err := dbInstance.Get([]string{"accounts"})
 		if err == nil {
-			sdkL.Trace("Got accountID from db")
-			accountID = string(accountIDRaw)
+			sdkL.WithField("method", "PlaceOrder").Trace("Got accountID from db")
+			accId = string(accountIDRaw)
 			accountIdOkCh <- struct{}{}
 		} else {
-			sdkL.Trace("Got accountID from sdk")
-			accountID = sdk.Config.AccountId
+			sdkL.WithField("method", "PlaceOrder").Trace("Got accountID from sdk")
+			accId = sdk.Config.AccountId
 			accountIdOkCh <- struct{}{}
 		}
+	} else {
+		accountIdOkCh <- struct{}{}
 	}
 	<-accountIdOkCh
 
 	sdkL.Trace("Creating new trades stream")
 	tradesStream, err := ordersStreamClient.TradesStream([]string{
-		accountID,
+		accId,
 	})
 	if err != nil {
 		sdkL.Errorf("Failed to create tradees stream: %v", err)
@@ -434,33 +439,35 @@ func (c *TinkoffBrokerPort) SubscribeOrders(cb func(types.OrderExecutionState)) 
 	go func(ctx context.Context, ts *investgo.TradesStream, cb func(types.OrderExecutionState)) {
 		defer wg.Done()
 
-		select {
-		case tradeState := <-ts.Trades():
-			sdkL.Infof("New state of order: %v; direction: %v", tradeState.OrderId, tradeState.Direction)
+		for {
+			select {
+			case tradeState := <-ts.Trades():
+				sdkL.Infof("New state of order: %v; direction: %v", tradeState.OrderId, tradeState.Direction)
 
-			lotsExecuted := 0
-			var executedPrice float64 = 0
-			for _, t := range tradeState.Trades {
-				lotsExecuted += int(t.Quantity)
-				executedPrice += t.Price.ToFloat() * float64(t.Quantity)
-			}
+				lotsExecuted := 0
+				var executedPrice float64 = 0
+				for _, t := range tradeState.Trades {
+					lotsExecuted += int(t.Quantity)
+					executedPrice += t.Price.ToFloat() * float64(t.Quantity)
+				}
 
-			changeEvent := types.OrderExecutionState{
-				ID:                 types.OrderID(tradeState.OrderId),
-				Direction:          types.OperationType(tradeState.Direction),
-				InstrumentID:       tradeState.InstrumentUid,
-				LotsExecuted:       lotsExecuted,
-				Status:             0, // TODO: Научитться определять статус заявки
-				ExecutedOrderPrice: executedPrice,
-				// TODO: Научиться считать вот это все (из tradeState.Trades видимо)
-				// LotsRequested      int
-				// InitialOrderPrice  types.Money
-				// ExecutedOrderPrice types.Money
-				// InitialComission   types.Money
-				// ExecutedComission  types.Money
+				changeEvent := types.OrderExecutionState{
+					ID:                 types.OrderID(tradeState.OrderId),
+					Direction:          types.OperationType(tradeState.Direction),
+					InstrumentID:       tradeState.InstrumentUid,
+					LotsExecuted:       lotsExecuted,
+					Status:             0, // TODO: Научитться определять статус заявки
+					ExecutedOrderPrice: executedPrice,
+					// TODO: Научиться считать вот это все (из tradeState.Trades видимо)
+					// LotsRequested      int
+					// InitialOrderPrice  types.Money
+					// ExecutedOrderPrice types.Money
+					// InitialComission   types.Money
+					// ExecutedComission  types.Money
+				}
+				sdkL.Tracef("Order state changed, notifying: %v", changeEvent)
+				go cb(changeEvent)
 			}
-			sdkL.Tracef("Order state changed, notifying: %v", changeEvent)
-			go cb(changeEvent)
 		}
 	}(backCtx, tradesStream, cb)
 
@@ -479,24 +486,27 @@ func (c *TinkoffBrokerPort) GetOrderState(orderID types.OrderID) (types.OrderExe
 
 	oc := sdk.NewOrdersServiceClient()
 
+	var accId string
 	accountIdOkCh := make(chan struct{}, 1)
-	if len(accountID) == 0 {
-		sdkL.Trace("No accountID")
+	if len(accId) == 0 {
+		sdkL.WithField("method", "PlaceOrder").Trace("No accountID")
 		accountIDRaw, err := dbInstance.Get([]string{"accounts"})
 		if err == nil {
-			sdkL.Trace("Got accountID from db")
-			accountID = string(accountIDRaw)
+			sdkL.WithField("method", "PlaceOrder").Trace("Got accountID from db")
+			accId = string(accountIDRaw)
 			accountIdOkCh <- struct{}{}
 		} else {
-			sdkL.Trace("Got accountID from sdk")
-			accountID = sdk.Config.AccountId
+			sdkL.WithField("method", "PlaceOrder").Trace("Got accountID from sdk")
+			accId = sdk.Config.AccountId
 			accountIdOkCh <- struct{}{}
 		}
+	} else {
+		accountIdOkCh <- struct{}{}
 	}
 	<-accountIdOkCh
 
 	sdkL.Trace("Sending get order state request")
-	state, err := oc.GetOrderState(accountID, string(orderID))
+	state, err := oc.GetOrderState(accId, string(orderID))
 	if err != nil {
 		sdkL.Errorf("Failed to get order state: %v", err)
 		return types.OrderExecutionState{}, err
