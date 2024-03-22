@@ -14,3 +14,15 @@ export interface OHLCData {
     readonly close: number;
     readonly volume: number;
 }
+
+export interface OrderState {
+    readonly id: string;
+    readonly instrumentId: string;
+    readonly price: number
+    readonly status: number;
+    readonly lotsRequested: number;
+    readonly lotsExecuted: number;
+    readonly operationType: number;
+    readonly time: UTCTimestamp;
+    readonly strategy: string;
+}
