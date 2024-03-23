@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"fmt"
-	"log"
 	accounts "main/grpcGW/grpcGW.accounts"
 	auth "main/grpcGW/grpcGW.auth"
 	marketdata "main/grpcGW/grpcGW.marketdata"
@@ -11,6 +10,7 @@ import (
 	trade "main/grpcGW/grpcGW.trade"
 	"net"
 
+	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 )
 
@@ -25,11 +25,11 @@ type Server struct {
 func Start(ctx context.Context, port int) {
 	s := grpc.NewServer()
 	defer s.Stop()
-	fmt.Println("Starting server")
+
+	log.Info("Starting server")
 
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if err != nil {
-		fmt.Println("Error listening port", err)
 		log.Fatalf("failed to listen: %v", err)
 	}
 	defer lis.Close()
@@ -42,9 +42,8 @@ func Start(ctx context.Context, port int) {
 	shares.RegisterSharesServer(s, srv)
 	trade.RegisterTradeServer(s, srv)
 
-	fmt.Println("Starting server", lis.Addr())
+	log.Infof("Server listening at: %v", lis.Addr())
 	err = s.Serve(lis)
-
 	if err != nil {
 		log.Fatalf("Error listening to server ", err)
 	}

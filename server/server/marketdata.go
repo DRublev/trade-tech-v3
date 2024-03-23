@@ -2,8 +2,6 @@ package server
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"main/bot/broker"
 	"main/bot/orderbook"
 	marketdata "main/grpcGW/grpcGW.marketdata"
@@ -12,20 +10,28 @@ import (
 	"os"
 	"os/signal"
 	"sync"
+	"time"
 
+	log "github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-// Обьявляем нвоый обработчик эндпоинта GetCandles
+var mdL = log.WithFields(log.Fields{
+	"controller": "marketdata",
+})
+
 func (s *Server) GetCandles(ctx context.Context, in *marketdata.GetCandlesRequest) (*marketdata.GetCandlesResponse, error) {
+	mdL.WithField("instrument", in.InstrumentId).Info("GetCandles requested")
+
 	err := broker.Init(ctx, types.Tinkoff)
 	if err != nil {
-		fmt.Println("marketdata GetCandles request err", err)
+		mdL.Errorf("Cannot init broker: %v", err)
 		return &marketdata.GetCandlesResponse{Candles: []*marketdata.OHLC{}}, err
 	}
 
 	var res []*marketdata.OHLC
 
+	mdL.Trace("Requesting broker for candles")
 	// Вызываем созданный ранее сервис
 	candles, err := broker.Broker.GetCandles(
 		in.InstrumentId,
@@ -34,9 +40,11 @@ func (s *Server) GetCandles(ctx context.Context, in *marketdata.GetCandlesReques
 		in.End.AsTime())
 
 	if err != nil {
+		mdL.Errorf("Failed getting candles from broker: %v", err)
 		return &marketdata.GetCandlesResponse{Candles: res}, err
 	}
 
+	mdL.Tracef("Got %v candles, mapping", len(candles))
 	// Мапим в нужный формат
 	for _, candle := range candles {
 		o := marketdata.Quant{
@@ -65,6 +73,7 @@ func (s *Server) GetCandles(ctx context.Context, in *marketdata.GetCandlesReques
 		})
 	}
 
+	mdL.Info("GetCandles responding")
 	return &marketdata.GetCandlesResponse{Candles: res}, nil
 }
 
@@ -79,6 +88,7 @@ func roundFloat(val float32, precision uint) float64 {
 	ratio := math.Pow(10, float64(precision))
 	return math.Round(float64(val)*ratio) / ratio
 }
+
 // TODO: Изменить сигнатуру на () [units, nano] и вынести в utils
 func toMDQuantFromNum(p float32) *marketdata.Quant {
 	units := math.Floor(float64(p))
@@ -89,56 +99,99 @@ func toMDQuantFromNum(p float32) *marketdata.Quant {
 		Nano:  int32(nano),
 	}
 }
+func (s *Server) SubscribeOrders(in *marketdata.SubscribeOrderRequest, stream marketdata.MarketData_SubscribeOrdersServer) error {
+	mdL.Info("SubscribeOrders requested")
 
-func (s *Server) SubscribeCandles(in *marketdata.SubscribeCandlesRequest, stream marketdata.MarketData_SubscribeCandlesServer) error {
-	var err error
+	bCtx, _ := signal.NotifyContext(context.Background(), os.Interrupt)
 
-	ctx := stream.Context()
-	err = broker.Init(ctx, types.Tinkoff)
+	err := broker.Init(bCtx, types.Tinkoff)
 	if err != nil {
-		fmt.Println("marketdata SubscribeCandles request err", err)
+		mdL.Errorf("Cannot init broker: %v", err)
 		return err
 	}
+
+	mdL.Trace("Requesting broker for subscribing to orderState")
+	err = broker.Broker.SubscribeOrders(func(st types.OrderExecutionState) {
+		err = stream.Send(&marketdata.OrderState{
+			IdempodentID:    string(st.IdempodentID),
+			ExecutionStatus: int32(st.Status),
+			OperationType:   int32(st.Direction),
+			LotsRequested:   int32(st.LotsRequested),
+			LotsExecuted:    int32(st.LotsExecuted),
+			InstrumentID:    st.InstrumentID,
+			Strategy:        "",
+			PricePerLot:     st.ExecutedOrderPrice / float64(st.LotsExecuted),
+			Time:            timestamppb.New(time.Now()),
+		})
+		if err != nil {
+			mdL.Warnf("Failed sending orderState to stream: %v", err)
+		}
+	})
+	if err != nil {
+		mdL.Errorf("Failed subscribing orderState: %v", err)
+		return err
+	}
+
+	mdL.Info("SubscribeOrders responding")
+	return err
+}
+
+func (s *Server) SubscribeCandles(in *marketdata.SubscribeCandlesRequest, stream marketdata.MarketData_SubscribeCandlesServer) error {
+	mdL.WithField("instrument", in.InstrumentId).Info("SubscribeCandles requested")
+
+	ctx := stream.Context()
+	bCtx, _ := signal.NotifyContext(context.Background(), os.Interrupt)
+
+	err := broker.Init(bCtx, types.Tinkoff)
+	if err != nil {
+		mdL.Errorf("Cannot init broker: %v", err)
+		return err
+	}
+
+	candlesCh := make(chan types.OHLC)
 
 	wg := &sync.WaitGroup{}
 
 	wg.Add(1)
-	go func(ctx context.Context, instrumentId string, interval int32) {
+	go func(ctx context.Context, ch *chan types.OHLC) {
 		defer wg.Done()
-		candlesCh := make(chan types.OHLC)
-		if ctx == nil {
-			fmt.Println("78 marketdata", "ctx is nil")
-
-			return
-		}
-
-		fmt.Println("83 marketdata", ctx, &candlesCh, instrumentId, interval)
-
-		er := broker.Broker.SubscribeCandles(ctx, &candlesCh, instrumentId, types.Interval(interval))
-		if er != nil {
-			fmt.Println("80 marketdata", er)
-
-			return
-		}
-
-		for c := range candlesCh {
-			fmt.Println("New candle ", c.Time)
-			err = stream.Send(&marketdata.OHLC{
-				Open:   toMDQuant(&c.Open),
-				High:   toMDQuant(&c.High),
-				Low:    toMDQuant(&c.Low),
-				Close:  toMDQuant(&c.Close),
-				Time:   timestamppb.New(c.Time),
-				Volume: c.Volume,
-			})
-			if err != nil {
+		for {
+			select {
+			case <-ctx.Done():
+				mdL.Info("Subscribe candles context closed")
 				return
+			case c, ok := <-*ch:
+				if !ok {
+					mdL.Infof("Subscribe candles stream is done for %v", in.InstrumentId)
+					return
+				}
+
+				mdL.Tracef("Sending new candle to stream. Candle time: %v", c.Time)
+				err = stream.Send(&marketdata.OHLC{
+					Open:   toMDQuant(&c.Open),
+					High:   toMDQuant(&c.High),
+					Low:    toMDQuant(&c.Low),
+					Close:  toMDQuant(&c.Close),
+					Time:   timestamppb.New(c.Time),
+					Volume: c.Volume,
+				})
+				if err != nil {
+					mdL.Warnf("Failed sending candle to stream: %v", err)
+				}
 			}
 		}
-	}(ctx, in.InstrumentId, in.Interval)
+	}(bCtx, &candlesCh)
+
+	mdL.Trace("Requesting broker for subscribing to candles")
+	err = broker.Broker.SubscribeCandles(ctx, &candlesCh, in.InstrumentId, types.Interval(in.Interval))
+	if err != nil {
+		mdL.Errorf("Failed subscribing candles: %v", err)
+		return err
+	}
 
 	wg.Wait()
 
+	mdL.Info("SubscribeCandles responding")
 	return err
 }
 
@@ -157,31 +210,38 @@ func toMDBidAsk(in []*types.BidAsk) []*marketdata.BidAsk {
 }
 
 func (s *Server) SubscribeOrderbook(in *marketdata.SubscribeOrderbookRequest, stream marketdata.MarketData_SubscribeOrderbookServer) error {
+	mdL.WithField("instrument", in.InstrumentId).Info("SubscribeOrderbook requested")
 	var err error
 
 	ctx, _ := signal.NotifyContext(context.Background(), os.Interrupt)
 	err = broker.Init(ctx, types.Tinkoff)
 	if err != nil {
-		fmt.Println("marketdata SubscribeOrderbook request err", err)
+		mdL.Errorf("Cannot init broker: %v", err)
 		return err
 	}
 
-	orderbookProvider := orderbook.NewOrderbookProvider()
+	mdL.Trace("Creating orderbook provider and channel")
+	orderbookProvider := orderbook.NewProvider()
 	orderbookCh, err := orderbookProvider.GetOrCreate(in.InstrumentId)
 	if err != nil {
+		mdL.Errorf("Failed getting channel for orderbook: %v", err)
 		return err
 	}
 
 	streamCtx := stream.Context()
-	err = broker.Broker.SubscribeOrderbook(streamCtx, orderbookCh, in.InstrumentId, in.Depth)
 
+	mdL.Trace("Requesting broker for subscribe to orderbook")
+	err = broker.Broker.SubscribeOrderbook(streamCtx, orderbookCh, in.InstrumentId, in.Depth)
 	select {
 	case <-streamCtx.Done():
+		mdL.Infof("Subscribe orderbook context closed for %v", in.InstrumentId)
 		return err
 	case o, ok := <-*orderbookCh:
 		if !ok {
-			return errors.New("stream is end")
+			mdL.Info("Subscribe orderbook")
+			return nil
 		}
+		mdL.Tracef("Sending orderbook to stream. Orderbok time: %v", o.Time)
 		err = stream.Send(&marketdata.Orderbook{
 			InstrumentId: o.InstrumentId,
 			Depth:        o.Depth,
@@ -191,7 +251,12 @@ func (s *Server) SubscribeOrderbook(in *marketdata.SubscribeOrderbookRequest, st
 			Bids:         toMDBidAsk(o.Bids),
 			Asks:         toMDBidAsk(o.Asks),
 		})
+
+		if err != nil {
+			mdL.Warnf("Failed sending orderbook to stream: %v", err)
+		}
 	}
 
+	mdL.Info("SubscribeOrderbook responding")
 	return err
 }

@@ -21,6 +21,7 @@ const _ = grpc.SupportPackageIsVersion7
 const (
 	MarketData_GetCandles_FullMethodName         = "/marketData.MarketData/GetCandles"
 	MarketData_SubscribeCandles_FullMethodName   = "/marketData.MarketData/SubscribeCandles"
+	MarketData_SubscribeOrders_FullMethodName    = "/marketData.MarketData/SubscribeOrders"
 	MarketData_SubscribeOrderbook_FullMethodName = "/marketData.MarketData/SubscribeOrderbook"
 )
 
@@ -31,6 +32,7 @@ type MarketDataClient interface {
 	// Название нашего эндпоинта
 	GetCandles(ctx context.Context, in *GetCandlesRequest, opts ...grpc.CallOption) (*GetCandlesResponse, error)
 	SubscribeCandles(ctx context.Context, in *SubscribeCandlesRequest, opts ...grpc.CallOption) (MarketData_SubscribeCandlesClient, error)
+	SubscribeOrders(ctx context.Context, in *SubscribeOrderRequest, opts ...grpc.CallOption) (MarketData_SubscribeOrdersClient, error)
 	SubscribeOrderbook(ctx context.Context, in *SubscribeOrderbookRequest, opts ...grpc.CallOption) (MarketData_SubscribeOrderbookClient, error)
 }
 
@@ -83,8 +85,40 @@ func (x *marketDataSubscribeCandlesClient) Recv() (*OHLC, error) {
 	return m, nil
 }
 
+func (c *marketDataClient) SubscribeOrders(ctx context.Context, in *SubscribeOrderRequest, opts ...grpc.CallOption) (MarketData_SubscribeOrdersClient, error) {
+	stream, err := c.cc.NewStream(ctx, &MarketData_ServiceDesc.Streams[1], MarketData_SubscribeOrders_FullMethodName, opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &marketDataSubscribeOrdersClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type MarketData_SubscribeOrdersClient interface {
+	Recv() (*OrderState, error)
+	grpc.ClientStream
+}
+
+type marketDataSubscribeOrdersClient struct {
+	grpc.ClientStream
+}
+
+func (x *marketDataSubscribeOrdersClient) Recv() (*OrderState, error) {
+	m := new(OrderState)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 func (c *marketDataClient) SubscribeOrderbook(ctx context.Context, in *SubscribeOrderbookRequest, opts ...grpc.CallOption) (MarketData_SubscribeOrderbookClient, error) {
-	stream, err := c.cc.NewStream(ctx, &MarketData_ServiceDesc.Streams[1], MarketData_SubscribeOrderbook_FullMethodName, opts...)
+	stream, err := c.cc.NewStream(ctx, &MarketData_ServiceDesc.Streams[2], MarketData_SubscribeOrderbook_FullMethodName, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -122,6 +156,7 @@ type MarketDataServer interface {
 	// Название нашего эндпоинта
 	GetCandles(context.Context, *GetCandlesRequest) (*GetCandlesResponse, error)
 	SubscribeCandles(*SubscribeCandlesRequest, MarketData_SubscribeCandlesServer) error
+	SubscribeOrders(*SubscribeOrderRequest, MarketData_SubscribeOrdersServer) error
 	SubscribeOrderbook(*SubscribeOrderbookRequest, MarketData_SubscribeOrderbookServer) error
 	mustEmbedUnimplementedMarketDataServer()
 }
@@ -135,6 +170,9 @@ func (UnimplementedMarketDataServer) GetCandles(context.Context, *GetCandlesRequ
 }
 func (UnimplementedMarketDataServer) SubscribeCandles(*SubscribeCandlesRequest, MarketData_SubscribeCandlesServer) error {
 	return status.Errorf(codes.Unimplemented, "method SubscribeCandles not implemented")
+}
+func (UnimplementedMarketDataServer) SubscribeOrders(*SubscribeOrderRequest, MarketData_SubscribeOrdersServer) error {
+	return status.Errorf(codes.Unimplemented, "method SubscribeOrders not implemented")
 }
 func (UnimplementedMarketDataServer) SubscribeOrderbook(*SubscribeOrderbookRequest, MarketData_SubscribeOrderbookServer) error {
 	return status.Errorf(codes.Unimplemented, "method SubscribeOrderbook not implemented")
@@ -191,6 +229,27 @@ func (x *marketDataSubscribeCandlesServer) Send(m *OHLC) error {
 	return x.ServerStream.SendMsg(m)
 }
 
+func _MarketData_SubscribeOrders_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(SubscribeOrderRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(MarketDataServer).SubscribeOrders(m, &marketDataSubscribeOrdersServer{stream})
+}
+
+type MarketData_SubscribeOrdersServer interface {
+	Send(*OrderState) error
+	grpc.ServerStream
+}
+
+type marketDataSubscribeOrdersServer struct {
+	grpc.ServerStream
+}
+
+func (x *marketDataSubscribeOrdersServer) Send(m *OrderState) error {
+	return x.ServerStream.SendMsg(m)
+}
+
 func _MarketData_SubscribeOrderbook_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(SubscribeOrderbookRequest)
 	if err := stream.RecvMsg(m); err != nil {
@@ -228,6 +287,11 @@ var MarketData_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "SubscribeCandles",
 			Handler:       _MarketData_SubscribeCandles_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "SubscribeOrders",
+			Handler:       _MarketData_SubscribeOrders_Handler,
 			ServerStreams: true,
 		},
 		{

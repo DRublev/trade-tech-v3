@@ -4,13 +4,15 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"path"
 	"path/filepath"
 	"runtime"
+
+	log "github.com/sirupsen/logrus"
 )
 
+// DB Контракт для базы данных. Чтобы скрыть детали реализации (как именно храним инфу)
 type DB struct{}
 
 func (d *DB) getStoragePath(storageName []string) (string, error) {
@@ -26,14 +28,16 @@ func (d *DB) getStoragePath(storageName []string) (string, error) {
 	return p, nil
 }
 
+// Prune Очистить директорию с данными
 func (d *DB) Prune(storageName []string) error {
 	storageFile, err := d.getStoragePath(storageName)
 	if err != nil {
-		log.Default().Println("Failed to get storage path: ", err)
+		log.Errorf("Failed to get storage path %v: %v", storageName, err)
 		return err
 	}
 
 	if _, err := os.Stat(storageFile); os.IsNotExist(err) {
+		log.Warnf("Directory %v doesnt exists", storageFile)
 		return nil
 	}
 
@@ -41,11 +45,11 @@ func (d *DB) Prune(storageName []string) error {
 	return err
 }
 
+// Append Добавить данные в конец стореджа
 func (d *DB) Append(storageName []string, content []byte) error {
 	storageFile, err := d.getStoragePath(storageName)
-	fmt.Println("Appending to ", storageFile)
 	if err != nil {
-		log.Default().Println("Failed to get storage path: ", err)
+		log.Errorf("Failed to get storage path %v: %v", storageName, err)
 		return err
 	}
 
@@ -56,33 +60,35 @@ func (d *DB) Append(storageName []string, content []byte) error {
 
 	file, err := os.OpenFile(storageFile, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0660)
 	if err != nil {
-		log.Default().Println("Failed to open file: ", err)
+		log.Errorf("Failed to open file %v: %v", storageName, err)
+
 		return err
 	}
 	defer file.Close()
 
-	log.Default().Println("Appending to file: ", storageFile)
+	log.Tracef("Appending to %v", storageFile)
 	_, err = file.Write(content)
 
 	return err
 }
 
+// Get Получить данные из стореджа
 func (d *DB) Get(storageName []string) ([]byte, error) {
 	var result []byte
 	storageFile, err := d.getStoragePath(storageName)
 	if err != nil {
-		log.Default().Println("Failed to get storage path: ", err)
+		log.Errorf("Failed to get storage path %v: %v", storageName, err)
 		return result, err
 	}
 
 	if _, err := os.Stat(storageFile); os.IsNotExist(err) {
-		fmt.Println("Directory doesnt exists ", storageFile)
+		log.Warnf("Directory %v doesnt exists", storageFile)
 		return result, err
 	}
 
 	file, err := os.OpenFile(storageFile, os.O_RDONLY, 0660)
 	if err != nil {
-		log.Default().Println("Failed to open file: ", err)
+		log.Errorf("Failed to open file %v: %v", storageName, err)
 		return result, err
 	}
 	defer file.Close()
@@ -99,7 +105,7 @@ func getLastLineWithSeek(fileHandle *os.File) string {
 	stat, _ := fileHandle.Stat()
 	filesize := stat.Size()
 	for {
-		cursor -= 1
+		cursor--
 		fileHandle.Seek(cursor, io.SeekEnd)
 
 		char := make([]byte, 1)

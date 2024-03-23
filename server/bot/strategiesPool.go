@@ -2,27 +2,31 @@ package bot
 
 import (
 	"errors"
-	"fmt"
 	"main/bot/broker"
 	config "main/bot/config"
 	"main/bot/orders"
 	"main/bot/strategies"
+	errs "main/bot/errors"
 	"main/types"
 	"sync"
 
 	"github.com/google/uuid"
+	log "github.com/sirupsen/logrus"
 )
 
+// IStrategyPool Интерфейс пула стратегий
 type IStrategyPool interface {
-	Start(key strategies.StrategyKey, instrumentId string) (bool, error)
-	Stop(key strategies.StrategyKey, instrumentId string) (bool, error)
+	Start(key strategies.StrategyKey, instrumentID string) (bool, error)
+	Stop(key strategies.StrategyKey, instrumentID string) (bool, error)
 }
 
+// StrategiesMap Хранилище запущенных стратегий
 type StrategiesMap struct {
 	sync.RWMutex
 	value map[string]strategies.IStrategy
 }
 
+// StrategyPool Аггрегатор стратегий. Весь доступ к стратегии ведется через него
 type StrategyPool struct {
 	IStrategyPool
 	configRepository *config.ConfigRepository
@@ -32,6 +36,7 @@ type StrategyPool struct {
 var oncePool sync.Once
 var pool *StrategyPool
 
+// NewPool Хранилище для StrategyPool
 func NewPool() *StrategyPool {
 	if pool != nil {
 		return pool
@@ -50,102 +55,136 @@ func NewPool() *StrategyPool {
 	return pool
 }
 
-func (sp *StrategyPool) Start(key strategies.StrategyKey, instrumentId string) (bool, error) {
+// Start Запуск стратегии
+func (sp *StrategyPool) Start(key strategies.StrategyKey, instrumentID string) (bool, error) {
+	l := log.WithFields(log.Fields{
+		"method": "Start",
+		"instrumentID": instrumentID,
+		"strategy":     key,
+	})
+
+	l.Info("Starting strategy")
+
 	if !key.IsValid() {
-		return false, errors.New("unknown strategy key")
+		l.Tracef("Unknown strategy key %v; %v", key, instrumentID)
+		return false, errs.UnknownStrategy
 	}
 
-	config, err := sp.getConfig(key, instrumentId)
+	config, err := sp.getConfig(key, instrumentID)
 	if err != nil {
-		return false, errors.New("no config found for " + string(key) + " " + instrumentId)
+		l.Tracef("No config found: %v", err)
+		return false, errors.New("no config found for " + string(key) + " " + instrumentID)
 	}
 
 	// TODO: Перенести StrategyMap в отдельный файл с геттерами\сеттерами и контролить мьютекс там
 	sp.strategies.RLock()
-	_, exists := sp.strategies.value[sp.getMapKey(key, instrumentId)]
+	_, exists := sp.strategies.value[sp.getMapKey(key, instrumentID)]
 	sp.strategies.RUnlock()
 	if exists {
+		l.Trace("Strategy already exists")
 		return false, errors.New("strategy already exists")
 	}
 
 	strategy, err := Assemble(key, config)
 	if err != nil {
+		l.Errorf("Error assembling strategy: %v", err)
 		return false, err
 	}
 
 	sp.strategies.Lock()
-	sp.strategies.value[sp.getMapKey(key, instrumentId)] = strategy
+	sp.strategies.value[sp.getMapKey(key, instrumentID)] = strategy
 	sp.strategies.Unlock()
 
+	l.Trace("Creating channels")
 	ordersToPlaceCh := make(chan *types.PlaceOrder)
 	ordersStateCh := make(chan types.OrderExecutionState)
 
 	okCh := make(chan bool, 1)
 	go func(s strategies.IStrategy, ordersToPlaceCh chan *types.PlaceOrder, ordersStateCh *chan types.OrderExecutionState) {
-		fmt.Printf("84 strategiesPool %v\n", s)
+		l.Trace("Starting strategy")
 		ok, err := s.Start(config, &ordersToPlaceCh, ordersStateCh)
 		if err != nil {
-			fmt.Println("Error starting strategy ", err)
+			l.Errorf("Error starting strategy %v", err)
 		}
 		okCh <- ok
 	}(strategy, ordersToPlaceCh, &ordersStateCh)
 
 	go func(source chan *types.PlaceOrder, ordersStateCh *chan types.OrderExecutionState) {
+		l.Trace("Registering channel for orders to place")
 		ow := orders.NewOrderWatcher(ordersStateCh)
 
-		if err != nil {
-			fmt.Println("error registering notification channel!", err)
-			return
-		}
 		for {
 			select {
-			case order, ok := <- ordersToPlaceCh:
+			case order, ok := <-ordersToPlaceCh:
+				l.Tracef("New order to place")
 				if !ok {
-					fmt.Println("orders to place channel closed")
+					l.Tracef("Orders to place channel closed; %v", instrumentID)
 					return
 				}
-				
+
 				// TODO: Тут сделать WithIdempodentId
-				order.IdempodentID = types.IdempodentId(uuid.New().String())
+				order.IdempodentID = types.IdempodentID(uuid.New().String())
 
 				orderID, err := broker.Broker.PlaceOrder(order)
 				if err != nil {
-					fmt.Printf("error placing order: %v\n", err)
+					l.Errorf("Error placing order: %v", err)
 					continue
 				}
+				l.Trace("Order place processed")
+
 				ow.Watch(order.IdempodentID)
-				ow.PairWithOrderId(order.IdempodentID, orderID)
+				ow.PairWithOrderID(order.IdempodentID, orderID)
 			}
 		}
 	}(ordersToPlaceCh, &ordersStateCh)
 
+	l.Info("Strategy started")
 	return <-okCh, nil
 }
 
-func (sp *StrategyPool) Stop(key strategies.StrategyKey, instrumentId string) (bool, error) {
+// Stop Остановить работу стратегии
+func (sp *StrategyPool) Stop(key strategies.StrategyKey, instrumentID string) (bool, error) {
+	l := log.WithFields(log.Fields{
+		"method": "Stop",
+		"instrumentID": instrumentID,
+		"strategy":     key,
+	})
+	l.Info("Stopping strategy")
+
 	if !key.IsValid() {
-		return false, errors.New("unknown strategy key")
+		l.Tracef("Unknown strategy key %v; %v", key, instrumentID)
+		return false, errs.UnknownStrategy
 	}
 
-	mapKey := sp.getMapKey(key, instrumentId)
+	mapKey := sp.getMapKey(key, instrumentID)
 
 	sp.strategies.RLock()
 	strategy, exists := sp.strategies.value[mapKey]
 	sp.strategies.RUnlock()
 	if exists {
+		l.Error("Strategy doesnt exists")
 		return false, errors.New("strategy not exists")
 	}
 
+	l.Trace("Trying to call Stop of a strategy instance")
 	ok, err := strategy.Stop()
+	l.Trace("Called Stop of a strategy instance")
 
 	return ok, err
 }
 
-func (sp *StrategyPool) getConfig(key strategies.StrategyKey, instrumentId string) (*strategies.Config, error) {
-	config, err := sp.configRepository.Get(sp.getMapKey(key, instrumentId))
+func (sp *StrategyPool) getConfig(key strategies.StrategyKey, instrumentID string) (*strategies.Config, error) {
+	l := log.WithFields(log.Fields{
+		"instrumentID": instrumentID,
+		"strategy":     key,
+	})
+
+	configKey := sp.getMapKey(key, instrumentID)
+	l.Tracef("Getting config for %v", configKey)
+	config, err := sp.configRepository.Get(configKey)
 	return config, err
 }
 
-func (sp *StrategyPool) getMapKey(key strategies.StrategyKey, instrumentId string) string {
-	return string(key) + instrumentId
+func (sp *StrategyPool) getMapKey(key strategies.StrategyKey, instrumentID string) string {
+	return string(key) + instrumentID
 }

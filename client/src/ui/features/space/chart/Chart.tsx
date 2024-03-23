@@ -1,8 +1,8 @@
-import React, { FC, MutableRefObject, RefObject, useCallback, useEffect, useRef } from "react";
-import { ColorType, IChartApi, createChart } from 'lightweight-charts';
+import React, { FC, MutableRefObject, RefObject, useCallback, useEffect, useRef, useState } from 'react';
+import { ColorType, IChartApi, createChart, SeriesMarker, Time } from 'lightweight-charts';
 import { useChartDimensions } from "./hooks";
 import { OHLCData } from "../../../../types";
-import { useCandles } from "../hooks";
+import { useCandles, useOrders } from '../hooks';
 
 type ChartProps = {
     containerRef: MutableRefObject<HTMLElement>;
@@ -17,6 +17,7 @@ type UseChartProps = {
 type ChartApi = {
     setInitialPriceSeries: (initialData: OHLCData[]) => void;
     updatePriceSeries: (newItem: OHLCData) => void;
+    updateMarkers: (newMarkers: SeriesMarker<Time>) => void;
 }
 
 const chartTheme = {
@@ -56,6 +57,7 @@ const useChart = ({ containerRef, }: UseChartProps): [RefObject<HTMLDivElement>,
     const chartRef = useRef();
     const chartApiRef = useRef<IChartApi>();
     const candlesApiRef = useRef<ReturnType<IChartApi['addCandlestickSeries']>>();
+    const [markers, setMarkers] = useState<SeriesMarker<Time>[]>([]);
 
     useEffect(() => {
         chartApiRef.current = createChart("chart-container", {
@@ -75,6 +77,10 @@ const useChart = ({ containerRef, }: UseChartProps): [RefObject<HTMLDivElement>,
 
         // TODO: Add volume series
     }, []);
+
+    const updateMarkers = useCallback((newMarkers: SeriesMarker<Time>) => {
+        setMarkers(markers => [...markers, newMarkers]);
+    }, [])
 
     const updatePriceSeries = useCallback((newItem: OHLCData) => {
         console.log('43 Chart', 'new candle!', newItem);
@@ -98,7 +104,13 @@ const useChart = ({ containerRef, }: UseChartProps): [RefObject<HTMLDivElement>,
         }
     }, [chartSize.width, chartApiRef.current]);
 
-    return [chartRef, { updatePriceSeries, setInitialPriceSeries }];
+    useEffect(() => {
+        if (markers.length && candlesApiRef.current) {
+            candlesApiRef.current.setMarkers(markers);
+        }
+    }, [markers]);
+
+    return [chartRef, { updatePriceSeries, setInitialPriceSeries, updateMarkers }];
 };
 
 
@@ -106,6 +118,7 @@ const Chart: FC<ChartProps> = ({ containerRef }) => {
     const [ref, api] = useChart({ containerRef });
     // TODO: Прокидывать id выбранного инструмента
     const { initialData, isLoading } = useCandles(api.updatePriceSeries);
+    useOrders(api.updateMarkers);
 
     useEffect(() => {
         api.setInitialPriceSeries(initialData)

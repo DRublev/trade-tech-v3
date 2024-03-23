@@ -10,13 +10,9 @@ ipcMain.handle(ipcEvents.GET_AUTH_INFO, async (e) => {
         const isSandbox = await storage.get('isSandbox');
         const account = await storage.get('accountId');
 
-        const hasToken = await new Promise(resolve => authService.hasToken({}, (err, res) => {
-            if (err) return resolve(false);
+        const { HasToken } = await authService.hasToken({});
 
-            resolve(res.HasToken);
-        }));
-
-        return { isAuthorised: !!hasToken, isSandbox, account };
+        return { isAuthorised: !!HasToken, isSandbox, account };
     } catch (err) {
         return Promise.reject('Не удалось получить данные из сторы: ' + err)
     }

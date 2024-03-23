@@ -7,6 +7,8 @@ import (
 	"main/types"
 	"sync"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type Config struct {
@@ -50,6 +52,18 @@ type State struct {
 	lastBuyPrice float32
 }
 
+func (s *State) String() string {
+	return fmt.Sprintf(
+		"Holding %v\nLeft balance %v; Blocked money %v\nPending buy %v, sell %v\nLast buy price %v",
+		s.holdingShares,
+		s.leftBalance,
+		s.notConfirmedBlockedMoney,
+		s.pendingBuyShares,
+		s.pendingSellShares,
+		s.lastBuyPrice,
+	)
+}
+
 type isWorking struct {
 	sync.RWMutex
 	value bool
@@ -75,36 +89,50 @@ func New() *SpreadStrategy {
 	return inst
 }
 
+var l *log.Entry
+
 func (s *SpreadStrategy) Start(config *strategies.Config, ordersToPlaceCh *chan *types.PlaceOrder, orderStateChangeCh *chan types.OrderExecutionState) (bool, error) {
 	// TODO: Нужен метод ConvertSerialsableToType[T](candidate) T, который конвертирует типы через json.Marshall
 	debugCfg := Config{
-		
+
 		Config: strategies.Config{
 			// InstrumentId: "BBG004730N88", // SBER
 			// InstrumentId: "4c466956-d2ce-4a95-abb4-17947a65f18a", // TGLD
 			// InstrumentId: "BBG004730RP0", // GAZP
-			// InstrumentId: "BBG004PYF2N3", // POLY
-			InstrumentId: "ba64a3c7-dd1d-4f19-8758-94aac17d971b", // FIXP
-			Balance: 400,
+			InstrumentId: "BBG004PYF2N3", // POLY
+			// InstrumentId: "ba64a3c7-dd1d-4f19-8758-94aac17d971b", // FIXP
+			// InstrumentId: "BBG004730ZJ9", // VTBR
+			Balance: 450,
 		},
-		maxSharesToHold: 1,
+		maxSharesToHold:     1,
 		nextOrderCooldownMs: 0,
-		lotSize: 1,
-		minProfit: 0.1,
-		stopLossAfter: 0,
+		lotSize:             1,
+		minProfit:           0.34,
+		stopLossAfter:       1,
+		// VTBR
+		// lotSize: 10_000,
+		// minProfit: 0.00002,
+		// stopLossAfter: 0.00002,
 	}
+
+	l = log.WithFields(log.Fields{
+		"strategy":   "spread",
+		"instrument": debugCfg.InstrumentId,
+	})
+
 	s.config = debugCfg //((any)(*config)).(Config)
-	fmt.Printf("78 strategy %v\n", s.config)
+	l.Infof("Starting strategy with config: %v", s.config)
 
 	// Создаем или получаем канал, в который будет постаупать инфа о стакане
-	obProvider := orderbook.NewOrderbookProvider()
-	fmt.Printf("95 strategy %v\n", obProvider)
+	l.Tracef("Getting orderbook channel")
+	obProvider := orderbook.NewProvider()
 	ch, err := obProvider.GetOrCreate(s.config.InstrumentId)
 	if err != nil {
-		fmt.Printf("98 strategy %v\n", err)
+		l.Errorf("Failed to get orderbook channel: %v", err)
 		return false, err
 	}
 
+	l.Trace("Setting state to empty")
 	// Заполняем изначальное состояние
 	s.state = strategies.StrategyState[State]{}
 	err = s.state.Set(State{
@@ -116,20 +144,22 @@ func (s *SpreadStrategy) Start(config *strategies.Config, ordersToPlaceCh *chan 
 		lastBuyPrice:             0,
 	})
 	if err != nil {
-		fmt.Printf("113 strategy %v\n", err)
+		l.Errorf("Failed to set strategy initial state: %v", err)
 		return false, err
 	}
 
 	s.nextOrderCooldown = time.NewTimer(time.Duration(0) * time.Millisecond)
 
 	s.obCh = ch
-	// Слушаем изменения в стакане
+
 	go func(ch *chan *types.Orderbook) {
+		l.Info("Start listening changes in orderbook")
 		for {
 			select {
 			case ob, ok := <-*ch:
+				l.Trace("New orderbook change")
 				if !ok {
-					fmt.Println("spread orderbook channel end")
+					l.Trace("Orderbook channel closed")
 					return
 				}
 
@@ -138,13 +168,13 @@ func (s *SpreadStrategy) Start(config *strategies.Config, ordersToPlaceCh *chan 
 		}
 	}(ch)
 
-	// Копируем выставляемые ордера в другой канал
 	go func(source *chan *types.PlaceOrder, target *chan *types.PlaceOrder) {
+		l.Info("Start listening for new place order requests")
 		for {
 			select {
 			case orderToPlace, ok := <-*source:
 				if !ok {
-					fmt.Println("orders to place channel end, closing target channel")
+					l.Warn("Place orders channel closed")
 					return
 				}
 				*target <- orderToPlace
@@ -152,13 +182,13 @@ func (s *SpreadStrategy) Start(config *strategies.Config, ordersToPlaceCh *chan 
 		}
 	}(&s.toPlaceOrders, ordersToPlaceCh)
 
-	// Подписка на изменения в ордерах
 	go func(source *chan types.OrderExecutionState) {
+		l.Info("Start listening for orders state changes")
 		for {
 			select {
 			case state, ok := <-*source:
 				if !ok {
-					fmt.Println("order state channel end")
+					l.Warn("Orders state channel closed")
 					return
 				}
 				go s.onOrderSateChange(state)
@@ -171,12 +201,12 @@ func (s *SpreadStrategy) Start(config *strategies.Config, ordersToPlaceCh *chan 
 }
 
 func (s *SpreadStrategy) Stop() (bool, error) {
+	l.Info("Stopping strategy")
 	return false, nil
 }
 
 func (s *SpreadStrategy) onOrderbook(ob *types.Orderbook) {
 	wg := &sync.WaitGroup{}
-
 	wg.Add(1)
 	go s.checkForRottenBuys(wg, ob)
 	wg.Add(1)
@@ -193,122 +223,147 @@ func (s *SpreadStrategy) onOrderbook(ob *types.Orderbook) {
 // TODO: Перенести в отдельный файл
 func (s *SpreadStrategy) buy(wg *sync.WaitGroup, ob *types.Orderbook) {
 	defer wg.Done()
+	l.Trace("Checking for buy")
 
 	if s.isBuying.value {
-		fmt.Println("Already buying")
+		l.Warnf("Not processed prev orderbook item for buy")
 		return
 	}
 
 	isHoldingMaxShares := s.state.Get().holdingShares+s.state.Get().pendingBuyShares >= s.config.maxSharesToHold
 	if isHoldingMaxShares {
-		fmt.Printf("already holding max shares. holding %v, processing %v,  max %v\n", s.state.Get().holdingShares, s.state.Get().pendingBuyShares, s.config.maxSharesToHold)
+		l.WithField("state", s.state.Get()).Tracef("Cannot buy, holding max shares")
 		return
 	}
 
 	// Аукцион закрытия, только заявки на продажу
 	if len(ob.Bids) == 0 {
+		l.Trace("No bids")
 		return
 	}
 
 	minBuyPrice := ob.Bids[0].Price
+	l.Tracef("Min buy price: %v", minBuyPrice)
 	leftBalance := s.state.Get().leftBalance - s.state.Get().notConfirmedBlockedMoney
-	if leftBalance < minBuyPrice {
-		fmt.Printf("Not enough money to enter position. First bid price: %v; Left money: %v\n", minBuyPrice, leftBalance)
+	if leftBalance < (minBuyPrice * float32(s.config.lotSize)) {
+		l.WithField("state", s.state.Get()).Tracef("Not enough money")
 		return
 	}
 
 	canBuySharesAmount := leftBalance / (minBuyPrice * float32(s.config.lotSize))
-	fmt.Printf("First bid price: %v; Left money: %v; Can buy %v shares\n", minBuyPrice, leftBalance, canBuySharesAmount)
+	l.Tracef("First bid price: %v; Left money: %v; Can buy %v shares\n", minBuyPrice, leftBalance, canBuySharesAmount)
 	if canBuySharesAmount == 0 {
-		fmt.Println("Can buy 0 shares")
+		l.WithField("state", s.state.Get()).Trace("Can buy 0 shares")
 		return
 	}
 
 	ok := s.isBuying.TryLock()
 	if !ok {
-		fmt.Println("isBuy mutex cannot be locked")
+		l.Warn("IsBuiyng mutex cannot be locked")
 		return
 	}
 	defer s.isBuying.Unlock()
 
+	l.Trace("Set is buiyng")
 	s.isBuying.value = true
-
 	if canBuySharesAmount > float32(s.config.maxSharesToHold) {
+		l.Tracef("Can buy more shares, than config allows")
 		canBuySharesAmount = float32(s.config.maxSharesToHold)
 	}
 
 	order := &types.PlaceOrder{
 		InstrumentID: s.config.InstrumentId,
-		Quantity: int64(canBuySharesAmount),
-		Price: types.Price(minBuyPrice),
-		Direction: types.Buy,
+		Quantity:     int64(canBuySharesAmount),
+		Price:        types.Price(minBuyPrice),
+		Direction:    types.Buy,
 	}
-	fmt.Printf("Order to place: %v\n", order)
+	l.Infof("Order to place: %v", order)
 
 	s.toPlaceOrders <- order
 
+	l.Trace("Updating state")
 	newState := *s.state.Get()
 	newState.pendingBuyShares += int32(canBuySharesAmount)
 	newState.notConfirmedBlockedMoney += canBuySharesAmount * minBuyPrice
 	newState.lastBuyPrice = minBuyPrice
 	s.state.Set(newState)
+	l.WithField("state", s.state.Get()).Trace("State updated after place buy order")
+
 	s.isBuying.value = false
+	l.Trace("Is buy released")
 }
 
 func (s *SpreadStrategy) sell(wg *sync.WaitGroup, ob *types.Orderbook) {
 	defer wg.Done()
+	l.Trace("Checking for sell")
 
 	if s.isSelling.value {
-		fmt.Println("Already buying")
+		l.Warnf("Not processed prev orderbook item for sell")
 		return
 	}
 
 	state := *s.state.Get()
 	if state.holdingShares-state.pendingSellShares == 0 {
-		fmt.Println("Nothing to sell, hold 0 shares")
+		l.WithField("state", state).Trace("Nothing to sell")
 		return
 	}
 	if state.holdingShares < 0 {
-		fmt.Printf("ERROR, holding less than 0 shares: %v\n", state.holdingShares)
+		l.WithField("state", state).Warn("Holding less than 0 shares")
 		return
 	}
 
 	minAskPrice := ob.Asks[0].Price
-	isGoodPrice := minAskPrice-s.state.Get().lastBuyPrice >= s.config.minProfit
-	hasStopLossBroken := s.config.stopLossAfter != 0 && ob.Bids[0].Price <= s.state.Get().lastBuyPrice - s.config.stopLossAfter
+	l.Tracef("Min ask price %v", minAskPrice)
+
+	isGoodPrice := minAskPrice-state.lastBuyPrice >= s.config.minProfit
+	hasStopLossBroken := s.config.stopLossAfter != float32(0) && ob.Bids[0].Price <= state.lastBuyPrice-s.config.stopLossAfter
+fmt.Printf("320 strategy %v <= %v - %v (%vis %v\n", ob.Bids[0].Price, state.lastBuyPrice, s.config.stopLossAfter, state.lastBuyPrice-s.config.stopLossAfter, hasStopLossBroken)
 	shouldMakeSell := isGoodPrice || hasStopLossBroken
 	if !shouldMakeSell {
-		fmt.Printf("Not a good deal. asks[0].price: %v; lastBuyPrice: %v; minProfit: %v\n", minAskPrice, s.state.Get().lastBuyPrice, s.config.minProfit)
+		l.WithField("lastBuyPrice", state.lastBuyPrice).Tracef("Not a good deal")
 		return
 	}
 
 	ok := s.isSelling.TryLock()
 	if !ok {
-		fmt.Println("isSelling mutex cannot be locked")
+		l.Warn("isSelling mutex cannot be locked")
+
 		return
 	}
 	defer s.isSelling.Unlock()
 
+	l.Trace("Set is selling")
+	s.isSelling.value = true
+
 	price := minAskPrice
+	l.Tracef("Selling price: %v", price)
 	if hasStopLossBroken {
 		price = ob.Bids[0].Price
-		fmt.Printf("Stop loss broken. stop loss: %v; current buy price: %v\n", s.state.Get().lastBuyPrice - s.config.stopLossAfter, price)
+		l.WithFields(log.Fields{
+			"lastBuyPrice":  state.lastBuyPrice,
+			"stopLoss":      s.config.stopLossAfter,
+			"stopLossPrice": state.lastBuyPrice - s.config.stopLossAfter,
+		}).Info("Stop loss broken")
 	}
-	
 
 	order := &types.PlaceOrder{
 		InstrumentID: s.config.InstrumentId,
-		Quantity: int64(state.holdingShares),
-		Direction: types.Sell,
-		Price: types.Price(price),
+		Quantity:     int64(state.holdingShares),
+		Direction:    types.Sell,
+		Price:        types.Price(price),
 	}
-	fmt.Printf("Order to place: %v\n", order)
+	l.Infof("Order to place: %v", order)
+
 	s.toPlaceOrders <- order
 
+	l.Trace("Updating state")
 	state = *s.state.Get()
 	state.pendingSellShares += state.holdingShares
 	s.state.Set(state)
+	l.WithField("state", s.state.Get()).Trace("State updated after place sell order")
+
 	s.isSelling.value = false
+	l.Trace("Is sell released")
 }
 
 func (s *SpreadStrategy) checkForRottenBuys(wg *sync.WaitGroup, ob *types.Orderbook) {
@@ -327,19 +382,37 @@ func (s *SpreadStrategy) checkForRottenSells(wg *sync.WaitGroup, ob *types.Order
 func (s *SpreadStrategy) onOrderSateChange(state types.OrderExecutionState) {
 	// TODO: Обновлять последнюю цену покупки
 	// TODO: Обновлять Оставшийся баланс и остальной стейт
-	fmt.Printf("291 strategy %v %v \n", state, state.ExecutedOrderPrice)
-	newState := s.state.Get()
-	
+
+	l.Infof("Order state changed %v", state)
+
+	newState := *s.state.Get()
+
 	if state.Direction == types.Buy {
-		newState.holdingShares += int32(state.LotsExecuted)
-		newState.pendingBuyShares -= int32(state.LotsExecuted)
+		l.Trace("Updating state after buy order executed")
+		newState.holdingShares += int32(state.LotsExecuted / int(s.config.lotSize))
+		newState.pendingBuyShares -= int32(state.LotsExecuted / int(s.config.lotSize))
 		newState.notConfirmedBlockedMoney -= float32(state.ExecutedOrderPrice)
 		newState.leftBalance -= float32(state.ExecutedOrderPrice)
+		l.Tracef(
+			"Lots executed %v of %v; Executed buy price %v",
+			state.ExecutedOrderPrice,
+			state.LotsExecuted,
+			state.LotsRequested,
+		)
 	}
 	if state.Direction == types.Sell {
-		newState.pendingSellShares -= int32(state.LotsExecuted)
+		l.Trace("Updating state after sell order executed")
+
+		newState.pendingSellShares -= int32(state.LotsExecuted) // int32(state.LotsExecuted / int(s.config.lotSize))
 		newState.leftBalance += float32(state.ExecutedOrderPrice)
+		newState.holdingShares += int32(state.LotsExecuted)//int32(state.LotsExecuted / int(s.config.lotSize))
+		l.Tracef(
+			"Lots executed %v of %v; Executed sell price %v",
+			state.LotsExecuted,
+			state.LotsRequested,
+			state.ExecutedOrderPrice,
+		)
 	}
-fmt.Printf("331 strategy %v\n", newState)
-	s.state.Set(*newState)
+	s.state.Set(newState)
+	l.WithField("state", s.state.Get()).Info("State updated")
 }

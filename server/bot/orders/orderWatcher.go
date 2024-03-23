@@ -2,38 +2,43 @@ package orders
 
 import (
 	"errors"
-	"fmt"
 	"main/bot/broker"
 	"main/types"
 	"sync"
+
+	log "github.com/sirupsen/logrus"
 )
 
+// IOrderWatcher Интерфейс для pub-sub на ордеры
 type IOrderWatcher interface {
 	Watch(string) error
 	Register(*chan types.OrderExecutionState) error
-	PairWithOrderId(types.IdempodentId, types.OrderId) error
+	PairWithOrderID(types.IdempodentID, types.OrderID) error
 }
 
+// OrderWatcher Провайдит функционал подписки на ордера и их состояние
 type OrderWatcher struct {
 	sync.RWMutex
 	IOrderWatcher
-	idempodentsToWatch     []types.IdempodentId
-	idempodentsToOrdersMap map[types.OrderId]types.IdempodentId
+	idempodentsToWatch     []types.IdempodentID
+	idempodentsToOrdersMap map[types.OrderID]types.IdempodentID
 	notifyCh               *chan types.OrderExecutionState
 }
 
 var onceOw sync.Once
 var ow *OrderWatcher
 
+// NewOrderWatcher Конструктор для OrderWatcher
 func NewOrderWatcher(notifyCh *chan types.OrderExecutionState) *OrderWatcher {
 	if ow != nil {
 		return ow
 	}
 
 	onceOw.Do(func() {
+		log.Info("Creating new order watcher")
 		ow = &OrderWatcher{
-			idempodentsToWatch:     []types.IdempodentId{},
-			idempodentsToOrdersMap: make(map[types.OrderId]types.IdempodentId),
+			idempodentsToWatch:     []types.IdempodentID{},
+			idempodentsToOrdersMap: make(map[types.OrderID]types.IdempodentID),
 			notifyCh:               notifyCh,
 		}
 	})
@@ -43,45 +48,82 @@ func NewOrderWatcher(notifyCh *chan types.OrderExecutionState) *OrderWatcher {
 	return ow
 }
 
-func (ow *OrderWatcher) Watch(idempodentId types.IdempodentId) error {
+// Watch Подписаться на ордер по idempodentID
+// TODO: Переименовать в Subscribe
+func (ow *OrderWatcher) Watch(idempodentID types.IdempodentID) error {
+	log.Infof("Starting to watch order with idempodent id %v", idempodentID)
 
 	for _, candidate := range ow.idempodentsToWatch {
-		if candidate == idempodentId {
-			fmt.Println("50 orderWatcher ", "already watching this id")
+		if candidate == idempodentID {
+			log.Warnf("IdempodentID %v is already watching", idempodentID)
 			return nil
 		}
 	}
 
 	ow.RWMutex.Lock()
-	ow.idempodentsToWatch = append(ow.idempodentsToWatch, idempodentId)
+	ow.idempodentsToWatch = append(ow.idempodentsToWatch, idempodentID)
 	ow.RWMutex.Unlock()
-	fmt.Printf("58 orderWatcher watching idempodent: %v\n", idempodentId)
+
+	log.Infof("Added %v to watch list", idempodentID)
 	return nil
 }
 
-func (ow *OrderWatcher) PairWithOrderId(idempodentId types.IdempodentId, orderId types.OrderId) error {
-	id, ok := ow.idempodentsToOrdersMap[orderId]
+// PairWithOrderID Матчит ордер с idempodentID на orderID
+func (ow *OrderWatcher) PairWithOrderID(idempodentID types.IdempodentID, orderID types.OrderID) error {
+	l := log.WithFields(log.Fields{
+		"idempodentID": idempodentID,
+		"orderID":      orderID,
+	})
+	l.Infof("Pairing idempodent id %v with id %v", idempodentID, orderID)
+
+	id, ok := ow.idempodentsToOrdersMap[orderID]
 	if ok {
-		fmt.Println("65 orderWatcher ", id)
+		l.Warnf("IDs %v and %v are already matched", id, orderID)
 		return errors.New("already matched with this idempodent")
 	}
 
 	ow.RWMutex.Lock()
-	ow.idempodentsToOrdersMap[orderId] = idempodentId
+	ow.idempodentsToOrdersMap[orderID] = idempodentID
 	ow.RWMutex.Unlock()
-	fmt.Println("72 orderWatcher ", "paired")
+
+	go func() {
+		l.Infof("Getting initial state of order")
+		s, err := broker.Broker.GetOrderState(orderID)
+		if err != nil {
+			l.Error("Failed getting initial state of order: %v", err)
+			return
+		}
+
+		if s.Status != types.New && s.Status != types.Unspecified {
+			l.Info("State of order", s)
+			ow.notify(s)
+		} else {
+			l.Info("Initial state is NEW, no need to notify")
+		}
+	}()
+
+	l.Info("Paired IDs")
 	return nil
 }
 
 func (ow *OrderWatcher) notify(state types.OrderExecutionState) {
-	idempodentID, ok := ow.idempodentsToOrdersMap[state.Id]
+	idempodentID, ok := ow.idempodentsToOrdersMap[state.ID]
+	l := log.WithFields(log.Fields{
+		"idempodentID": idempodentID,
+		"orderID":      state.ID,
+		"instrumentID": state.InstrumentID,
+		"direction":    state.Direction,
+	})
 	if !ok {
-		fmt.Printf("75 orderWatcher %v\n", ow.idempodentsToOrdersMap)
-		fmt.Printf("found no orders with this id or id not watching id %v; idempodent: %v\n", state.Id, state.IdempodentId)
+		l.Error("Order is not watched, or no one subscribed for it")
 		return
 	}
 
-	fmt.Printf("state for order %v changed: %v\n", idempodentID, state)
+	if state.Status == types.Fill {
+		l.Info("Order is fullfilled, unsubscribing")
+		delete(ow.idempodentsToOrdersMap, state.ID)
+	}
 
+	l.Info("Notifying about new order state")
 	*ow.notifyCh <- state
 }

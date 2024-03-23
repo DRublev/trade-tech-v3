@@ -2,58 +2,65 @@ package orderbook
 
 import (
 	"context"
-	"fmt"
 	"main/bot/broker"
 	"main/types"
 	"os"
 	"os/signal"
 	"sync"
+
+	log "github.com/sirupsen/logrus"
 )
 
-type OrderbookChannels struct {
+type orderbookChannels struct {
 	sync.RWMutex
 	value map[string]*chan *types.Orderbook
 }
 
-type OrderbookProvider struct {
-	channels OrderbookChannels
+// Provider Провайдер для стакана
+type Provider struct {
+	channels orderbookChannels
 }
 
 var onceOp sync.Once
-var op *OrderbookProvider
+var op *Provider
 
-func NewOrderbookProvider() *OrderbookProvider {
+// NewProvider Конструктор для Provider
+func NewProvider() *Provider {
 	if op != nil {
 		return op
 	}
 
-	onceOp.Do(func() {
-	})
-	op := &OrderbookProvider{}
-	op.channels = OrderbookChannels{
+	// onceOp.Do(func() {
+	log.Info("Creating orderbook provider")
+	op := &Provider{}
+	op.channels = orderbookChannels{
 		value: make(map[string]*chan *types.Orderbook),
 	}
-	fmt.Printf("32 orderbookProvider %v\n", op)
+	// })
+
 	return op
 }
 
-func (op *OrderbookProvider) GetOrCreate(instrumentId string) (*chan *types.Orderbook, error) {
-	fmt.Printf("36 orderbookProvider %v\n", op)
+// GetOrCreate Подписывается на стакан для инструмента instrumentID
+// Возвращает канал для стакана или создает новый
+func (op *Provider) GetOrCreate(instrumentID string) (*chan *types.Orderbook, error) {
+	log.Infof("Getting orderbook channel for %v", instrumentID)
+
 	op.channels.RLock()
-	ch, exists := op.channels.value[instrumentId]
+	ch, exists := op.channels.value[instrumentID]
 	op.channels.RUnlock()
 
 	if !exists {
-		fmt.Printf("Creating orderbook channel for %v\n", instrumentId)
+		log.Tracef("No channel found for %v, creating a new one", instrumentID)
 		op.channels.Lock()
 		newCh := make(chan *types.Orderbook)
-		op.channels.value[instrumentId] = &newCh
+		op.channels.value[instrumentID] = &newCh
 		ch = &newCh
 		op.channels.Unlock()
 	}
 	backCtx, _ := signal.NotifyContext(context.Background(), os.Interrupt)
 
-	go broker.Broker.SubscribeOrderbook(backCtx, ch, instrumentId, 30)
+	go broker.Broker.SubscribeOrderbook(backCtx, ch, instrumentID, 30)
 
 	return ch, nil
 }

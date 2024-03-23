@@ -10,7 +10,7 @@ const DEFAULT_AUTH_INFO = { isAuthorized: false, isSandbox: true, account: '', i
 class AuthState {
     static instance: AuthState;
     constructor() {
-        if (!!AuthState.instance) {
+        if (AuthState.instance) {
             return AuthState.instance;
         }
 

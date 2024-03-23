@@ -11,6 +11,7 @@ import (
 	"os/signal"
 )
 
+// Assemble Фабрика для сборки стратегий
 func Assemble(key strategies.StrategyKey, config *strategies.Config) (strategies.IStrategy, error) {
 	backCtx, _ := signal.NotifyContext(context.Background(), os.Interrupt)
 

@@ -4,9 +4,13 @@ import (
 	"time"
 )
 
+// InstrumentStatus Статус инструмента
 type InstrumentStatus byte
+// TradingStatus Статус торгуемости инструмента
 type TradingStatus byte
 
+// Share Акция или фонд
+// TODO: Переименовать в Instrument
 type Share struct {
 	Figi                string
 	Name                string

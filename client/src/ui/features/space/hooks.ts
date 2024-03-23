@@ -1,9 +1,9 @@
-import { GetCandlesRequest } from "../../../../grpcGW/marketData";
+import { GetCandlesRequest } from '../../../../grpcGW/marketData';
 import { useIpcInoke, useIpcListen } from "../../hooks";
-import { OHLCData } from "../../../types";
+import { OHLCData, OrderState } from "../../../types";
 import { useState, useEffect, useCallback } from "react";
-import { getTradingSchedules } from "../../../node/ipcHandlers/instruments";
 import { GetTradingSchedulesRequest, GetTradingSchedulesResponse, TradingSchedule } from "../../../../grpcGW/shares";
+import { SeriesMarker, Time } from 'lightweight-charts';
 
 type GetCandlesResponse = OHLCData[];
 
@@ -13,9 +13,53 @@ export const useGetShares = () => useIpcInoke("GET_SHARES");
 
 // TODO: Нужен хук который сам бы хендлил отписку
 const useSubscribeCandles = () => useIpcInoke("SUBSCRIBE_CANDLES");
+const useSubscribeOrders = () => useIpcInoke("SUBSCRIBE_ORDER");
 const useListenCandles = () => useIpcListen("NEW_CANDLE");
-// BBG004730RP0 GAZP
+const useListenOrders = () => useIpcListen("NEW_ORDER");
+// "BBG004730RP0" /* GAZP */
 // "4c466956-d2ce-4a95-abb4-17947a65f18a" TGLD
+// "BBG004730ZJ9" /* VTBR */
+// "BBG004PYF2N3" /* POLY */
+
+function orderToMarkerMapper(order: OrderState): SeriesMarker<Time> {
+    return {
+        time: order.time,
+        position: order.operationType === 1 ? 'belowBar' : 'aboveBar',
+        shape: 'circle',
+        color: order.operationType === 1 ? 'green' : 'red',
+        text: `${order.lotsExecuted} x ${order.price}`,
+        size: 2,
+    }
+}
+export const useOrders = (onNewOrder: (d: SeriesMarker<Time>) => void, figiOrInstrumentId= "4c466956-d2ce-4a95-abb4-17947a65f18a") => {
+    const subscribe = useSubscribeOrders();
+    const [registerOrderCb, unregisterOrderCb] = useListenOrders();
+
+    const subscribeOrders = async () => {
+        await subscribe({
+            instrumentId: figiOrInstrumentId,
+        });
+    }
+
+    const handleNewOrder = useCallback((e: Event, order: OrderState) => {
+        if (!order) return;
+
+        onNewOrder(orderToMarkerMapper(order));
+    }, []);
+
+    useEffect(() => {
+        registerOrderCb(handleNewOrder);
+    }, [handleNewOrder]);
+
+    useEffect(() => {
+        subscribeOrders();
+
+        return () => {
+            unregisterOrderCb(handleNewOrder);
+        }
+    }, [figiOrInstrumentId]);
+}
+
 export const useCandles = (onNewCandle: (d: OHLCData) => void, figiOrInstrumentId = "BBG004PYF2N3" /* POLY */, interval = 1) => {
     const getCandles = useGetCandles();
     const subscribe = useSubscribeCandles();
@@ -41,7 +85,7 @@ export const useCandles = (onNewCandle: (d: OHLCData) => void, figiOrInstrumentI
                 end: now,
             });
 
-            console.log("39 hooks", candles.length);
+            console.log("39 hooks", new Date(candles[candles.length - 1].time));
 
             // TODO: Чтобы избежать лагов графика стоит ограничивать размер candles в N айтемов, в зависимости от размера окна и интервала
             setInitialData(candles);

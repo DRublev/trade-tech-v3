@@ -12,7 +12,6 @@ import (
 const nanoPrecision = 1_000_000_000
 const BILLION int64 = 1_000_000_000
 
-// TODO: Вынести на уровень аппа
 func quantToNumber(q types.Quant) float64 {
 	return float64(q.Units) + (float64(q.Nano) / nanoPrecision)
 }
