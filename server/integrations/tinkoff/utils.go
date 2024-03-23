@@ -17,6 +17,9 @@ func quantToNumber(q types.Quant) float64 {
 }
 
 func toQuant(iq *investapi.Quotation) types.Quant {
+	if iq == nil {
+		return types.Quant{Units: 0}
+	}
 	return types.Quant{
 		Units: int(iq.Units),
 		Nano:  int(iq.Nano),

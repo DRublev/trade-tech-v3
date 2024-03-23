@@ -19,7 +19,8 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	Shares_GetShares_FullMethodName = "/shares.Shares/GetShares"
+	Shares_GetShares_FullMethodName           = "/shares.Shares/GetShares"
+	Shares_GetTradingSchedules_FullMethodName = "/shares.Shares/GetTradingSchedules"
 )
 
 // SharesClient is the client API for Shares service.
@@ -27,6 +28,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type SharesClient interface {
 	GetShares(ctx context.Context, in *GetInstrumentsRequest, opts ...grpc.CallOption) (*GetSharesResponse, error)
+	GetTradingSchedules(ctx context.Context, in *GetTradingSchedulesRequest, opts ...grpc.CallOption) (*GetTradingSchedulesResponse, error)
 }
 
 type sharesClient struct {
@@ -46,11 +48,21 @@ func (c *sharesClient) GetShares(ctx context.Context, in *GetInstrumentsRequest,
 	return out, nil
 }
 
+func (c *sharesClient) GetTradingSchedules(ctx context.Context, in *GetTradingSchedulesRequest, opts ...grpc.CallOption) (*GetTradingSchedulesResponse, error) {
+	out := new(GetTradingSchedulesResponse)
+	err := c.cc.Invoke(ctx, Shares_GetTradingSchedules_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // SharesServer is the server API for Shares service.
 // All implementations must embed UnimplementedSharesServer
 // for forward compatibility
 type SharesServer interface {
 	GetShares(context.Context, *GetInstrumentsRequest) (*GetSharesResponse, error)
+	GetTradingSchedules(context.Context, *GetTradingSchedulesRequest) (*GetTradingSchedulesResponse, error)
 	mustEmbedUnimplementedSharesServer()
 }
 
@@ -60,6 +72,9 @@ type UnimplementedSharesServer struct {
 
 func (UnimplementedSharesServer) GetShares(context.Context, *GetInstrumentsRequest) (*GetSharesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetShares not implemented")
+}
+func (UnimplementedSharesServer) GetTradingSchedules(context.Context, *GetTradingSchedulesRequest) (*GetTradingSchedulesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetTradingSchedules not implemented")
 }
 func (UnimplementedSharesServer) mustEmbedUnimplementedSharesServer() {}
 
@@ -92,6 +107,24 @@ func _Shares_GetShares_Handler(srv interface{}, ctx context.Context, dec func(in
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Shares_GetTradingSchedules_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetTradingSchedulesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SharesServer).GetTradingSchedules(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Shares_GetTradingSchedules_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SharesServer).GetTradingSchedules(ctx, req.(*GetTradingSchedulesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Shares_ServiceDesc is the grpc.ServiceDesc for Shares service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -102,6 +135,10 @@ var Shares_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetShares",
 			Handler:    _Shares_GetShares_Handler,
+		},
+		{
+			MethodName: "GetTradingSchedules",
+			Handler:    _Shares_GetTradingSchedules_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -40,6 +40,39 @@ export interface GetSharesResponse {
   instruments: Share[];
 }
 
+export interface GetTradingSchedulesRequest {
+  exchange: string;
+  from: Date | undefined;
+  to: Date | undefined;
+}
+
+export interface GetTradingSchedulesResponse {
+  exchanges: TradingSchedule[];
+}
+
+export interface TradingSchedule {
+  exchange: string;
+  days: TradingDay[];
+}
+
+export interface TradingDay {
+  date: Date | undefined;
+  isTradingDay: boolean;
+  startTime: Date | undefined;
+  endTime: Date | undefined;
+  openingAuctionStartTime: Date | undefined;
+  closingAuctionEndTime: Date | undefined;
+  eveningOpeningAuctionStartTime: Date | undefined;
+  eveningStartTime: Date | undefined;
+  eveningEndTime: Date | undefined;
+  clearingStartTime: Date | undefined;
+  clearingEndTime: Date | undefined;
+  premarketStartTime: Date | undefined;
+  premarketEndTime: Date | undefined;
+  closingAuctionStartTime: Date | undefined;
+  peningAuctionEndTime: Date | undefined;
+}
+
 function createBaseQuatation(): Quatation {
   return { units: 0, nano: 0 };
 }
@@ -459,6 +492,525 @@ export const GetSharesResponse = {
   },
 };
 
+function createBaseGetTradingSchedulesRequest(): GetTradingSchedulesRequest {
+  return { exchange: "", from: undefined, to: undefined };
+}
+
+export const GetTradingSchedulesRequest = {
+  encode(message: GetTradingSchedulesRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.exchange !== "") {
+      writer.uint32(10).string(message.exchange);
+    }
+    if (message.from !== undefined) {
+      Timestamp.encode(toTimestamp(message.from), writer.uint32(26).fork()).ldelim();
+    }
+    if (message.to !== undefined) {
+      Timestamp.encode(toTimestamp(message.to), writer.uint32(34).fork()).ldelim();
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): GetTradingSchedulesRequest {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetTradingSchedulesRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.exchange = reader.string();
+          continue;
+        case 3:
+          if (tag !== 26) {
+            break;
+          }
+
+          message.from = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
+          continue;
+        case 4:
+          if (tag !== 34) {
+            break;
+          }
+
+          message.to = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetTradingSchedulesRequest {
+    return {
+      exchange: isSet(object.exchange) ? globalThis.String(object.exchange) : "",
+      from: isSet(object.from) ? fromJsonTimestamp(object.from) : undefined,
+      to: isSet(object.to) ? fromJsonTimestamp(object.to) : undefined,
+    };
+  },
+
+  toJSON(message: GetTradingSchedulesRequest): unknown {
+    const obj: any = {};
+    if (message.exchange !== "") {
+      obj.exchange = message.exchange;
+    }
+    if (message.from !== undefined) {
+      obj.from = message.from.toISOString();
+    }
+    if (message.to !== undefined) {
+      obj.to = message.to.toISOString();
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetTradingSchedulesRequest>, I>>(base?: I): GetTradingSchedulesRequest {
+    return GetTradingSchedulesRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GetTradingSchedulesRequest>, I>>(object: I): GetTradingSchedulesRequest {
+    const message = createBaseGetTradingSchedulesRequest();
+    message.exchange = object.exchange ?? "";
+    message.from = object.from ?? undefined;
+    message.to = object.to ?? undefined;
+    return message;
+  },
+};
+
+function createBaseGetTradingSchedulesResponse(): GetTradingSchedulesResponse {
+  return { exchanges: [] };
+}
+
+export const GetTradingSchedulesResponse = {
+  encode(message: GetTradingSchedulesResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    for (const v of message.exchanges) {
+      TradingSchedule.encode(v!, writer.uint32(10).fork()).ldelim();
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): GetTradingSchedulesResponse {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetTradingSchedulesResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.exchanges.push(TradingSchedule.decode(reader, reader.uint32()));
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetTradingSchedulesResponse {
+    return {
+      exchanges: globalThis.Array.isArray(object?.exchanges)
+        ? object.exchanges.map((e: any) => TradingSchedule.fromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: GetTradingSchedulesResponse): unknown {
+    const obj: any = {};
+    if (message.exchanges?.length) {
+      obj.exchanges = message.exchanges.map((e) => TradingSchedule.toJSON(e));
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetTradingSchedulesResponse>, I>>(base?: I): GetTradingSchedulesResponse {
+    return GetTradingSchedulesResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GetTradingSchedulesResponse>, I>>(object: I): GetTradingSchedulesResponse {
+    const message = createBaseGetTradingSchedulesResponse();
+    message.exchanges = object.exchanges?.map((e) => TradingSchedule.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseTradingSchedule(): TradingSchedule {
+  return { exchange: "", days: [] };
+}
+
+export const TradingSchedule = {
+  encode(message: TradingSchedule, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.exchange !== "") {
+      writer.uint32(10).string(message.exchange);
+    }
+    for (const v of message.days) {
+      TradingDay.encode(v!, writer.uint32(18).fork()).ldelim();
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): TradingSchedule {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTradingSchedule();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.exchange = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.days.push(TradingDay.decode(reader, reader.uint32()));
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TradingSchedule {
+    return {
+      exchange: isSet(object.exchange) ? globalThis.String(object.exchange) : "",
+      days: globalThis.Array.isArray(object?.days) ? object.days.map((e: any) => TradingDay.fromJSON(e)) : [],
+    };
+  },
+
+  toJSON(message: TradingSchedule): unknown {
+    const obj: any = {};
+    if (message.exchange !== "") {
+      obj.exchange = message.exchange;
+    }
+    if (message.days?.length) {
+      obj.days = message.days.map((e) => TradingDay.toJSON(e));
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<TradingSchedule>, I>>(base?: I): TradingSchedule {
+    return TradingSchedule.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<TradingSchedule>, I>>(object: I): TradingSchedule {
+    const message = createBaseTradingSchedule();
+    message.exchange = object.exchange ?? "";
+    message.days = object.days?.map((e) => TradingDay.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseTradingDay(): TradingDay {
+  return {
+    date: undefined,
+    isTradingDay: false,
+    startTime: undefined,
+    endTime: undefined,
+    openingAuctionStartTime: undefined,
+    closingAuctionEndTime: undefined,
+    eveningOpeningAuctionStartTime: undefined,
+    eveningStartTime: undefined,
+    eveningEndTime: undefined,
+    clearingStartTime: undefined,
+    clearingEndTime: undefined,
+    premarketStartTime: undefined,
+    premarketEndTime: undefined,
+    closingAuctionStartTime: undefined,
+    peningAuctionEndTime: undefined,
+  };
+}
+
+export const TradingDay = {
+  encode(message: TradingDay, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.date !== undefined) {
+      Timestamp.encode(toTimestamp(message.date), writer.uint32(10).fork()).ldelim();
+    }
+    if (message.isTradingDay === true) {
+      writer.uint32(16).bool(message.isTradingDay);
+    }
+    if (message.startTime !== undefined) {
+      Timestamp.encode(toTimestamp(message.startTime), writer.uint32(26).fork()).ldelim();
+    }
+    if (message.endTime !== undefined) {
+      Timestamp.encode(toTimestamp(message.endTime), writer.uint32(34).fork()).ldelim();
+    }
+    if (message.openingAuctionStartTime !== undefined) {
+      Timestamp.encode(toTimestamp(message.openingAuctionStartTime), writer.uint32(42).fork()).ldelim();
+    }
+    if (message.closingAuctionEndTime !== undefined) {
+      Timestamp.encode(toTimestamp(message.closingAuctionEndTime), writer.uint32(50).fork()).ldelim();
+    }
+    if (message.eveningOpeningAuctionStartTime !== undefined) {
+      Timestamp.encode(toTimestamp(message.eveningOpeningAuctionStartTime), writer.uint32(58).fork()).ldelim();
+    }
+    if (message.eveningStartTime !== undefined) {
+      Timestamp.encode(toTimestamp(message.eveningStartTime), writer.uint32(66).fork()).ldelim();
+    }
+    if (message.eveningEndTime !== undefined) {
+      Timestamp.encode(toTimestamp(message.eveningEndTime), writer.uint32(74).fork()).ldelim();
+    }
+    if (message.clearingStartTime !== undefined) {
+      Timestamp.encode(toTimestamp(message.clearingStartTime), writer.uint32(82).fork()).ldelim();
+    }
+    if (message.clearingEndTime !== undefined) {
+      Timestamp.encode(toTimestamp(message.clearingEndTime), writer.uint32(90).fork()).ldelim();
+    }
+    if (message.premarketStartTime !== undefined) {
+      Timestamp.encode(toTimestamp(message.premarketStartTime), writer.uint32(98).fork()).ldelim();
+    }
+    if (message.premarketEndTime !== undefined) {
+      Timestamp.encode(toTimestamp(message.premarketEndTime), writer.uint32(106).fork()).ldelim();
+    }
+    if (message.closingAuctionStartTime !== undefined) {
+      Timestamp.encode(toTimestamp(message.closingAuctionStartTime), writer.uint32(114).fork()).ldelim();
+    }
+    if (message.peningAuctionEndTime !== undefined) {
+      Timestamp.encode(toTimestamp(message.peningAuctionEndTime), writer.uint32(122).fork()).ldelim();
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): TradingDay {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTradingDay();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.date = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
+          continue;
+        case 2:
+          if (tag !== 16) {
+            break;
+          }
+
+          message.isTradingDay = reader.bool();
+          continue;
+        case 3:
+          if (tag !== 26) {
+            break;
+          }
+
+          message.startTime = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
+          continue;
+        case 4:
+          if (tag !== 34) {
+            break;
+          }
+
+          message.endTime = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
+          continue;
+        case 5:
+          if (tag !== 42) {
+            break;
+          }
+
+          message.openingAuctionStartTime = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
+          continue;
+        case 6:
+          if (tag !== 50) {
+            break;
+          }
+
+          message.closingAuctionEndTime = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
+          continue;
+        case 7:
+          if (tag !== 58) {
+            break;
+          }
+
+          message.eveningOpeningAuctionStartTime = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
+          continue;
+        case 8:
+          if (tag !== 66) {
+            break;
+          }
+
+          message.eveningStartTime = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
+          continue;
+        case 9:
+          if (tag !== 74) {
+            break;
+          }
+
+          message.eveningEndTime = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
+          continue;
+        case 10:
+          if (tag !== 82) {
+            break;
+          }
+
+          message.clearingStartTime = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
+          continue;
+        case 11:
+          if (tag !== 90) {
+            break;
+          }
+
+          message.clearingEndTime = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
+          continue;
+        case 12:
+          if (tag !== 98) {
+            break;
+          }
+
+          message.premarketStartTime = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
+          continue;
+        case 13:
+          if (tag !== 106) {
+            break;
+          }
+
+          message.premarketEndTime = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
+          continue;
+        case 14:
+          if (tag !== 114) {
+            break;
+          }
+
+          message.closingAuctionStartTime = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
+          continue;
+        case 15:
+          if (tag !== 122) {
+            break;
+          }
+
+          message.peningAuctionEndTime = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TradingDay {
+    return {
+      date: isSet(object.date) ? fromJsonTimestamp(object.date) : undefined,
+      isTradingDay: isSet(object.isTradingDay) ? globalThis.Boolean(object.isTradingDay) : false,
+      startTime: isSet(object.startTime) ? fromJsonTimestamp(object.startTime) : undefined,
+      endTime: isSet(object.endTime) ? fromJsonTimestamp(object.endTime) : undefined,
+      openingAuctionStartTime: isSet(object.openingAuctionStartTime)
+        ? fromJsonTimestamp(object.openingAuctionStartTime)
+        : undefined,
+      closingAuctionEndTime: isSet(object.closingAuctionEndTime)
+        ? fromJsonTimestamp(object.closingAuctionEndTime)
+        : undefined,
+      eveningOpeningAuctionStartTime: isSet(object.eveningOpeningAuctionStartTime)
+        ? fromJsonTimestamp(object.eveningOpeningAuctionStartTime)
+        : undefined,
+      eveningStartTime: isSet(object.eveningStartTime) ? fromJsonTimestamp(object.eveningStartTime) : undefined,
+      eveningEndTime: isSet(object.eveningEndTime) ? fromJsonTimestamp(object.eveningEndTime) : undefined,
+      clearingStartTime: isSet(object.clearingStartTime) ? fromJsonTimestamp(object.clearingStartTime) : undefined,
+      clearingEndTime: isSet(object.clearingEndTime) ? fromJsonTimestamp(object.clearingEndTime) : undefined,
+      premarketStartTime: isSet(object.premarketStartTime) ? fromJsonTimestamp(object.premarketStartTime) : undefined,
+      premarketEndTime: isSet(object.premarketEndTime) ? fromJsonTimestamp(object.premarketEndTime) : undefined,
+      closingAuctionStartTime: isSet(object.closingAuctionStartTime)
+        ? fromJsonTimestamp(object.closingAuctionStartTime)
+        : undefined,
+      peningAuctionEndTime: isSet(object.peningAuctionEndTime)
+        ? fromJsonTimestamp(object.peningAuctionEndTime)
+        : undefined,
+    };
+  },
+
+  toJSON(message: TradingDay): unknown {
+    const obj: any = {};
+    if (message.date !== undefined) {
+      obj.date = message.date.toISOString();
+    }
+    if (message.isTradingDay === true) {
+      obj.isTradingDay = message.isTradingDay;
+    }
+    if (message.startTime !== undefined) {
+      obj.startTime = message.startTime.toISOString();
+    }
+    if (message.endTime !== undefined) {
+      obj.endTime = message.endTime.toISOString();
+    }
+    if (message.openingAuctionStartTime !== undefined) {
+      obj.openingAuctionStartTime = message.openingAuctionStartTime.toISOString();
+    }
+    if (message.closingAuctionEndTime !== undefined) {
+      obj.closingAuctionEndTime = message.closingAuctionEndTime.toISOString();
+    }
+    if (message.eveningOpeningAuctionStartTime !== undefined) {
+      obj.eveningOpeningAuctionStartTime = message.eveningOpeningAuctionStartTime.toISOString();
+    }
+    if (message.eveningStartTime !== undefined) {
+      obj.eveningStartTime = message.eveningStartTime.toISOString();
+    }
+    if (message.eveningEndTime !== undefined) {
+      obj.eveningEndTime = message.eveningEndTime.toISOString();
+    }
+    if (message.clearingStartTime !== undefined) {
+      obj.clearingStartTime = message.clearingStartTime.toISOString();
+    }
+    if (message.clearingEndTime !== undefined) {
+      obj.clearingEndTime = message.clearingEndTime.toISOString();
+    }
+    if (message.premarketStartTime !== undefined) {
+      obj.premarketStartTime = message.premarketStartTime.toISOString();
+    }
+    if (message.premarketEndTime !== undefined) {
+      obj.premarketEndTime = message.premarketEndTime.toISOString();
+    }
+    if (message.closingAuctionStartTime !== undefined) {
+      obj.closingAuctionStartTime = message.closingAuctionStartTime.toISOString();
+    }
+    if (message.peningAuctionEndTime !== undefined) {
+      obj.peningAuctionEndTime = message.peningAuctionEndTime.toISOString();
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<TradingDay>, I>>(base?: I): TradingDay {
+    return TradingDay.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<TradingDay>, I>>(object: I): TradingDay {
+    const message = createBaseTradingDay();
+    message.date = object.date ?? undefined;
+    message.isTradingDay = object.isTradingDay ?? false;
+    message.startTime = object.startTime ?? undefined;
+    message.endTime = object.endTime ?? undefined;
+    message.openingAuctionStartTime = object.openingAuctionStartTime ?? undefined;
+    message.closingAuctionEndTime = object.closingAuctionEndTime ?? undefined;
+    message.eveningOpeningAuctionStartTime = object.eveningOpeningAuctionStartTime ?? undefined;
+    message.eveningStartTime = object.eveningStartTime ?? undefined;
+    message.eveningEndTime = object.eveningEndTime ?? undefined;
+    message.clearingStartTime = object.clearingStartTime ?? undefined;
+    message.clearingEndTime = object.clearingEndTime ?? undefined;
+    message.premarketStartTime = object.premarketStartTime ?? undefined;
+    message.premarketEndTime = object.premarketEndTime ?? undefined;
+    message.closingAuctionStartTime = object.closingAuctionStartTime ?? undefined;
+    message.peningAuctionEndTime = object.peningAuctionEndTime ?? undefined;
+    return message;
+  },
+};
+
 export type SharesService = typeof SharesService;
 export const SharesService = {
   getShares: {
@@ -470,10 +1022,22 @@ export const SharesService = {
     responseSerialize: (value: GetSharesResponse) => Buffer.from(GetSharesResponse.encode(value).finish()),
     responseDeserialize: (value: Buffer) => GetSharesResponse.decode(value),
   },
+  getTradingSchedules: {
+    path: "/shares.Shares/GetTradingSchedules",
+    requestStream: false,
+    responseStream: false,
+    requestSerialize: (value: GetTradingSchedulesRequest) =>
+      Buffer.from(GetTradingSchedulesRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer) => GetTradingSchedulesRequest.decode(value),
+    responseSerialize: (value: GetTradingSchedulesResponse) =>
+      Buffer.from(GetTradingSchedulesResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer) => GetTradingSchedulesResponse.decode(value),
+  },
 } as const;
 
 export interface SharesServer extends UntypedServiceImplementation {
   getShares: handleUnaryCall<GetInstrumentsRequest, GetSharesResponse>;
+  getTradingSchedules: handleUnaryCall<GetTradingSchedulesRequest, GetTradingSchedulesResponse>;
 }
 
 export interface SharesClient extends Client {
@@ -491,6 +1055,21 @@ export interface SharesClient extends Client {
     metadata: Metadata,
     options: Partial<CallOptions>,
     callback: (error: ServiceError | null, response: GetSharesResponse) => void,
+  ): ClientUnaryCall;
+  getTradingSchedules(
+    request: GetTradingSchedulesRequest,
+    callback: (error: ServiceError | null, response: GetTradingSchedulesResponse) => void,
+  ): ClientUnaryCall;
+  getTradingSchedules(
+    request: GetTradingSchedulesRequest,
+    metadata: Metadata,
+    callback: (error: ServiceError | null, response: GetTradingSchedulesResponse) => void,
+  ): ClientUnaryCall;
+  getTradingSchedules(
+    request: GetTradingSchedulesRequest,
+    metadata: Metadata,
+    options: Partial<CallOptions>,
+    callback: (error: ServiceError | null, response: GetTradingSchedulesResponse) => void,
   ): ClientUnaryCall;
 }
 
