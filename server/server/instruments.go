@@ -5,6 +5,7 @@ import (
 	"main/bot/broker"
 	shares "main/grpcGW/grpcGW.shares"
 	"main/types"
+	"strings"
 
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -56,4 +57,45 @@ func (s *Server) GetShares(ctx context.Context, in *shares.GetInstrumentsRequest
 
 	instL.Info("GetShares responding")
 	return &shares.GetSharesResponse{Instruments: res}, nil
+}
+
+func (s *Server) GetTradingSchedules(ctx context.Context, in *shares.GetTradingSchedulesRequest) (*shares.GetTradingSchedulesResponse, error) {
+	instL.Info("GetTradingSchedules requested")
+	err := broker.Init(ctx, types.Tinkoff)
+	if err != nil {
+		instL.Errorf("Cannot init broker: %v", err)
+		return &shares.GetTradingSchedulesResponse{Exchanges: []*shares.TradingSchedule{}}, err
+	}
+
+	var res []*shares.TradingSchedule
+
+	exchangesArr, err := broker.Broker.GetTradingSchedules(in.Exchange, in.From.AsTime(), in.To.AsTime())
+
+	if err != nil {
+		return &shares.GetTradingSchedulesResponse{Exchanges: res}, err
+	}
+
+	for _, exchange := range exchangesArr {
+		if strings.Contains(exchange.Exchange, "MOEX") && !strings.Contains(exchange.Exchange, "WEEKEND") {
+			var days []*shares.TradingDay
+			for _, day := range exchange.Days {
+				days = append(days, &shares.TradingDay{
+					Date:                    timestamppb.New(day.Date),
+					IsTradingDay:            day.IsTradingDay,
+					StartTime:               timestamppb.New(day.StartTime),
+					EndTime:                 timestamppb.New(day.EndTime),
+					OpeningAuctionStartTime: timestamppb.New(day.OpeningAuctionEndTime),
+				})
+			}
+
+			res = append(res, &shares.TradingSchedule{
+				Exchange: exchange.Exchange,
+				Days:     days,
+			})
+		}
+
+	}
+
+	instL.Info("GetTradingSchedules responding")
+	return &shares.GetTradingSchedulesResponse{Exchanges: res}, nil
 }

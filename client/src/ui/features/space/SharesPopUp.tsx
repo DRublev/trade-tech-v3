@@ -4,8 +4,8 @@ import { Button, Card } from "@radix-ui/themes"
 import React, { useCallback, useState } from "react"
 import { PopoverWindow } from "../../components/PopoverWindow"
 import style from '../../basicStyles.css';
-import { Quatation, Share } from "../../../../grpcGW/shares";
-import { useSharesFromStore } from './hooks';
+import { Quatation, Share, TradingSchedule } from "../../../../grpcGW/shares";
+import { getTodaysSchedules, useSharesFromStore } from './hooks';
 import { SerarchInput } from '../../components/SearchInput';
 
 const nanoPrecision = 1_000_000_000;
@@ -17,8 +17,24 @@ const isContainsWithIgnoreCase = (value: string, term: string): boolean => {
     return value.toLocaleLowerCase().includes(term.toLocaleLowerCase())
 }
 
+const ShareLine = (index: number, share: Share, isAvailable: boolean) => {
+    return (
+        <div key={index} style={{ marginBottom: '5px' }}>
+            <div key={share.ticker} style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span>{share.name}</span>
+                {isAvailable
+                    ? <span style={{ color: 'gray' }}>{quantToNumber(share.minPriceIncrement)}</span>
+                    : <span style={{ color: 'red' }}>Недоступен</span>}
+
+            </div>
+            <div style={{ color: 'gray', fontSize: '12px' }}> {share.ticker}</div>
+        </div>
+    )
+}
+
 export const SharesPop = () => {
     const { sharesFromStore } = useSharesFromStore();
+    const schedules = getTodaysSchedules();
 
     const [term, setTerm] = useState("")
 
@@ -28,21 +44,25 @@ export const SharesPop = () => {
     }, [])
 
     const ShareListItem = () => {
-        return (
-            sharesFromStore.filter((share: Share) => {
-                return isContainsWithIgnoreCase(share.name, term) ||
-                    isContainsWithIgnoreCase(share.ticker, term) ||
-                    share.uid.includes(term)
-            }).map((share: Share, index) =>
-                <div key={index} style={{ marginBottom: '5px' }}>
-                    <div key={share.ticker} style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span>{share.name}</span>
-                        <span style={{ color: 'gray' }}>{quantToNumber(share.minPriceIncrement)}</span>
-                    </div>
-                    <div style={{ color: 'gray', fontSize: '12px' }}> {share.ticker}</div>
-                </div>
 
-            )
+        const isExchangeAvailable = (exchange: string): boolean => {
+            console.log(schedules)
+            const schedule = schedules.find((sh: TradingSchedule) => sh.exchange === exchange)
+            return schedule
+                ? schedule.days[0].isTradingDay
+                && schedule.days[0].endTime < new Date()
+                && schedule.days[0].startTime > new Date()
+                : false
+        }
+
+        return (
+            sharesFromStore
+                .filter((share: Share) => schedules.map(schedule => schedule.exchange).includes(share.exchange))
+                .filter((share: Share) => {
+                    return isContainsWithIgnoreCase(share.name, term) ||
+                        isContainsWithIgnoreCase(share.ticker, term) ||
+                        share.uid.includes(term)
+                }).map((share: Share, index) => ShareLine(index, share, isExchangeAvailable(share.exchange)))
         )
     }
 

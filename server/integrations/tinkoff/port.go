@@ -476,6 +476,44 @@ func (c *TinkoffBrokerPort) SubscribeOrders(cb func(types.OrderExecutionState)) 
 	return nil
 }
 
+func (c *TinkoffBrokerPort) GetTradingSchedules(exchange string, from time.Time, to time.Time) ([]types.TradingSchedule, error) {
+	sdkL.Info("Getting trading schedules")
+
+	sdk, err := c.GetSdk()
+	if err != nil {
+		sdkL.Errorf("Cannot init sdk: %v", err)
+		return []types.TradingSchedule{}, err
+	}
+
+	instrumentService := sdk.NewInstrumentsServiceClient()
+
+	tradingSchedulesRes, err := instrumentService.TradingSchedules(exchange, from, to)
+	if err != nil {
+		sdkL.Errorf("Cannot get trading schedules: %v", err)
+		return []types.TradingSchedule{}, err
+	}
+
+	exchanges := []types.TradingSchedule{}
+
+	for _, ex := range tradingSchedulesRes.Exchanges {
+		days := []types.TradingDay{}
+
+		for _, day := range ex.Days {
+			days = append(days, types.TradingDay{
+				Date:         day.Date.AsTime(),
+				IsTradingDay: day.IsTradingDay,
+				StartTime:    day.StartTime.AsTime(),
+				EndTime:      day.EndTime.AsTime(),
+			})
+		}
+		exchanges = append(exchanges, types.TradingSchedule{
+			Exchange: ex.Exchange,
+			Days:     days,
+		})
+	}
+
+	return exchanges, nil
+}
 func (c *TinkoffBrokerPort) GetOrderState(orderID types.OrderID) (types.OrderExecutionState, error) {
 	sdkL.Info("Getting state of order %v", orderID)
 	sdk, err := c.GetSdk()
