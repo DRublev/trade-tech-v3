@@ -3,11 +3,11 @@ package server
 import (
 	"context"
 	"fmt"
-	accounts "main/contracts/contracts.accounts"
-	auth "main/contracts/contracts.auth"
-	marketdata "main/contracts/contracts.marketdata"
-	shares "main/contracts/contracts.shares"
-	trade "main/contracts/contracts.trade"
+	accounts "main/server/contracts/contracts.accounts"
+	auth "main/server/contracts/contracts.auth"
+	marketdata "main/server/contracts/contracts.marketdata"
+	shares "main/server/contracts/contracts.shares"
+	trade "main/server/contracts/contracts.trade"
 	"net"
 
 	log "github.com/sirupsen/logrus"

@@ -4,7 +4,7 @@ import (
 	"context"
 	"main/bot/broker"
 	"main/bot/orderbook"
-	marketdata "main/contracts/contracts.marketdata"
+	marketdata "main/server/contracts/contracts.marketdata"
 	"main/types"
 	"math"
 	"os"

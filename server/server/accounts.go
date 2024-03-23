@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"main/bot/broker"
-	accounts "main/contracts/contracts.accounts"
+	accounts "main/server/contracts/contracts.accounts"
 	"main/types"
 
 	log "github.com/sirupsen/logrus"

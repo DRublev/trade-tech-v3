@@ -3,7 +3,7 @@ package server
 import (
 	"context"
 	"errors"
-	auth "main/contracts/contracts.auth"
+	auth "main/server/contracts/contracts.auth"
 	"main/db"
 	"main/utils"
 	"os"

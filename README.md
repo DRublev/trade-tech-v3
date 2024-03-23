@@ -48,7 +48,7 @@ brew install protoc-gen-go-grpc
 Запустить команды
 GO
 ```sh
-([[ ! -d ./server/contracts ]] && mkdir ./server/contracts) || protoc -I protobuf protobuf/*.proto --go_out=./server/contracts/ --go_opt=paths=import --go-grpc_out=./server/contracts/ --go-grpc_opt=paths=import
+([[ ! -d ./server/server/contracts ]] && mkdir ./server/server/contracts) || protoc -I protobuf protobuf/*.proto --go_out=./server/server/contracts/ --go_opt=paths=import --go-grpc_out=./server/server/contracts/ --go-grpc_opt=paths=import
 ```
 
 TS for Windows

@@ -143,7 +143,7 @@
     // server/server/init.go
     import (
         // ...
-	    marketdata "main/contracts/contracts.marketdata"
+	    marketdata "main/server/contracts/contracts.marketdata"
         // ...
     )
 
@@ -167,7 +167,7 @@
     import (
         "context"
         "main/bot"
-        marketdata "main/contracts/contracts.marketdata"
+        marketdata "main/server/contracts/contracts.marketdata"
         "main/types"
 
         "google.golang.org/protobuf/types/known/timestamppb"
