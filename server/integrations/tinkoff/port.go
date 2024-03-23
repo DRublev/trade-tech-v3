@@ -442,6 +442,11 @@ func (c *TinkoffBrokerPort) SubscribeOrders(cb func(types.OrderExecutionState)) 
 		for {
 			select {
 			case tradeState := <-ts.Trades():
+				// TODO: there are some nil trades.
+				if tradeState == nil {
+					continue
+				}
+
 				sdkL.Infof("New state of order: %v; direction: %v", tradeState.OrderId, tradeState.Direction)
 
 				lotsExecuted := 0
