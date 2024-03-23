@@ -1,4 +1,4 @@
-import { GetCandlesRequest } from '../../../../contracts/marketData';
+import { GetCandlesRequest } from '.././contracts/marketData';
 import { useIpcInoke, useIpcListen } from "../../hooks";
 import { OHLCData, OrderState } from "../../../types";
 import { useState, useEffect, useCallback } from "react";

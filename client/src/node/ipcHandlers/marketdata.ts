@@ -2,7 +2,7 @@ import { BrowserWindow, ipcMain, ipcRenderer } from "electron";
 import { ipcEvents } from "../../ipcEvents";
 import { marketdataService } from "../grpc/marketdata";
 import { Quant } from "./types";
-import { OHLC, OrderState } from '../../../contracts/marketData';
+import { OHLC, OrderState } from './contracts/marketData';
 import { OHLCData, OrderState as Order } from "../../types";
 import { UTCTimestamp } from "lightweight-charts";
 

@@ -2,7 +2,7 @@ import { ipcMain, safeStorage } from "electron";
 import { ipcEvents } from "../../ipcEvents";
 import { sharesService } from "../grpc/instruments";
 import storage from '../Storage';
-import { GetInstrumentsRequest, GetSharesResponse } from "../../../contracts/shares";
+import { GetInstrumentsRequest, GetSharesResponse } from "./contracts/shares";
 import { authService } from "../grpc/auth";
 
 ipcMain.handle(ipcEvents.GET_SHARES, (e, req) => getShares(req))

@@ -1,5 +1,5 @@
 import { credentials } from "@grpc/grpc-js";
-import { MarketDataClient } from "../../../contracts/marketData";
+import { MarketDataClient } from "./contracts/marketData";
 
 const channelOptions = {
     // Send keepalive pings every 10 seconds, default is 2 hours.

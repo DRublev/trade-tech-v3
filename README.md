@@ -57,5 +57,5 @@ protoc --plugin=protoc-gen-ts_proto=".\\client\\node_modules\\.bin\\protoc-gen-t
 ```
 TS Unix
 ```sh
-([[ ! -d ./client/contracts ]] && mkdir ./client/contracts) || protoc --ts_proto_out=./client/contracts --ts_proto_opt=outputServices=grpc-js --ts_proto_opt=esModuleInterop=true -I ./protobuf ./protobuf/*.proto
+([[ ! -d ./client/src/node/grpc/contracts ]] && mkdir ./client/src/node/grpc/contracts) || protoc --ts_proto_out=./client/src/node/grpc/contracts --ts_proto_opt=outputServices=grpc-js --ts_proto_opt=esModuleInterop=true -I ./protobuf ./protobuf/*.proto
 ```
