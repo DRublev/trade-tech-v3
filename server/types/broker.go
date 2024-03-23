@@ -25,4 +25,5 @@ type IBroker interface {
 	GetShares(InstrumentStatus) ([]Share, error)
 	PlaceOrder(order *PlaceOrder) (OrderId, error)
 	SubscribeOrders(func(OrderExecutionState)) error
+	GetTradingSchedules(string, time.Time, time.Time) ([]TradingSchedule, error)
 }

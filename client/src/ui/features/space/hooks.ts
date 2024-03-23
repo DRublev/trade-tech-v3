@@ -2,10 +2,13 @@ import { GetCandlesRequest } from "../../../../grpcGW/marketData";
 import { useIpcInoke, useIpcListen } from "../../hooks";
 import { OHLCData } from "../../../types";
 import { useState, useEffect, useCallback } from "react";
+import { getTradingSchedules } from "../../../node/ipcHandlers/instruments";
+import { GetTradingSchedulesRequest, GetTradingSchedulesResponse, TradingSchedule } from "../../../../grpcGW/shares";
 
 type GetCandlesResponse = OHLCData[];
 
 export const useGetCandles = (): (req: GetCandlesRequest) => Promise<GetCandlesResponse> => useIpcInoke("GET_CANDLES");
+export const useGetTradingSchedules = (): (req: GetTradingSchedulesRequest) => Promise<GetTradingSchedulesResponse> => useIpcInoke("GET_TRADING_SCHEDULES");
 export const useGetShares = () => useIpcInoke("GET_SHARES");
 
 // TODO: Нужен хук который сам бы хендлил отписку
@@ -102,4 +105,32 @@ export const useSharesFromStore = () => {
     }, [])
 
     return { sharesFromStore, isLoading }
+};
+
+export const getTodaysSchedules = (): TradingSchedule[] => {
+    const getSchedules = useGetTradingSchedules();
+    const [schedules, setSchedules] = useState([]);
+    const [isLoading, setIsLoading] = useState(false);
+
+    const load = useCallback(async () => {
+        const now = new Date();
+
+        try {
+            if (isLoading) return;
+            setIsLoading(true);
+            const response: any = (await getSchedules({ exchange: "", from: now, to: now })).exchanges;
+            setSchedules(response)
+        } catch (error) {
+            console.error(`get shares error: ${error}`);
+            setSchedules([]);
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        load();
+    }, [])
+
+    return schedules
 };

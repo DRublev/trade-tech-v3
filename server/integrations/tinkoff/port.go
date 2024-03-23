@@ -347,11 +347,11 @@ func (c *TinkoffBrokerPort) PlaceOrder(order *types.PlaceOrder) (types.OrderId, 
 	if order.Direction == types.Sell {
 		direction = investapi.OrderDirection_ORDER_DIRECTION_SELL
 	}
-fmt.Printf("350 port %v\n", direction)
+	fmt.Printf("350 port %v\n", direction)
 	// TODO: Брать из инструмента
 	price := FloatToQuotation(float64(order.Price), &investapi.Quotation{
 		Units: 0,
-		Nano: 10000000,
+		Nano:  10000000,
 	})
 	if len(accountId) == 0 {
 		accountIDRaw, err := dbInstance.Get([]string{"accounts"})
@@ -430,13 +430,13 @@ func (c *TinkoffBrokerPort) SubscribeOrders(cb func(types.OrderExecutionState)) 
 				lotsExecuted += int(t.Quantity)
 				executedPrice += t.Price.ToFloat() * float64(t.Quantity)
 			}
-			
+
 			changeEvent := types.OrderExecutionState{
-				Id:           types.OrderId(tradeState.OrderId),
-				Direction:    types.OperationType(tradeState.Direction),
-				InstrumentId: tradeState.InstrumentUid,
-				LotsExecuted: lotsExecuted,
-				Status:       0, // TODO: Научитться определять статус заявки
+				Id:                 types.OrderId(tradeState.OrderId),
+				Direction:          types.OperationType(tradeState.Direction),
+				InstrumentId:       tradeState.InstrumentUid,
+				LotsExecuted:       lotsExecuted,
+				Status:             0, // TODO: Научитться определять статус заявки
 				ExecutedOrderPrice: executedPrice,
 				// TODO: Научиться считать вот это все (из tradeState.Trades видимо)
 				// LotsRequested      int
@@ -452,4 +452,41 @@ func (c *TinkoffBrokerPort) SubscribeOrders(cb func(types.OrderExecutionState)) 
 	wg.Wait()
 
 	return nil
+}
+
+func (c *TinkoffBrokerPort) GetTradingSchedules(exchange string, from time.Time, to time.Time) ([]types.TradingSchedule, error) {
+	sdk, err := c.GetSdk()
+	if err != nil {
+		fmt.Println("Cannot init sdk! ", err)
+		return []types.TradingSchedule{}, err
+	}
+
+	instrumentService := sdk.NewInstrumentsServiceClient()
+
+	tradingSchedulesRes, err := instrumentService.TradingSchedules(exchange, from, to)
+	if err != nil {
+		fmt.Println("Cannot get trading schedules", err)
+		return []types.TradingSchedule{}, err
+	}
+
+	exchanges := []types.TradingSchedule{}
+
+	for _, ex := range tradingSchedulesRes.Exchanges {
+		days := []types.TradingDay{}
+
+		for _, day := range ex.Days {
+			days = append(days, types.TradingDay{
+				Date:         day.Date.AsTime(),
+				IsTradingDay: day.IsTradingDay,
+				StartTime:    day.StartTime.AsTime(),
+				EndTime:      day.EndTime.AsTime(),
+			})
+		}
+		exchanges = append(exchanges, types.TradingSchedule{
+			Exchange: ex.Exchange,
+			Days:     days,
+		})
+	}
+
+	return exchanges, nil
 }
