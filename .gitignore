@@ -24,3 +24,4 @@ client/storage
 storage
 
 .vscode
+node_modules
