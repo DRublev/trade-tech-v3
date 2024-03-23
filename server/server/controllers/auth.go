@@ -1,10 +1,10 @@
-package server
+package controllers
 
 import (
 	"context"
 	"errors"
-	auth "main/server/contracts/contracts.auth"
 	"main/db"
+	auth "main/server/contracts/contracts.auth"
 	"main/utils"
 	"os"
 

@@ -8,19 +8,12 @@ import (
 	marketdata "main/server/contracts/contracts.marketdata"
 	shares "main/server/contracts/contracts.shares"
 	trade "main/server/contracts/contracts.trade"
+	"main/server/controllers"
 	"net"
 
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 )
-
-type Server struct {
-	accounts.UnimplementedAccountsServer
-	auth.UnimplementedAuthServer
-	marketdata.UnimplementedMarketDataServer
-	shares.UnimplementedSharesServer
-	trade.UnimplementedTradeServer
-}
 
 func Start(ctx context.Context, port int) {
 	s := grpc.NewServer()
@@ -34,7 +27,7 @@ func Start(ctx context.Context, port int) {
 	}
 	defer lis.Close()
 
-	srv := &Server{}
+	srv := &controllers.Server{}
 
 	accounts.RegisterAccountsServer(s, srv)
 	auth.RegisterAuthServer(s, srv)
