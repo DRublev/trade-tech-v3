@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"main/bot/broker"
-	accounts "main/grpcGW/grpcGW.accounts"
+	accounts "main/contracts/contracts.accounts"
 	"main/types"
 
 	log "github.com/sirupsen/logrus"

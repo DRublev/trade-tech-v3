@@ -123,7 +123,7 @@ function createBaseStartResponse(): StartResponse {
 
 export const StartResponse = {
   encode(message: StartResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-    if (message.Ok !== false) {
+    if (message.Ok === true) {
       writer.uint32(8).bool(message.Ok);
     }
     if (message.Error !== "") {
@@ -171,7 +171,7 @@ export const StartResponse = {
 
   toJSON(message: StartResponse): unknown {
     const obj: any = {};
-    if (message.Ok !== false) {
+    if (message.Ok === true) {
       obj.Ok = message.Ok;
     }
     if (message.Error !== "") {
@@ -271,7 +271,7 @@ function createBaseStopResponse(): StopResponse {
 
 export const StopResponse = {
   encode(message: StopResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-    if (message.Ok !== false) {
+    if (message.Ok === true) {
       writer.uint32(8).bool(message.Ok);
     }
     if (message.Error !== "") {
@@ -319,7 +319,7 @@ export const StopResponse = {
 
   toJSON(message: StopResponse): unknown {
     const obj: any = {};
-    if (message.Ok !== false) {
+    if (message.Ok === true) {
       obj.Ok = message.Ok;
     }
     if (message.Error !== "") {
@@ -434,7 +434,7 @@ function createBaseChangeConfigResponse(): ChangeConfigResponse {
 
 export const ChangeConfigResponse = {
   encode(message: ChangeConfigResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-    if (message.Ok !== false) {
+    if (message.Ok === true) {
       writer.uint32(8).bool(message.Ok);
     }
     if (message.Error !== "") {
@@ -482,7 +482,7 @@ export const ChangeConfigResponse = {
 
   toJSON(message: ChangeConfigResponse): unknown {
     const obj: any = {};
-    if (message.Ok !== false) {
+    if (message.Ok === true) {
       obj.Ok = message.Ok;
     }
     if (message.Error !== "") {

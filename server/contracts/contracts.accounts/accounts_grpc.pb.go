@@ -4,7 +4,7 @@
 // - protoc             v4.25.3
 // source: accounts.proto
 
-package grpcGW_accounts
+package contracts_accounts
 
 import (
 	context "context"

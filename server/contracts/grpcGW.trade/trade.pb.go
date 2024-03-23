@@ -4,7 +4,7 @@
 // 	protoc        v4.25.3
 // source: trade.proto
 
-package grpcGW_trade
+package contracts_trade
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"

@@ -3,8 +3,8 @@ package server
 import (
 	"context"
 	"errors"
+	auth "main/contracts/contracts.auth"
 	"main/db"
-	auth "main/grpcGW/grpcGW.auth"
 	"main/utils"
 	"os"
 

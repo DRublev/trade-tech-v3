@@ -4,7 +4,7 @@
 // - protoc             v4.25.3
 // source: auth.proto
 
-package grpcGW_auth
+package contracts_auth
 
 import (
 	context "context"

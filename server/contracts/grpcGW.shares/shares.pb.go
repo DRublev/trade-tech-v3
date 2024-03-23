@@ -4,7 +4,7 @@
 // 	protoc        v4.25.3
 // source: shares.proto
 
-package grpcGW_shares
+package contracts_shares
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"

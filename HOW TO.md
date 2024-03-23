@@ -99,7 +99,7 @@
     package marketData;
 
     // Название пакета для go
-    option go_package = "grpcGW.marketdata";
+    option go_package = "contracts.marketdata";
 
     import "google/protobuf/timestamp.proto";
 
@@ -143,7 +143,7 @@
     // server/server/init.go
     import (
         // ...
-	    marketdata "main/grpcGW/grpcGW.marketdata"
+	    marketdata "main/contracts/contracts.marketdata"
         // ...
     )
 
@@ -167,7 +167,7 @@
     import (
         "context"
         "main/bot"
-        marketdata "main/grpcGW/grpcGW.marketdata"
+        marketdata "main/contracts/contracts.marketdata"
         "main/types"
 
         "google.golang.org/protobuf/types/known/timestamppb"

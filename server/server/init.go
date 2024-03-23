@@ -3,11 +3,11 @@ package server
 import (
 	"context"
 	"fmt"
-	accounts "main/grpcGW/grpcGW.accounts"
-	auth "main/grpcGW/grpcGW.auth"
-	marketdata "main/grpcGW/grpcGW.marketdata"
-	shares "main/grpcGW/grpcGW.shares"
-	trade "main/grpcGW/grpcGW.trade"
+	accounts "main/contracts/contracts.accounts"
+	auth "main/contracts/contracts.auth"
+	marketdata "main/contracts/contracts.marketdata"
+	shares "main/contracts/contracts.shares"
+	trade "main/contracts/contracts.trade"
 	"net"
 
 	log "github.com/sirupsen/logrus"

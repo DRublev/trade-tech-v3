@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package accounts;
 
-option go_package = "grpcGW.accounts";
+option go_package = "contracts.accounts";
 
 service Accounts {
     rpc GetAccounts(GetAccountsRequest) returns (GetAccountsResponse);

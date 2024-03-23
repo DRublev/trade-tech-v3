@@ -39,17 +39,23 @@ npm i -g ts-proto
 npm i -g protoc-gen-ts
 ```
 
+Установить плагины для go
+```sh
+brew install protoc-gen-go
+brew install protoc-gen-go-grpc
+```
+
 Запустить команды
 GO
 ```sh
-protoc -I protobuf protobuf/*.proto --go_out=./server/grpcGW/ --go_opt=paths=import --go-grpc_out=./server/grpcGW/ --go-grpc_opt=paths=import
+([[ ! -d ./server/contracts ]] && mkdir ./server/contracts) || protoc -I protobuf protobuf/*.proto --go_out=./server/contracts/ --go_opt=paths=import --go-grpc_out=./server/contracts/ --go-grpc_opt=paths=import
 ```
 
 TS for Windows
 ```sh
-protoc --plugin=protoc-gen-ts_proto=".\\client\\node_modules\\.bin\\protoc-gen-ts_proto.cmd" --ts_proto_out=./client/grpcGW --ts_proto_opt=outputServices=grpc-js --ts_proto_opt=esModuleInterop=true -I ./protobuf ./protobuf/*.proto
+protoc --plugin=protoc-gen-ts_proto=".\\client\\node_modules\\.bin\\protoc-gen-ts_proto.cmd" --ts_proto_out=./client/contracts --ts_proto_opt=outputServices=grpc-js --ts_proto_opt=esModuleInterop=true -I ./protobuf ./protobuf/*.proto
 ```
 TS Unix
 ```sh
-protoc --ts_proto_out=./client/grpcGW --ts_proto_opt=outputServices=grpc-js --ts_proto_opt=esModuleInterop=true -I ./protobuf ./protobuf/*.proto
+([[ ! -d ./client/contracts ]] && mkdir ./client/contracts) || protoc --ts_proto_out=./client/contracts --ts_proto_opt=outputServices=grpc-js --ts_proto_opt=esModuleInterop=true -I ./protobuf ./protobuf/*.proto
 ```

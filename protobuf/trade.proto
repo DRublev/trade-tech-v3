@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package trade;
 
-option go_package = "grpcGW.trade";
+option go_package = "contracts.trade";
 
 service Trade {
     rpc Start(StartRequest) returns (StartResponse);

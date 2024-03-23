@@ -3,7 +3,7 @@ syntax = "proto3";
 package marketData;
 
 // Название пакета для go
-option go_package = "grpcGW.marketdata";
+option go_package = "contracts.marketdata";
 
 import "google/protobuf/timestamp.proto";
 

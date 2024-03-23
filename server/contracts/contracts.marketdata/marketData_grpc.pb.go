@@ -4,7 +4,7 @@
 // - protoc             v4.25.3
 // source: marketData.proto
 
-package grpcGW_marketdata
+package contracts_marketdata
 
 import (
 	context "context"

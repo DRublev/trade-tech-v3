@@ -43,7 +43,7 @@ export const SetTokenRequest = {
     if (message.Token !== "") {
       writer.uint32(10).string(message.Token);
     }
-    if (message.IsSandbox !== false) {
+    if (message.IsSandbox === true) {
       writer.uint32(16).bool(message.IsSandbox);
     }
     return writer;
@@ -91,7 +91,7 @@ export const SetTokenRequest = {
     if (message.Token !== "") {
       obj.Token = message.Token;
     }
-    if (message.IsSandbox !== false) {
+    if (message.IsSandbox === true) {
       obj.IsSandbox = message.IsSandbox;
     }
     return obj;
@@ -157,7 +157,7 @@ function createBaseClearTokenRequest(): ClearTokenRequest {
 
 export const ClearTokenRequest = {
   encode(message: ClearTokenRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-    if (message.ForSandbox !== false) {
+    if (message.ForSandbox === true) {
       writer.uint32(8).bool(message.ForSandbox);
     }
     return writer;
@@ -192,7 +192,7 @@ export const ClearTokenRequest = {
 
   toJSON(message: ClearTokenRequest): unknown {
     const obj: any = {};
-    if (message.ForSandbox !== false) {
+    if (message.ForSandbox === true) {
       obj.ForSandbox = message.ForSandbox;
     }
     return obj;
@@ -300,7 +300,7 @@ function createBaseHasTokenResponse(): HasTokenResponse {
 
 export const HasTokenResponse = {
   encode(message: HasTokenResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-    if (message.HasToken !== false) {
+    if (message.HasToken === true) {
       writer.uint32(8).bool(message.HasToken);
     }
     return writer;
@@ -335,7 +335,7 @@ export const HasTokenResponse = {
 
   toJSON(message: HasTokenResponse): unknown {
     const obj: any = {};
-    if (message.HasToken !== false) {
+    if (message.HasToken === true) {
       obj.HasToken = message.HasToken;
     }
     return obj;

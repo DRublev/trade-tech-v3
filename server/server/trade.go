@@ -4,7 +4,7 @@ import (
 	"context"
 	bot "main/bot"
 	"main/bot/strategies"
-	trade "main/grpcGW/grpcGW.trade"
+	trade "main/contracts/contracts.trade"
 
 	log "github.com/sirupsen/logrus"
 )

@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package shares;
 
-option go_package = "grpcGW.shares";
+option go_package = "contracts.shares";
 
 import "google/protobuf/timestamp.proto";
 

@@ -3,7 +3,7 @@ package server
 import (
 	"context"
 	"main/bot/broker"
-	shares "main/grpcGW/grpcGW.shares"
+	shares "main/contracts/contracts.shares"
 	"main/types"
 
 	log "github.com/sirupsen/logrus"

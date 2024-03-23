@@ -4,7 +4,7 @@ import { Button, Card } from "@radix-ui/themes"
 import React, { useCallback, useState } from "react"
 import { PopoverWindow } from "../../components/PopoverWindow"
 import style from '../../basicStyles.css';
-import { Quatation, Share } from "../../../../grpcGW/shares";
+import { Quatation, Share } from "../../../../contracts/shares";
 import { useSharesFromStore } from './hooks';
 import { SerarchInput } from '../../components/SearchInput';
 
