@@ -2,7 +2,7 @@ import { BrowserWindow, ipcMain, ipcRenderer } from "electron";
 import { ipcEvents } from "../../ipcEvents";
 import { marketdataService } from "../grpc/marketdata";
 import { Quant } from "./types";
-import { OHLC, OrderState } from '../../../grpcGW/marketData';
+import { OHLC, OrderState } from './contracts/marketData';
 import { OHLCData, OrderState as Order } from "../../types";
 import { UTCTimestamp } from "lightweight-charts";
 
@@ -54,7 +54,7 @@ ipcMain.handle(ipcEvents.GET_CANDLES, async (e, req) => {
 });
 
 ipcMain.handle(ipcEvents.SUBSCRIBE_ORDER, async (e, req) => {
-    const {instrumentId} = req;
+    const { instrumentId } = req;
 
     if (!instrumentId) return Promise.reject('InstrumentId обязательный параметр');
 

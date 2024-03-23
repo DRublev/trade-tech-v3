@@ -3,24 +3,17 @@ package server
 import (
 	"context"
 	"fmt"
-	accounts "main/grpcGW/grpcGW.accounts"
-	auth "main/grpcGW/grpcGW.auth"
-	marketdata "main/grpcGW/grpcGW.marketdata"
-	shares "main/grpcGW/grpcGW.shares"
-	trade "main/grpcGW/grpcGW.trade"
+	accounts "main/server/contracts/contracts.accounts"
+	auth "main/server/contracts/contracts.auth"
+	marketdata "main/server/contracts/contracts.marketdata"
+	shares "main/server/contracts/contracts.shares"
+	trade "main/server/contracts/contracts.trade"
+	"main/server/controllers"
 	"net"
 
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 )
-
-type Server struct {
-	accounts.UnimplementedAccountsServer
-	auth.UnimplementedAuthServer
-	marketdata.UnimplementedMarketDataServer
-	shares.UnimplementedSharesServer
-	trade.UnimplementedTradeServer
-}
 
 func Start(ctx context.Context, port int) {
 	s := grpc.NewServer()
@@ -34,7 +27,7 @@ func Start(ctx context.Context, port int) {
 	}
 	defer lis.Close()
 
-	srv := &Server{}
+	srv := &controllers.Server{}
 
 	accounts.RegisterAccountsServer(s, srv)
 	auth.RegisterAuthServer(s, srv)

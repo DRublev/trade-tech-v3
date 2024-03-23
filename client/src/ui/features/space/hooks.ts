@@ -1,4 +1,4 @@
-import { GetCandlesRequest } from '../../../../grpcGW/marketData';
+import { GetCandlesRequest } from '.././contracts/marketData';
 import { useIpcInoke, useIpcListen } from "../../hooks";
 import { OHLCData, OrderState } from "../../../types";
 import { useState, useEffect, useCallback } from "react";
@@ -31,7 +31,7 @@ function orderToMarkerMapper(order: OrderState): SeriesMarker<Time> {
         size: 2,
     }
 }
-export const useOrders = (onNewOrder: (d: SeriesMarker<Time>) => void, figiOrInstrumentId= "4c466956-d2ce-4a95-abb4-17947a65f18a") => {
+export const useOrders = (onNewOrder: (d: SeriesMarker<Time>) => void, figiOrInstrumentId = "4c466956-d2ce-4a95-abb4-17947a65f18a") => {
     const subscribe = useSubscribeOrders();
     const [registerOrderCb, unregisterOrderCb] = useListenOrders();
 
