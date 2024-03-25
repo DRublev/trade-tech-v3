@@ -43,6 +43,14 @@ export interface ChangeConfigResponse {
   Error: string;
 }
 
+export interface SetInstrumentRequest {
+  InstrumentId: string;
+}
+
+export interface SetInstrumentResponse {
+  Ok: boolean;
+}
+
 function createBaseStartRequest(): StartRequest {
   return { Strategy: "", InstrumentId: "" };
 }
@@ -502,6 +510,120 @@ export const ChangeConfigResponse = {
   },
 };
 
+function createBaseSetInstrumentRequest(): SetInstrumentRequest {
+  return { InstrumentId: "" };
+}
+
+export const SetInstrumentRequest = {
+  encode(message: SetInstrumentRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.InstrumentId !== "") {
+      writer.uint32(10).string(message.InstrumentId);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): SetInstrumentRequest {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseSetInstrumentRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.InstrumentId = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): SetInstrumentRequest {
+    return { InstrumentId: isSet(object.InstrumentId) ? globalThis.String(object.InstrumentId) : "" };
+  },
+
+  toJSON(message: SetInstrumentRequest): unknown {
+    const obj: any = {};
+    if (message.InstrumentId !== "") {
+      obj.InstrumentId = message.InstrumentId;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<SetInstrumentRequest>, I>>(base?: I): SetInstrumentRequest {
+    return SetInstrumentRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<SetInstrumentRequest>, I>>(object: I): SetInstrumentRequest {
+    const message = createBaseSetInstrumentRequest();
+    message.InstrumentId = object.InstrumentId ?? "";
+    return message;
+  },
+};
+
+function createBaseSetInstrumentResponse(): SetInstrumentResponse {
+  return { Ok: false };
+}
+
+export const SetInstrumentResponse = {
+  encode(message: SetInstrumentResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.Ok === true) {
+      writer.uint32(8).bool(message.Ok);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): SetInstrumentResponse {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseSetInstrumentResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 8) {
+            break;
+          }
+
+          message.Ok = reader.bool();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): SetInstrumentResponse {
+    return { Ok: isSet(object.Ok) ? globalThis.Boolean(object.Ok) : false };
+  },
+
+  toJSON(message: SetInstrumentResponse): unknown {
+    const obj: any = {};
+    if (message.Ok === true) {
+      obj.Ok = message.Ok;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<SetInstrumentResponse>, I>>(base?: I): SetInstrumentResponse {
+    return SetInstrumentResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<SetInstrumentResponse>, I>>(object: I): SetInstrumentResponse {
+    const message = createBaseSetInstrumentResponse();
+    message.Ok = object.Ok ?? false;
+    return message;
+  },
+};
+
 export type TradeService = typeof TradeService;
 export const TradeService = {
   start: {
@@ -522,11 +644,21 @@ export const TradeService = {
     responseSerialize: (value: StopResponse) => Buffer.from(StopResponse.encode(value).finish()),
     responseDeserialize: (value: Buffer) => StopResponse.decode(value),
   },
+  setInstrument: {
+    path: "/trade.Trade/SetInstrument",
+    requestStream: false,
+    responseStream: false,
+    requestSerialize: (value: SetInstrumentRequest) => Buffer.from(SetInstrumentRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer) => SetInstrumentRequest.decode(value),
+    responseSerialize: (value: SetInstrumentResponse) => Buffer.from(SetInstrumentResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer) => SetInstrumentResponse.decode(value),
+  },
 } as const;
 
 export interface TradeServer extends UntypedServiceImplementation {
   start: handleUnaryCall<StartRequest, StartResponse>;
   stop: handleUnaryCall<StopRequest, StopResponse>;
+  setInstrument: handleUnaryCall<SetInstrumentRequest, SetInstrumentResponse>;
 }
 
 export interface TradeClient extends Client {
@@ -556,6 +688,21 @@ export interface TradeClient extends Client {
     metadata: Metadata,
     options: Partial<CallOptions>,
     callback: (error: ServiceError | null, response: StopResponse) => void,
+  ): ClientUnaryCall;
+  setInstrument(
+    request: SetInstrumentRequest,
+    callback: (error: ServiceError | null, response: SetInstrumentResponse) => void,
+  ): ClientUnaryCall;
+  setInstrument(
+    request: SetInstrumentRequest,
+    metadata: Metadata,
+    callback: (error: ServiceError | null, response: SetInstrumentResponse) => void,
+  ): ClientUnaryCall;
+  setInstrument(
+    request: SetInstrumentRequest,
+    metadata: Metadata,
+    options: Partial<CallOptions>,
+    callback: (error: ServiceError | null, response: SetInstrumentResponse) => void,
   ): ClientUnaryCall;
 }
 

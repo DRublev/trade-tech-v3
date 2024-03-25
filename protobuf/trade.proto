@@ -7,6 +7,7 @@ option go_package = "contracts.trade";
 service Trade {
     rpc Start(StartRequest) returns (StartResponse);
     rpc Stop(StopRequest) returns (StopResponse);
+    rpc SetInstrument(SetInstrumentRequest) returns (SetInstrumentResponse);
 }
 
 message StartRequest {
@@ -38,4 +39,12 @@ message ChangeConfigRequest {
 message ChangeConfigResponse {
     bool Ok = 1;
     string Error = 2;
+}
+
+message SetInstrumentRequest {
+    string InstrumentId = 1;
+}
+
+message SetInstrumentResponse {
+    bool Ok = 1;
 }

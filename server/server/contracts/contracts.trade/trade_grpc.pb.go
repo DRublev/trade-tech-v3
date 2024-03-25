@@ -19,8 +19,9 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	Trade_Start_FullMethodName = "/trade.Trade/Start"
-	Trade_Stop_FullMethodName  = "/trade.Trade/Stop"
+	Trade_Start_FullMethodName         = "/trade.Trade/Start"
+	Trade_Stop_FullMethodName          = "/trade.Trade/Stop"
+	Trade_SetInstrument_FullMethodName = "/trade.Trade/SetInstrument"
 )
 
 // TradeClient is the client API for Trade service.
@@ -29,6 +30,7 @@ const (
 type TradeClient interface {
 	Start(ctx context.Context, in *StartRequest, opts ...grpc.CallOption) (*StartResponse, error)
 	Stop(ctx context.Context, in *StopRequest, opts ...grpc.CallOption) (*StopResponse, error)
+	SetInstrument(ctx context.Context, in *SetInstrumentRequest, opts ...grpc.CallOption) (*SetInstrumentResponse, error)
 }
 
 type tradeClient struct {
@@ -57,12 +59,22 @@ func (c *tradeClient) Stop(ctx context.Context, in *StopRequest, opts ...grpc.Ca
 	return out, nil
 }
 
+func (c *tradeClient) SetInstrument(ctx context.Context, in *SetInstrumentRequest, opts ...grpc.CallOption) (*SetInstrumentResponse, error) {
+	out := new(SetInstrumentResponse)
+	err := c.cc.Invoke(ctx, Trade_SetInstrument_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // TradeServer is the server API for Trade service.
 // All implementations must embed UnimplementedTradeServer
 // for forward compatibility
 type TradeServer interface {
 	Start(context.Context, *StartRequest) (*StartResponse, error)
 	Stop(context.Context, *StopRequest) (*StopResponse, error)
+	SetInstrument(context.Context, *SetInstrumentRequest) (*SetInstrumentResponse, error)
 	mustEmbedUnimplementedTradeServer()
 }
 
@@ -75,6 +87,9 @@ func (UnimplementedTradeServer) Start(context.Context, *StartRequest) (*StartRes
 }
 func (UnimplementedTradeServer) Stop(context.Context, *StopRequest) (*StopResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Stop not implemented")
+}
+func (UnimplementedTradeServer) SetInstrument(context.Context, *SetInstrumentRequest) (*SetInstrumentResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetInstrument not implemented")
 }
 func (UnimplementedTradeServer) mustEmbedUnimplementedTradeServer() {}
 
@@ -125,6 +140,24 @@ func _Trade_Stop_Handler(srv interface{}, ctx context.Context, dec func(interfac
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Trade_SetInstrument_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetInstrumentRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradeServer).SetInstrument(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Trade_SetInstrument_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradeServer).SetInstrument(ctx, req.(*SetInstrumentRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Trade_ServiceDesc is the grpc.ServiceDesc for Trade service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -139,6 +172,10 @@ var Trade_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Stop",
 			Handler:    _Trade_Stop_Handler,
+		},
+		{
+			MethodName: "SetInstrument",
+			Handler:    _Trade_SetInstrument_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
