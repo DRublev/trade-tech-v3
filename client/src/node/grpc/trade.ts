@@ -1,4 +1,5 @@
-import { credentials } from "@grpc/grpc-js";
+import type { TradeClient as ITradeClient } from "./contracts/trade";
 import { TradeClient } from "./contracts/trade";
+import { createService } from "./utils";
 
-export const tradeService = new TradeClient("0.0.0.0:50051", credentials.createInsecure());
+export const tradeService = createService<ITradeClient>(TradeClient);

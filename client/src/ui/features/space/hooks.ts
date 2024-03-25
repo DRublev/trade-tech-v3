@@ -16,10 +16,6 @@ const useSubscribeCandles = () => useIpcInoke("SUBSCRIBE_CANDLES");
 const useSubscribeOrders = () => useIpcInoke("SUBSCRIBE_ORDER");
 const useListenCandles = () => useIpcListen("NEW_CANDLE");
 const useListenOrders = () => useIpcListen("NEW_ORDER");
-// "BBG004730RP0" /* GAZP */
-// "4c466956-d2ce-4a95-abb4-17947a65f18a" TGLD
-// "BBG004730ZJ9" /* VTBR */
-// "BBG004PYF2N3" /* POLY */
 
 function orderToMarkerMapper(order: OrderState): SeriesMarker<Time> {
     return {
@@ -31,7 +27,7 @@ function orderToMarkerMapper(order: OrderState): SeriesMarker<Time> {
         size: 2,
     }
 }
-export const useOrders = (onNewOrder: (d: SeriesMarker<Time>) => void, figiOrInstrumentId = "4c466956-d2ce-4a95-abb4-17947a65f18a") => {
+export const useOrders = (onNewOrder: (d: SeriesMarker<Time>) => void, figiOrInstrumentId: string) => {
     const subscribe = useSubscribeOrders();
     const [registerOrderCb, unregisterOrderCb] = useListenOrders();
 
@@ -60,7 +56,7 @@ export const useOrders = (onNewOrder: (d: SeriesMarker<Time>) => void, figiOrIns
     }, [figiOrInstrumentId]);
 }
 
-export const useCandles = (onNewCandle: (d: OHLCData) => void, figiOrInstrumentId = "BBG004PYF2N3" /* POLY */, interval = 1) => {
+export const useCandles = (onNewCandle: (d: OHLCData) => void, figiOrInstrumentId: string, interval = 1) => {
     const getCandles = useGetCandles();
     const subscribe = useSubscribeCandles();
 
@@ -177,4 +173,21 @@ export const getTodaysSchedules = (): TradingSchedule[] => {
     }, [])
 
     return schedules
+};
+
+
+// "BBG004730RP0" /* GAZP */
+// "4c466956-d2ce-4a95-abb4-17947a65f18a" TGLD
+// "BBG004730ZJ9" /* VTBR */
+// "BBG004PYF2N3" /* POLY */
+let instrumentId = "BBG004PYF2N3" /* POLY */;
+
+export const useCurrentInstrumentId = (): [string, (c: string) => void] => {
+    const set = (candidate: string) => {
+        if (!candidate) throw new Error('candidate is required');
+
+        instrumentId = candidate;
+    };
+
+    return [instrumentId, set];
 };

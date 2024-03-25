@@ -8,17 +8,21 @@ import Chart from "./chart";
 import s from './styles.css';
 import { SharesPop } from './SharesPopUp';
 import { useIpcInoke } from '../../hooks';
+import { useCurrentInstrumentId } from './hooks';
 
 export const ControlsPanel = () => {
     const startTrade = useIpcInoke('START_TRADE');
     const [isStarted, setIsStarted] = useState(false);
+    const [instrument] = useCurrentInstrumentId();
 
     const onStartClick = async () => {
         setIsStarted(!isStarted)
         //future logic
         try {
 
-            await startTrade({});
+            await startTrade({
+                instrumentId: instrument,
+            });
         } catch (e) {
             console.log('24 SpaceRoute', e);
         }
