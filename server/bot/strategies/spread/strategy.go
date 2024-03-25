@@ -403,9 +403,9 @@ func (s *SpreadStrategy) onOrderSateChange(state types.OrderExecutionState) {
 	if state.Direction == types.Sell {
 		l.Trace("Updating state after sell order executed")
 
-		newState.pendingSellShares -= int32(state.LotsExecuted) // int32(state.LotsExecuted / int(s.config.lotSize))
+		newState.pendingSellShares -= int32(state.LotsExecuted / int(s.config.lotSize))
 		newState.leftBalance += float32(state.ExecutedOrderPrice)
-		newState.holdingShares += int32(state.LotsExecuted)//int32(state.LotsExecuted / int(s.config.lotSize))
+		newState.holdingShares -= int32(state.LotsExecuted / int(s.config.lotSize))
 		l.Tracef(
 			"Lots executed %v of %v; Executed sell price %v",
 			state.LotsExecuted,
