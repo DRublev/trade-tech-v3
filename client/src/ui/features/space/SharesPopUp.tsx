@@ -32,7 +32,7 @@ const ShareLine = (index: number, share: Share, isAvailable: boolean) => {
     )
 }
 
-export const SharesPop = () => {
+export const SharesPop = ({trigger}: {trigger?: React.ReactNode}) => {
     const { sharesFromStore } = useSharesFromStore();
     const schedules = getTodaysSchedules();
 
@@ -83,16 +83,14 @@ export const SharesPop = () => {
 
     const SharesTriggerButton = () => {
         return (
-            <div style={{ marginRight: '20px' }}>
-                <Button highContrast variant="ghost" size="4" radius="full" style={{ verticalAlign: 'middle' }} className={style.button}>
-                    <MixerHorizontalIcon color='white' style={{ color: 'black' }} />
-                </Button>
-            </div>
+          <Button highContrast variant="ghost" size="4" radius="full" style={{ verticalAlign: 'middle' }} className={style.button}>
+              <MixerHorizontalIcon color='white' style={{ color: 'black' }} />
+          </Button>
         )
     }
 
     return (
-        <PopoverWindow trigger={SharesTriggerButton()}>
+        <PopoverWindow trigger={trigger ?? SharesTriggerButton()}>
             {SharesPopUpContent()}
         </PopoverWindow>
     )

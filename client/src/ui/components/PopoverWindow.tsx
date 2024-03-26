@@ -9,7 +9,7 @@ type Props = {
 export const PopoverWindow: FC<Props> = ({ children, trigger }) => {
     return (
         <Popover.Root>
-            <Popover.Trigger style={{ border: 'none', backgroundColor: 'inherit', color: 'white' }}>
+            <Popover.Trigger style={{ border: 'none', backgroundColor: 'inherit' }}>
                 {trigger}
             </Popover.Trigger>
             <Popover.Portal>
