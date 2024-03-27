@@ -8,6 +8,7 @@ import Chart from "./chart";
 import s from './styles.css';
 import { SharesPop } from './SharesPopUp';
 import { useIpcInoke } from '../../hooks';
+import { useCurrentInstrumentId } from './hooks';
 import { useNavigate } from 'react-router-dom';
 
 const toolBarButtonProps = {
@@ -18,6 +19,7 @@ const toolBarButtonProps = {
 export const ControlsPanel = () => {
     const startTrade = useIpcInoke('START_TRADE');
     const [isStarted, setIsStarted] = useState(false);
+    const [instrument] = useCurrentInstrumentId();
     const navigate = useNavigate();
 
     const onStartClick = async () => {
@@ -25,7 +27,9 @@ export const ControlsPanel = () => {
         //future logic
         try {
 
-            await startTrade({});
+            await startTrade({
+                instrumentId: instrument,
+            });
         } catch (e) {
             console.log('24 SpaceRoute', e);
         }

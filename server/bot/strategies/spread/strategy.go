@@ -1,6 +1,7 @@
 package spread
 
 import (
+	"encoding/json"
 	"fmt"
 	"main/bot/orderbook"
 	"main/bot/strategies"
@@ -13,22 +14,26 @@ import (
 
 type Config struct {
 	strategies.Config
+	// Доступный для торговли баланс
+	Balance float32
 
-	// Минимальная разница bid-ask, при которой выставлять ордер
-	minProfit float32
+	// Акция для торговли
+	InstrumentID string
+
+	MinProfit float32
 
 	// Сколько мс ждать после исполнения итерации покупка-продажа перед следующей
-	nextOrderCooldownMs int32
+	NextOrderCooldownMs int32
 
 	// Каким количчеством акций торговать? Макс
-	maxSharesToHold int32
+	MaxSharesToHold int32
 
 	// Лотность инструмента
-	lotSize int32
+	LotSize int32
 
-	// Если цена пошла ниже чем цена покупки - stopLossAfter, продать по лучшей цене
+	// Если цена пошла ниже чем цена покупки - StopLossAfter, продать по лучшей цене
 	// Нужно чтобы  выходить из позиции, когда акция пошла вниз
-	stopLossAfter float32
+	StopLossAfter float32
 }
 
 type State struct {
@@ -91,42 +96,37 @@ func New() *SpreadStrategy {
 
 var l *log.Entry
 
-func (s *SpreadStrategy) Start(config *strategies.Config, ordersToPlaceCh *chan *types.PlaceOrder, orderStateChangeCh *chan types.OrderExecutionState) (bool, error) {
-	// TODO: Нужен метод ConvertSerialsableToType[T](candidate) T, который конвертирует типы через json.Marshall
-	debugCfg := Config{
-
-		Config: strategies.Config{
-			// InstrumentId: "BBG004730N88", // SBER
-			// InstrumentId: "4c466956-d2ce-4a95-abb4-17947a65f18a", // TGLD
-			// InstrumentId: "BBG004730RP0", // GAZP
-			InstrumentId: "BBG004PYF2N3", // POLY
-			// InstrumentId: "ba64a3c7-dd1d-4f19-8758-94aac17d971b", // FIXP
-			// InstrumentId: "BBG004730ZJ9", // VTBR
-			Balance: 450,
-		},
-		maxSharesToHold:     1,
-		nextOrderCooldownMs: 0,
-		lotSize:             1,
-		minProfit:           0.34,
-		stopLossAfter:       1,
-		// VTBR
-		// lotSize: 10_000,
-		// minProfit: 0.00002,
-		// stopLossAfter: 0.00002,
-	}
-
+func (s *SpreadStrategy) Start(
+	config *strategies.Config,
+	ordersToPlaceCh *chan *types.PlaceOrder,
+	orderStateChangeCh *chan types.OrderExecutionState,
+) (bool, error) {
 	l = log.WithFields(log.Fields{
 		"strategy":   "spread",
-		"instrument": debugCfg.InstrumentId,
+		"instrument": (*config)["InstrumentID"],
 	})
 
-	s.config = debugCfg //((any)(*config)).(Config)
+	var res Config
+
+	bts, err := json.Marshal(config)
+	if err != nil {
+		l.Error("Error parsing config %v", err)
+		return false, err
+	}
+
+	err = json.Unmarshal(bts, &res)
+	if err != nil {
+		l.Error("Error parsing config %v", err)
+		return false, err
+	}
+	s.config = res
+
 	l.Infof("Starting strategy with config: %v", s.config)
 
 	// Создаем или получаем канал, в который будет постаупать инфа о стакане
 	l.Tracef("Getting orderbook channel")
 	obProvider := orderbook.NewProvider()
-	ch, err := obProvider.GetOrCreate(s.config.InstrumentId)
+	ch, err := obProvider.GetOrCreate(s.config.InstrumentID)
 	if err != nil {
 		l.Errorf("Failed to get orderbook channel: %v", err)
 		return false, err
@@ -230,7 +230,7 @@ func (s *SpreadStrategy) buy(wg *sync.WaitGroup, ob *types.Orderbook) {
 		return
 	}
 
-	isHoldingMaxShares := s.state.Get().holdingShares+s.state.Get().pendingBuyShares >= s.config.maxSharesToHold
+	isHoldingMaxShares := s.state.Get().holdingShares+s.state.Get().pendingBuyShares >= s.config.MaxSharesToHold
 	if isHoldingMaxShares {
 		l.WithField("state", s.state.Get()).Tracef("Cannot buy, holding max shares")
 		return
@@ -245,12 +245,12 @@ func (s *SpreadStrategy) buy(wg *sync.WaitGroup, ob *types.Orderbook) {
 	minBuyPrice := ob.Bids[0].Price
 	l.Tracef("Min buy price: %v", minBuyPrice)
 	leftBalance := s.state.Get().leftBalance - s.state.Get().notConfirmedBlockedMoney
-	if leftBalance < (minBuyPrice * float32(s.config.lotSize)) {
+	if leftBalance < (minBuyPrice * float32(s.config.LotSize)) {
 		l.WithField("state", s.state.Get()).Tracef("Not enough money")
 		return
 	}
 
-	canBuySharesAmount := leftBalance / (minBuyPrice * float32(s.config.lotSize))
+	canBuySharesAmount := leftBalance / (minBuyPrice * float32(s.config.LotSize))
 	l.Tracef("First bid price: %v; Left money: %v; Can buy %v shares\n", minBuyPrice, leftBalance, canBuySharesAmount)
 	if canBuySharesAmount == 0 {
 		l.WithField("state", s.state.Get()).Trace("Can buy 0 shares")
@@ -266,13 +266,13 @@ func (s *SpreadStrategy) buy(wg *sync.WaitGroup, ob *types.Orderbook) {
 
 	l.Trace("Set is buiyng")
 	s.isBuying.value = true
-	if canBuySharesAmount > float32(s.config.maxSharesToHold) {
+	if canBuySharesAmount > float32(s.config.MaxSharesToHold) {
 		l.Tracef("Can buy more shares, than config allows")
-		canBuySharesAmount = float32(s.config.maxSharesToHold)
+		canBuySharesAmount = float32(s.config.MaxSharesToHold)
 	}
 
 	order := &types.PlaceOrder{
-		InstrumentID: s.config.InstrumentId,
+		InstrumentID: s.config.InstrumentID,
 		Quantity:     int64(canBuySharesAmount),
 		Price:        types.Price(minBuyPrice),
 		Direction:    types.Buy,
@@ -315,9 +315,9 @@ func (s *SpreadStrategy) sell(wg *sync.WaitGroup, ob *types.Orderbook) {
 	minAskPrice := ob.Asks[0].Price
 	l.Tracef("Min ask price %v", minAskPrice)
 
-	isGoodPrice := minAskPrice-state.lastBuyPrice >= s.config.minProfit
-	hasStopLossBroken := s.config.stopLossAfter != float32(0) && ob.Bids[0].Price <= state.lastBuyPrice-s.config.stopLossAfter
-fmt.Printf("320 strategy %v <= %v - %v (%vis %v\n", ob.Bids[0].Price, state.lastBuyPrice, s.config.stopLossAfter, state.lastBuyPrice-s.config.stopLossAfter, hasStopLossBroken)
+	isGoodPrice := minAskPrice-state.lastBuyPrice >= s.config.MinProfit
+	hasStopLossBroken := s.config.StopLossAfter != float32(0) && ob.Bids[0].Price <= state.lastBuyPrice-s.config.StopLossAfter
+	fmt.Printf("320 strategy %v <= %v - %v (%vis %v\n", ob.Bids[0].Price, state.lastBuyPrice, s.config.StopLossAfter, state.lastBuyPrice-s.config.StopLossAfter, hasStopLossBroken)
 	shouldMakeSell := isGoodPrice || hasStopLossBroken
 	if !shouldMakeSell {
 		l.WithField("lastBuyPrice", state.lastBuyPrice).Tracef("Not a good deal")
@@ -341,13 +341,13 @@ fmt.Printf("320 strategy %v <= %v - %v (%vis %v\n", ob.Bids[0].Price, state.last
 		price = ob.Bids[0].Price
 		l.WithFields(log.Fields{
 			"lastBuyPrice":  state.lastBuyPrice,
-			"stopLoss":      s.config.stopLossAfter,
-			"stopLossPrice": state.lastBuyPrice - s.config.stopLossAfter,
+			"stopLoss":      s.config.StopLossAfter,
+			"stopLossPrice": state.lastBuyPrice - s.config.StopLossAfter,
 		}).Info("Stop loss broken")
 	}
 
 	order := &types.PlaceOrder{
-		InstrumentID: s.config.InstrumentId,
+		InstrumentID: s.config.InstrumentID,
 		Quantity:     int64(state.holdingShares),
 		Direction:    types.Sell,
 		Price:        types.Price(price),
@@ -389,8 +389,8 @@ func (s *SpreadStrategy) onOrderSateChange(state types.OrderExecutionState) {
 
 	if state.Direction == types.Buy {
 		l.Trace("Updating state after buy order executed")
-		newState.holdingShares += int32(state.LotsExecuted / int(s.config.lotSize))
-		newState.pendingBuyShares -= int32(state.LotsExecuted / int(s.config.lotSize))
+		newState.holdingShares += int32(state.LotsExecuted / int(s.config.LotSize))
+		newState.pendingBuyShares -= int32(state.LotsExecuted / int(s.config.LotSize))
 		newState.notConfirmedBlockedMoney -= float32(state.ExecutedOrderPrice)
 		newState.leftBalance -= float32(state.ExecutedOrderPrice)
 		l.Tracef(
@@ -403,9 +403,9 @@ func (s *SpreadStrategy) onOrderSateChange(state types.OrderExecutionState) {
 	if state.Direction == types.Sell {
 		l.Trace("Updating state after sell order executed")
 
-		newState.pendingSellShares -= int32(state.LotsExecuted / int(s.config.lotSize))
+		newState.pendingSellShares -= int32(state.LotsExecuted / int(s.config.LotSize))
 		newState.leftBalance += float32(state.ExecutedOrderPrice)
-		newState.holdingShares -= int32(state.LotsExecuted / int(s.config.lotSize))
+		newState.holdingShares -= int32(state.LotsExecuted / int(s.config.LotSize))
 		l.Tracef(
 			"Lots executed %v of %v; Executed sell price %v",
 			state.LotsExecuted,

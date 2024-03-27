@@ -186,5 +186,5 @@ func (sp *StrategyPool) getConfig(key strategies.StrategyKey, instrumentID strin
 }
 
 func (sp *StrategyPool) getMapKey(key strategies.StrategyKey, instrumentID string) string {
-	return string(key) + instrumentID
+	return string(key) + "_" + instrumentID
 }

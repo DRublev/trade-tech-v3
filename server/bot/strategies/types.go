@@ -22,13 +22,8 @@ func (s StrategyKey) IsValid() bool {
 }
 
 // Config Общий конфиг для стратегии
-type Config struct {
-	// Доступный для торговли баланс
-	Balance float32
+type Config map[string]any	
 
-	// Акция для торговли
-	InstrumentId string
-}
 
 // IStrategy Интерфейс стратегии
 type IStrategy interface {
