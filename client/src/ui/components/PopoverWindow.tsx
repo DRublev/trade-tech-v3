@@ -2,8 +2,8 @@ import React, { FC } from "react"
 import * as Popover from '@radix-ui/react-popover';
 
 type Props = {
-    children?: React.ReactNode
-    trigger?: React.ReactNode
+    children?: React.ReactNode;
+    trigger?: React.ReactNode;
 };
 
 export const PopoverWindow: FC<Props> = ({ children, trigger }) => {

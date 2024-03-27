@@ -16,7 +16,7 @@ const toolBarButtonProps = {
 }
 
 export const ControlsPanel = () => {
-    const startTrade = useIpcInoke('START_TRADE');
+    const startTrade = useIpcInvoke('START_TRADE');
     const [isStarted, setIsStarted] = useState(false);
     const navigate = useNavigate();
 
