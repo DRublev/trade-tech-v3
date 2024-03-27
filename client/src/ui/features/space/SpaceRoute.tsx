@@ -1,19 +1,26 @@
 import React, { useState, useRef } from 'react';
 import { Layout } from "../../components/Layout"
 import * as Toolbar from '@radix-ui/react-toolbar';
-import { Button, Card, Flex } from "@radix-ui/themes";
-import { PlayIcon, StopIcon } from '@radix-ui/react-icons';
+import { Card, Flex } from "@radix-ui/themes";
+import { MixerHorizontalIcon, PersonIcon, PlayIcon, StopIcon } from '@radix-ui/react-icons';
 import style from '../../basicStyles.css';
 import Chart from "./chart";
 import s from './styles.css';
 import { SharesPop } from './SharesPopUp';
 import { useIpcInoke } from '../../hooks';
 import { useCurrentInstrumentId } from './hooks';
+import { useNavigate } from 'react-router-dom';
+
+const toolBarButtonProps = {
+  className: style.button,
+  style: { verticalAlign: 'middle', transform: 'scale(1.6)', marginRight: '20px' },
+}
 
 export const ControlsPanel = () => {
     const startTrade = useIpcInoke('START_TRADE');
     const [isStarted, setIsStarted] = useState(false);
     const [instrument] = useCurrentInstrumentId();
+    const navigate = useNavigate();
 
     const onStartClick = async () => {
         setIsStarted(!isStarted)
@@ -28,21 +35,30 @@ export const ControlsPanel = () => {
         }
     }
 
+    const onAccountClick = () => {
+      navigate('/register/select-account');
+    }
+
     return (
-        <Card style={{ minWidth: '40vw', padding: 0, position: 'fixed', left: '50%', transform: 'translate(-50%, 50%)', bottom: '40px', margin: '0 auto', boxShadow: '4px 4px 8px 0px rgba(34, 60, 80, 0.2)' }}>
-            <Toolbar.Root>
-                <Flex align="center" justify="center" gap="4">
-                    <Toolbar.ToggleGroup type="single">
-                        <SharesPop />
-                        <Toolbar.ToggleItem value="start" asChild>
-                            <Button className={style.button} onClick={onStartClick} highContrast variant="ghost" size="1" radius="full" style={{ verticalAlign: 'middle', transform: 'scale(1.6)' }}>
-                                {isStarted ? <StopIcon /> : <PlayIcon />}
-                            </Button>
-                        </Toolbar.ToggleItem>
-                    </Toolbar.ToggleGroup>
-                </Flex>
-            </Toolbar.Root>
-        </Card>
+        <Toolbar.Root>
+            <Flex align="center" justify="center" gap="4">
+                <Toolbar.ToggleGroup type="single">
+                    <SharesPop 
+                      trigger={
+                        <Toolbar.Button asChild {...toolBarButtonProps}>
+                          <MixerHorizontalIcon color='white' style={{ color: 'black' }} />
+                        </Toolbar.Button>
+                      } 
+                    />
+                    <Toolbar.Button value="start" asChild onClick={onStartClick} {...toolBarButtonProps}>
+                        {isStarted ? <StopIcon /> : <PlayIcon />}
+                    </Toolbar.Button>
+                    <Toolbar.Button value="start" asChild onClick={onAccountClick} {...toolBarButtonProps}>
+                        <PersonIcon />
+                    </Toolbar.Button>
+                </Toolbar.ToggleGroup>
+            </Flex>
+        </Toolbar.Root>
     )
 }
 
@@ -56,7 +72,9 @@ export const SpaceRoute = () => {
             <Card ref={chartContainer} className={s.chartContainer}>
                 <Chart containerRef={chartContainer} />
             </Card>
-            <ControlsPanel />
+            <Card>
+              <ControlsPanel />
+            </Card>
         </Layout>
     )
 }
