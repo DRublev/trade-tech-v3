@@ -2,7 +2,7 @@ import React, { FC, MutableRefObject, RefObject, useCallback, useEffect, useRef,
 import { ColorType, IChartApi, createChart, SeriesMarker, Time } from 'lightweight-charts';
 import { useChartDimensions } from "./hooks";
 import { OHLCData } from "../../../../types";
-import { useCandles, useOrders } from '../hooks';
+import { useCandles, useCurrentInstrumentId, useOrders } from '../hooks';
 
 type ChartProps = {
     containerRef: MutableRefObject<HTMLElement>;
@@ -115,10 +115,10 @@ const useChart = ({ containerRef, }: UseChartProps): [RefObject<HTMLDivElement>,
 
 
 const Chart: FC<ChartProps> = ({ containerRef }) => {
-    const [ref, api] = useChart({ containerRef });
-    // TODO: Прокидывать id выбранного инструмента
-    const { initialData, isLoading } = useCandles(api.updatePriceSeries);
-    useOrders(api.updateMarkers);
+    const [ref, api] = useChart({ containerRef })
+    const [instrument] = useCurrentInstrumentId();
+    const { initialData, isLoading } = useCandles(api.updatePriceSeries, instrument);
+    useOrders(api.updateMarkers, instrument);
 
     useEffect(() => {
         api.setInitialPriceSeries(initialData)

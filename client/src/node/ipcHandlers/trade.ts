@@ -2,15 +2,16 @@ import { ipcMain } from 'electron';
 import { ipcEvents } from '../../ipcEvents';
 import { tradeService } from '../grpc/trade';
 
-ipcMain.handle(ipcEvents.START_TRADE, async (e) => {
-    const response = await new Promise(resolve => tradeService.start({
-        InstrumentId: 'BBG004730RP0',
-        Strategy: 'spread_v0'
-    }, (err, res) => {
-        if (err) return resolve(false);
-        console.log('11 trade', res);
+ipcMain.handle(ipcEvents.START_TRADE, async (e, req) => {
+    const { instrumentId } = req;
 
-        resolve(true);
-    }));
+    if (!instrumentId) return Promise.reject("instrumentId является обязательным параметром");
+
+    const response = await tradeService.start({
+        InstrumentId: instrumentId,
+        // TODO: Сделать эндпоинт, который бы отдавал с бека список стратегий с некоторой инфой, а на фронте его показывать как опции
+        Strategy: 'spread_v0'
+    });
+
     return response
 });
