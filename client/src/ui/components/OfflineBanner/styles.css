@@ -1,0 +1,12 @@
+.internetStatus{
+  display: flex;
+  height: 32px;
+  align-items: center;
+  justify-content: center;
+}
+.offline{
+  color: #FFC53D;
+}
+.online{
+  color: #30A46C;
+}
