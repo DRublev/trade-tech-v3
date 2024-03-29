@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	bot "main/bot"
+	config "main/bot/config"
 	"main/bot/strategies"
 	trade "main/server/contracts/contracts.trade"
 
@@ -48,6 +49,31 @@ func (s *Server) Stop(ctx context.Context, in *trade.StopRequest) (*trade.StopRe
 	tradeL.Info("Stop responding")
 	return &trade.StopResponse{
 		Ok:    ok,
+		Error: errMsg,
+	}, err
+}
+
+func (s *Server) ChangeConfig(ctx context.Context, in *trade.ChangeConfigRequest) (*trade.ChangeConfigResponse, error) {
+	tradeL.Info("ChangeConfig requested")
+
+	configKey := in.Strategy + "_" + in.InstrumentId
+	configRepository := config.New()
+	config := make(strategies.Config)
+
+	for key, value := range in.Config.AsMap() {
+		config[key] = value
+	}
+
+	err := configRepository.Set(configKey, config)
+	errMsg := ""
+	if err != nil {
+		log.Errorf("Error setting config: %v", err)
+		errMsg = err.Error()
+	}
+
+	tradeL.Info("ChangeConfig responding")
+	return &trade.ChangeConfigResponse{
+		Ok:    true,
 		Error: errMsg,
 	}, err
 }
