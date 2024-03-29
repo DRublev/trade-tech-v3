@@ -523,11 +523,21 @@ export const TradeService = {
     responseSerialize: (value: StopResponse) => Buffer.from(StopResponse.encode(value).finish()),
     responseDeserialize: (value: Buffer) => StopResponse.decode(value),
   },
+  changeConfig: {
+    path: "/trade.Trade/ChangeConfig",
+    requestStream: false,
+    responseStream: false,
+    requestSerialize: (value: ChangeConfigRequest) => Buffer.from(ChangeConfigRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer) => ChangeConfigRequest.decode(value),
+    responseSerialize: (value: ChangeConfigResponse) => Buffer.from(ChangeConfigResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer) => ChangeConfigResponse.decode(value),
+  },
 } as const;
 
 export interface TradeServer extends UntypedServiceImplementation {
   start: handleUnaryCall<StartRequest, StartResponse>;
   stop: handleUnaryCall<StopRequest, StopResponse>;
+  changeConfig: handleUnaryCall<ChangeConfigRequest, ChangeConfigResponse>;
 }
 
 export interface TradeClient extends Client {
@@ -557,6 +567,21 @@ export interface TradeClient extends Client {
     metadata: Metadata,
     options: Partial<CallOptions>,
     callback: (error: ServiceError | null, response: StopResponse) => void,
+  ): ClientUnaryCall;
+  changeConfig(
+    request: ChangeConfigRequest,
+    callback: (error: ServiceError | null, response: ChangeConfigResponse) => void,
+  ): ClientUnaryCall;
+  changeConfig(
+    request: ChangeConfigRequest,
+    metadata: Metadata,
+    callback: (error: ServiceError | null, response: ChangeConfigResponse) => void,
+  ): ClientUnaryCall;
+  changeConfig(
+    request: ChangeConfigRequest,
+    metadata: Metadata,
+    options: Partial<CallOptions>,
+    callback: (error: ServiceError | null, response: ChangeConfigResponse) => void,
   ): ClientUnaryCall;
 }
 

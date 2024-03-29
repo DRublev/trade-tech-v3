@@ -24,4 +24,11 @@ ipcMain.handle(ipcEvents.CHANGE_STRATEGY_CONFIG, async (e, req) => {
     if (!strategy) return Promise.reject("strategy является обязательным параметром");
     if (!values) return Promise.reject("values является обязательным параметром");
 
+    const response = await tradeService.changeConfig({
+        InstrumentId: instrumentId,
+        Strategy: strategy,
+        Config: values,
+    });
+
+    return response;
 })
