@@ -9,6 +9,7 @@ import type {
   UntypedServiceImplementation,
 } from "@grpc/grpc-js";
 import _m0 from "protobufjs/minimal";
+import { Struct } from "./google/protobuf/struct";
 
 export const protobufPackage = "trade";
 
@@ -35,7 +36,7 @@ export interface StopResponse {
 export interface ChangeConfigRequest {
   Strategy: string;
   InstrumentId: string;
-  Config: string;
+  Config: { [key: string]: any } | undefined;
 }
 
 export interface ChangeConfigResponse {
@@ -340,7 +341,7 @@ export const StopResponse = {
 };
 
 function createBaseChangeConfigRequest(): ChangeConfigRequest {
-  return { Strategy: "", InstrumentId: "", Config: "" };
+  return { Strategy: "", InstrumentId: "", Config: undefined };
 }
 
 export const ChangeConfigRequest = {
@@ -351,8 +352,8 @@ export const ChangeConfigRequest = {
     if (message.InstrumentId !== "") {
       writer.uint32(18).string(message.InstrumentId);
     }
-    if (message.Config !== "") {
-      writer.uint32(26).string(message.Config);
+    if (message.Config !== undefined) {
+      Struct.encode(Struct.wrap(message.Config), writer.uint32(26).fork()).ldelim();
     }
     return writer;
   },
@@ -383,7 +384,7 @@ export const ChangeConfigRequest = {
             break;
           }
 
-          message.Config = reader.string();
+          message.Config = Struct.unwrap(Struct.decode(reader, reader.uint32()));
           continue;
       }
       if ((tag & 7) === 4 || tag === 0) {
@@ -398,7 +399,7 @@ export const ChangeConfigRequest = {
     return {
       Strategy: isSet(object.Strategy) ? globalThis.String(object.Strategy) : "",
       InstrumentId: isSet(object.InstrumentId) ? globalThis.String(object.InstrumentId) : "",
-      Config: isSet(object.Config) ? globalThis.String(object.Config) : "",
+      Config: isObject(object.Config) ? object.Config : undefined,
     };
   },
 
@@ -410,7 +411,7 @@ export const ChangeConfigRequest = {
     if (message.InstrumentId !== "") {
       obj.InstrumentId = message.InstrumentId;
     }
-    if (message.Config !== "") {
+    if (message.Config !== undefined) {
       obj.Config = message.Config;
     }
     return obj;
@@ -423,7 +424,7 @@ export const ChangeConfigRequest = {
     const message = createBaseChangeConfigRequest();
     message.Strategy = object.Strategy ?? "";
     message.InstrumentId = object.InstrumentId ?? "";
-    message.Config = object.Config ?? "";
+    message.Config = object.Config ?? undefined;
     return message;
   },
 };
@@ -576,6 +577,10 @@ export type DeepPartial<T> = T extends Builtin ? T
 type KeysOfUnion<T> = T extends T ? keyof T : never;
 export type Exact<P, I extends P> = P extends Builtin ? P
   : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
+
+function isObject(value: any): boolean {
+  return typeof value === "object" && value !== null;
+}
 
 function isSet(value: any): boolean {
   return value !== null && value !== undefined;

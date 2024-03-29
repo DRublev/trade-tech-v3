@@ -1,5 +1,7 @@
 syntax = "proto3";
 
+import "google/protobuf/struct.proto";
+
 package trade;
 
 option go_package = "contracts.trade";
@@ -32,7 +34,7 @@ message StopResponse {
 message ChangeConfigRequest {
     string Strategy = 1;
     string InstrumentId = 2;
-    string Config = 3;
+    google.protobuf.Struct Config = 3;
 }
 
 message ChangeConfigResponse {
