@@ -1,13 +1,14 @@
 import { Button, Dialog, Flex } from "@radix-ui/themes";
 import type { FC } from "react";
-import React from "react";
+import React, { useEffect, useState } from "react";
 
 type Props = {
-    children?: React.ReactNode;
-    trigger?: React.ReactNode;
     title: string | React.ReactNode;
     description?: string | React.ReactNode;
+    trigger?: React.ReactNode;
+    children?: React.ReactNode;
     actions?: React.ReactNode[];
+    close?: boolean;
 };
 
 export const Modal: FC<Props> = ({
@@ -15,14 +16,23 @@ export const Modal: FC<Props> = ({
     description,
     children,
     trigger,
+    close,
     actions = [
         <Button variant="soft" color="gray">
             Закрыть
         </Button>,
     ],
 }: Props) => {
+    const [open, setOpen] = useState(false);
+
+    useEffect(() => {
+        if (open && close) {
+            setOpen(false);
+        }
+    }, [open, close])
+
     return (
-        <Dialog.Root>
+        <Dialog.Root open={open} onOpenChange={setOpen}>
             <Dialog.Trigger>{trigger}</Dialog.Trigger>
             <Dialog.Content>
                 <Dialog.Title>{title}</Dialog.Title>

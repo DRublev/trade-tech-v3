@@ -15,3 +15,13 @@ ipcMain.handle(ipcEvents.START_TRADE, async (e, req) => {
 
     return response
 });
+
+
+ipcMain.handle(ipcEvents.CHANGE_STRATEGY_CONFIG, async (e, req) => {
+    const { instrumentId, strategy, values } = req;
+
+    if (!instrumentId) return Promise.reject("instrumentId является обязательным параметром");
+    if (!strategy) return Promise.reject("strategy является обязательным параметром");
+    if (!values) return Promise.reject("values является обязательным параметром");
+
+})

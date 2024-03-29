@@ -83,8 +83,6 @@ const useChart = ({ containerRef, }: UseChartProps): [RefObject<HTMLDivElement>,
     }, [])
 
     const updatePriceSeries = useCallback((newItem: OHLCData) => {
-        console.log('43 Chart', 'new candle!', newItem);
-
         if (!candlesApiRef.current) return;
         candlesApiRef.current.update(newItem);
     }, [candlesApiRef.current]);
