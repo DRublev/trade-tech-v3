@@ -10,6 +10,7 @@ service Trade {
     rpc Start(StartRequest) returns (StartResponse);
     rpc Stop(StopRequest) returns (StopResponse);
     rpc ChangeConfig(ChangeConfigRequest) returns (ChangeConfigResponse);
+    rpc GetConfig(GetConfigRequest) returns (GetConfigResponse);
 }
 
 message StartRequest {
@@ -41,4 +42,13 @@ message ChangeConfigRequest {
 message ChangeConfigResponse {
     bool Ok = 1;
     string Error = 2;
+}
+
+message GetConfigRequest {
+    string Strategy = 1;
+    string InstrumentId = 2;
+}
+
+message GetConfigResponse {
+    google.protobuf.Struct Config = 1;
 }
