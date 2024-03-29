@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { useIpcInvoke } from "../../hooks";
 import { ConfigScheme } from "./types";
 
@@ -61,16 +62,25 @@ type UseConfigHook = (instrumentId: string, strategy: string) => {
     scheme: ReturnType<typeof useConfigScheme>;
     defaultValues: Record<string, any>;
 }
+
 export const useConfig: UseConfigHook = (instrumentId: string, strategy: string) => {
     const api = useConfigIpc();
     const scheme = useConfigScheme(instrumentId, strategy);
+    const [defaultValues, setDefaultValues] = useState({});
 
-    const defaultValues = {
-        Balance: 450,
-        MaxSharesToHold: 1,
-        MinProfit: 0.34,
-        StopLossAfter: 1,
-    };
+    const fetchInitialValues = async () => {
+        try {
+            const cfg = await api.get({ instrumentId, strategy });
+            setDefaultValues(cfg);
+        } catch (e) {
+            console.log('80 hooks', e);
+            // TODO: Тут отправка в сентри/логгер
+        }
+    }
+
+    useEffect(() => {
+        fetchInitialValues()
+    }, [])
 
     return { api, scheme, defaultValues };
 }

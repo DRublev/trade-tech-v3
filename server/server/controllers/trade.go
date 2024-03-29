@@ -2,10 +2,14 @@ package controllers
 
 import (
 	"context"
+	"encoding/json"
 	bot "main/bot"
 	config "main/bot/config"
 	"main/bot/strategies"
 	trade "main/server/contracts/contracts.trade"
+
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -76,4 +80,32 @@ func (s *Server) ChangeConfig(ctx context.Context, in *trade.ChangeConfigRequest
 		Ok:    true,
 		Error: errMsg,
 	}, err
+}
+
+func (s *Server) GetConfig(ctx context.Context, in *trade.GetConfigRequest) (*trade.GetConfigResponse, error) {
+	tradeL.Info("GetConfig requested")
+
+	configKey := in.Strategy + "_" + in.InstrumentId
+	configRepository := config.New()
+
+	c, err := configRepository.Get(configKey)
+	if err != nil {
+		return nil, err
+	}
+
+	res := &trade.GetConfigResponse{}
+
+	b, err := json.Marshal(c)
+	configStruct := &structpb.Struct{}
+
+	err = protojson.Unmarshal(b, configStruct)
+	if err != nil {
+		return nil, err
+	}
+
+	res.Config = configStruct
+
+	tradeL.Info("GetConfig responding")
+	return res, nil
+
 }
