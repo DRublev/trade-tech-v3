@@ -1,9 +1,9 @@
 import type { FC } from 'react';
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { Modal } from '../../components/Modal';
 import { ConfigForm } from './ConfigForm';
 import * as ScrollArea from '@radix-ui/react-scroll-area';
-import { useConfig } from './hooks';
+import { ConfigFieldTypes, useConfig } from './hooks';
 import { useCurrentInstrumentId } from '../space/hooks';
 import s from './ConfigChangeModal.css';
 
@@ -18,7 +18,7 @@ export const ConfigChangeModal: FC<Props> = ({ trigger }: Props) => {
     const { api, scheme, defaultValues } = useConfig(instrumentId, strategy);
     const [shouldClose, setShouldClose] = useState(undefined); // TODO: Костыль, надо подумать как сделать удобнее
 
-    const onSubmit = async (rawValues: Record<string, any>) => {
+    const onSubmit = useCallback(async (rawValues: Record<string, any>) => {
         try {
             let changedFields = 0;
             const values: Record<string, any> = {};
@@ -28,7 +28,7 @@ export const ConfigChangeModal: FC<Props> = ({ trigger }: Props) => {
                 }
                 const field = scheme.fields.find(f => f.name === fieldKey);
                 if (!field) continue;
-                if (field.type === 'number' || field.type === 'money') {
+                if (field.type === ConfigFieldTypes.number || field.type === ConfigFieldTypes.money) {
                     values[fieldKey] = Number(rawValues[fieldKey]);
                     continue;
                 }
@@ -44,10 +44,10 @@ export const ConfigChangeModal: FC<Props> = ({ trigger }: Props) => {
             setShouldClose(true);
             setTimeout(() => setShouldClose(false))
         } catch (e) {
-            console.log('22 ConfigChangeModal', e);
+            console.error('22 ConfigChangeModal', e);
             // TODO: Алерт, а лучше месседж в форму с разбором ошибки
         }
-    };
+    }, [scheme, api, defaultValues]);
 
     return (
         <Modal title="Настройки стратегии" close={shouldClose} trigger={trigger} actions={[]}>

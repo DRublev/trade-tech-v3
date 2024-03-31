@@ -2,6 +2,12 @@ import { useEffect, useState } from "react";
 import { useIpcInvoke } from "../../hooks";
 import { ConfigScheme } from "./types";
 
+type FieldTypes = ConfigScheme['fields'][number]['type'];
+export const ConfigFieldTypes: Record<FieldTypes, FieldTypes> = {
+    number: 'number',
+    money: 'money',
+}
+
 type UseConfigSchemeHook = (insrumentId: string, strategy?: string) => ConfigScheme;
 
 const useConfigScheme: UseConfigSchemeHook = (instrumentId, strategy) => {
@@ -13,7 +19,7 @@ const useConfigScheme: UseConfigSchemeHook = (instrumentId, strategy) => {
                 required: true,
                 label: 'Доступный для торговли баланс',
                 placeholder: 'рублей',
-                type: 'number',
+                type: ConfigFieldTypes.number,
                 min: 0,
                 htmlType: 'number',
             },
@@ -22,7 +28,7 @@ const useConfigScheme: UseConfigSchemeHook = (instrumentId, strategy) => {
                 required: true,
                 label: 'Максимально лотов',
                 placeholder: 'штук',
-                type: 'number',
+                type: ConfigFieldTypes.number,
                 min: 1,
                 step: 1,
                 htmlType: 'number',
@@ -32,7 +38,7 @@ const useConfigScheme: UseConfigSchemeHook = (instrumentId, strategy) => {
                 required: true,
                 label: 'Минимальный профит со сделки',
                 placeholder: '',
-                type: 'number',
+                type: ConfigFieldTypes.number,
                 min: 0,
                 step: 0.01,
                 htmlType: 'number',
@@ -41,7 +47,7 @@ const useConfigScheme: UseConfigSchemeHook = (instrumentId, strategy) => {
                 name: 'StopLossAfter',
                 label: 'Стоп-лосс',
                 placeholder: 'цена покупки - стоп-лосс = цена продажи',
-                type: 'number',
+                type: ConfigFieldTypes.number,
                 min: 0,
                 step: 0.01,
                 htmlType: 'number',
