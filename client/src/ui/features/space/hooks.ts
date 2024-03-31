@@ -1,8 +1,8 @@
-import { GetCandlesRequest } from '.././contracts/marketData';
+import { GetCandlesRequest } from '../../../node/grpc/contracts/marketData';
 import { useIpcInvoke, useIpcListen } from "../../hooks";
 import { OHLCData, OrderState } from "../../../types";
 import { useState, useEffect, useCallback } from "react";
-import { GetTradingSchedulesRequest, GetTradingSchedulesResponse, TradingSchedule } from "../../../../grpcGW/shares";
+import { GetTradingSchedulesRequest, GetTradingSchedulesResponse, TradingSchedule } from "../../../node/grpc/contracts/shares";
 import { SeriesMarker, Time } from 'lightweight-charts';
 
 type GetCandlesResponse = OHLCData[];
