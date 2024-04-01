@@ -27,8 +27,8 @@ export const TradeLogs: FC<Props> = () => {
                 {logs.map((l) => (
                     <Flex gap="5" key={l.time} align="center" p="1">
                         {l.operationType == 1 ? <BuyLabel /> : <SellLabel />}
-                        <Text>{l.lotsExecuted} x {l.price}</Text>
-                        <Text>{l.price * l.lotsExecuted}</Text>
+                        <Text>{l.lotsExecuted} x {l.price}₽</Text>
+                        <Text>{l.price * l.lotsExecuted}₽</Text>
                     </Flex>
                 ))}
             </ScrollArea>

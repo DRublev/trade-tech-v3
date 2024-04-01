@@ -14,12 +14,12 @@ export const TradeStats: FC<Props> = () => {
         <Flex align="center" mb="1" gap="2">
             <ReloadIcon />
             <Text>Оборот</Text>
-            {turnover.toFixed(2)}
+            <Text>{turnover.toFixed(2)}₽</Text>
         </Flex>
         <Flex align="center" mb="1" gap="2">
             <DoubleArrowUpIcon />
             <Text>Профит</Text>
-            <Text color={profit >= 0 ? 'green' : 'red'}>{profit.toFixed(2)}</Text>
+            <Text color={profit >= 0 ? 'green' : 'red'}>{profit.toFixed(2)}₽</Text>
         </Flex>
         <Flex align="center" mb="1" gap="2">
             <ListBulletIcon />
