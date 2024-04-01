@@ -44,7 +44,7 @@ func NewPool() *StrategyPool {
 
 	oncePool.Do(func() {
 		pool = &StrategyPool{}
-		pool.configRepository = &config.ConfigRepository{}
+		pool.configRepository = config.New()
 		pool.strategies = StrategiesMap{
 			value: make(map[string]strategies.IStrategy),
 		}

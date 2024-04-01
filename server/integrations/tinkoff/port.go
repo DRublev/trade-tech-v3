@@ -472,7 +472,7 @@ func (c *TinkoffBrokerPort) SubscribeOrders(cb func(types.OrderExecutionState)) 
 					Direction:          types.OperationType(tradeState.Direction),
 					InstrumentID:       tradeState.InstrumentUid,
 					LotsExecuted:       lotsExecuted,
-					Status:             0, // TODO: Научитться определять статус заявки
+					Status:             0, // TODO: Научиться определять статус заявки
 					ExecutedOrderPrice: executedPrice,
 					// TODO: Научиться считать вот это все (из tradeState.Trades видимо)
 					// LotsRequested      int
@@ -555,7 +555,7 @@ func (c *TinkoffBrokerPort) GetOrderState(orderID types.OrderID) (types.OrderExe
 		Direction:          types.OperationType(state.Direction),
 		InstrumentID:       state.InstrumentUid,
 		LotsExecuted:       int(state.LotsExecuted),
-		Status:             status, // TODO: Научитться определять статус заявки
+		Status:             status, // TODO: Научиться определять статус заявки
 		ExecutedOrderPrice: state.ExecutedOrderPrice.ToFloat(),
 	}
 

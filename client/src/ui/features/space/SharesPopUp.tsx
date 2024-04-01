@@ -90,8 +90,8 @@ export const SharesPop = ({trigger}: {trigger?: React.ReactNode}) => {
     }
 
     return (
-        <PopoverWindow trigger={trigger ?? SharesTriggerButton()}>
-            {SharesPopUpContent()}
+        <PopoverWindow trigger={trigger ?? <SharesTriggerButton />}>
+            <SharesPopUpContent />
         </PopoverWindow>
     )
 }

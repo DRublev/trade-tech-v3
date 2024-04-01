@@ -19,8 +19,10 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	Trade_Start_FullMethodName = "/trade.Trade/Start"
-	Trade_Stop_FullMethodName  = "/trade.Trade/Stop"
+	Trade_Start_FullMethodName        = "/trade.Trade/Start"
+	Trade_Stop_FullMethodName         = "/trade.Trade/Stop"
+	Trade_ChangeConfig_FullMethodName = "/trade.Trade/ChangeConfig"
+	Trade_GetConfig_FullMethodName    = "/trade.Trade/GetConfig"
 )
 
 // TradeClient is the client API for Trade service.
@@ -29,6 +31,8 @@ const (
 type TradeClient interface {
 	Start(ctx context.Context, in *StartRequest, opts ...grpc.CallOption) (*StartResponse, error)
 	Stop(ctx context.Context, in *StopRequest, opts ...grpc.CallOption) (*StopResponse, error)
+	ChangeConfig(ctx context.Context, in *ChangeConfigRequest, opts ...grpc.CallOption) (*ChangeConfigResponse, error)
+	GetConfig(ctx context.Context, in *GetConfigRequest, opts ...grpc.CallOption) (*GetConfigResponse, error)
 }
 
 type tradeClient struct {
@@ -57,12 +61,32 @@ func (c *tradeClient) Stop(ctx context.Context, in *StopRequest, opts ...grpc.Ca
 	return out, nil
 }
 
+func (c *tradeClient) ChangeConfig(ctx context.Context, in *ChangeConfigRequest, opts ...grpc.CallOption) (*ChangeConfigResponse, error) {
+	out := new(ChangeConfigResponse)
+	err := c.cc.Invoke(ctx, Trade_ChangeConfig_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tradeClient) GetConfig(ctx context.Context, in *GetConfigRequest, opts ...grpc.CallOption) (*GetConfigResponse, error) {
+	out := new(GetConfigResponse)
+	err := c.cc.Invoke(ctx, Trade_GetConfig_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // TradeServer is the server API for Trade service.
 // All implementations must embed UnimplementedTradeServer
 // for forward compatibility
 type TradeServer interface {
 	Start(context.Context, *StartRequest) (*StartResponse, error)
 	Stop(context.Context, *StopRequest) (*StopResponse, error)
+	ChangeConfig(context.Context, *ChangeConfigRequest) (*ChangeConfigResponse, error)
+	GetConfig(context.Context, *GetConfigRequest) (*GetConfigResponse, error)
 	mustEmbedUnimplementedTradeServer()
 }
 
@@ -75,6 +99,12 @@ func (UnimplementedTradeServer) Start(context.Context, *StartRequest) (*StartRes
 }
 func (UnimplementedTradeServer) Stop(context.Context, *StopRequest) (*StopResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Stop not implemented")
+}
+func (UnimplementedTradeServer) ChangeConfig(context.Context, *ChangeConfigRequest) (*ChangeConfigResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ChangeConfig not implemented")
+}
+func (UnimplementedTradeServer) GetConfig(context.Context, *GetConfigRequest) (*GetConfigResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetConfig not implemented")
 }
 func (UnimplementedTradeServer) mustEmbedUnimplementedTradeServer() {}
 
@@ -125,6 +155,42 @@ func _Trade_Stop_Handler(srv interface{}, ctx context.Context, dec func(interfac
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Trade_ChangeConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ChangeConfigRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradeServer).ChangeConfig(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Trade_ChangeConfig_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradeServer).ChangeConfig(ctx, req.(*ChangeConfigRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Trade_GetConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetConfigRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradeServer).GetConfig(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Trade_GetConfig_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradeServer).GetConfig(ctx, req.(*GetConfigRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Trade_ServiceDesc is the grpc.ServiceDesc for Trade service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -139,6 +205,14 @@ var Trade_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Stop",
 			Handler:    _Trade_Stop_Handler,
+		},
+		{
+			MethodName: "ChangeConfig",
+			Handler:    _Trade_ChangeConfig_Handler,
+		},
+		{
+			MethodName: "GetConfig",
+			Handler:    _Trade_GetConfig_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

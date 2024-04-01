@@ -1,5 +1,5 @@
 import { MagnifyingGlassIcon } from "@radix-ui/react-icons"
-import { Flex, TextField, TextFieldInput } from "@radix-ui/themes"
+import { TextField } from "@radix-ui/themes"
 import React, { ChangeEventHandler } from "react"
 
 type Props = {
