@@ -4,7 +4,7 @@ import { Modal } from '../../components/Modal';
 import { ConfigForm } from './ConfigForm';
 import * as ScrollArea from '@radix-ui/react-scroll-area';
 import { ConfigFieldTypes, useConfig } from './hooks';
-import { useCurrentInstrumentId } from '../space/hooks';
+import { useCurrentInstrumentId } from '../../utils/useCurrentInstrumentId';
 import s from './ConfigChangeModal.css';
 
 type Props = {

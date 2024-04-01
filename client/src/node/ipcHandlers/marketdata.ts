@@ -5,6 +5,7 @@ import { Quant } from "./types";
 import { OHLC, OrderState } from '../grpc/contracts/marketData';
 import { OHLCData, OrderState as Order } from "../../types";
 import { UTCTimestamp } from "lightweight-charts";
+import { ClientReadableStream } from "@grpc/grpc-js";
 
 const nanoPrecision = 1_000_000_000;
 const quantToNumber = (q: Quant): number => {
@@ -54,35 +55,45 @@ ipcMain.handle(ipcEvents.GET_CANDLES, async (e, req) => {
     return res;
 });
 
+// TODO: Вынести бы в класс, но пока пофиг 
+type HandleOrderCallback = (order: OrderState, error?: Error) => void;
+const subscribers: HandleOrderCallback[] = [];
+let stream: ClientReadableStream<OrderState>;
+const createStream = () => {
+    stream = marketdataService.subscribeOrders({})
+    stream.on('data', (order: OrderState) => {
+        Promise.allSettled(subscribers.map(cb => cb(order)))
+    });
+    stream.on('end', () => {
+        Promise.allSettled(subscribers.map(cb => cb(null, new Error('end of stream'))))
+
+    });
+    stream.on('error', (err) => {
+        Promise.allSettled(subscribers.map(cb => cb(null, err)))
+    });
+};
+
+const subscribeForOrderStateChange = (callback: HandleOrderCallback) => {
+    if (!stream) {
+        createStream();
+    }
+    subscribers.push(callback)
+};
+
 ipcMain.handle(ipcEvents.SUBSCRIBE_ORDER, async (e, req) => {
     const { instrumentId } = req;
 
     if (!instrumentId) return Promise.reject('InstrumentId обязательный параметр');
 
     const [win] = BrowserWindow.getAllWindows()
-
-    const res = new Promise((resolve, reject) => {
-        try {
-            // TODO: Хорошо бы это делать в воркере или background процессе
-            const stream = marketdataService.subscribeOrders({})
-            stream.on('data', (order: OrderState) => {
-                win.webContents.send(ipcEvents.NEW_ORDER, toOrderState(order));
-            });
-            stream.on('end', () => {
-                resolve(true);
-            });
-            stream.on('error', (err) => {
-                console.log('Error with order sending.', err);
-                reject(err);
-            })
-            resolve(true);
-        } catch (e) {
-            reject(e);
-        }
+    // TODO: Сюда бы обработку ошибок
+    subscribeForOrderStateChange((order: OrderState, error?: Error) => {
+        if (!order || order.InstrumentID != instrumentId) return;
+        win.webContents.send(ipcEvents.NEW_ORDER, toOrderState(order));
     });
 
     // TODO: Возвращать метод/строку для отписки
-    return res;
+    return;
 });
 
 ipcMain.handle(ipcEvents.SUBSCRIBE_CANDLES, async (e, req) => {

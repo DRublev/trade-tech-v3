@@ -1,8 +1,9 @@
 import React, { FC, MutableRefObject, RefObject, useCallback, useEffect, useRef, useState } from 'react';
 import { ColorType, IChartApi, createChart, SeriesMarker, Time, MouseEventHandler, CreatePriceLineOptions } from 'lightweight-charts';
 import { useChartDimensions } from "./hooks";
-import { OHLCData, OrderState } from "../../../../types";
-import { useCandles, useCurrentInstrumentId, useOrders } from '../hooks';
+import { OHLCData, OrderState } from "../../../types";
+import { useCandles, useOrders } from '../space/hooks';
+import { useCurrentInstrumentId } from '../../utils/useCurrentInstrumentId';
 
 type ChartProps = {
     containerRef: MutableRefObject<HTMLElement>;
@@ -21,7 +22,7 @@ type ChartApi = {
     setInitialPriceSeries: (initialData: OHLCData[]) => void;
     updatePriceSeries: (newItem: OHLCData) => void;
     updateMarkers: (newMarkers: SeriesMarker<Time>) => void;
-    drawPriceLine: (params: DrawPriceLineParams) => () =>void;
+    drawPriceLine: (params: DrawPriceLineParams) => () => void;
 }
 
 const chartTheme: Parameters<typeof createChart>[1] = {
@@ -65,7 +66,7 @@ const useChart = ({ containerRef, instrument }: UseChartProps): [RefObject<HTMLD
     const chartApiRef = useRef<IChartApi>();
     const candlesApiRef = useRef<ReturnType<IChartApi['addCandlestickSeries']>>();
     const [markers, setMarkers] = useState<SeriesMarker<Time>[]>([]);
-    
+
     const legend = document.createElement('div');
     legend.style = `position: absolute; left: 12px; top: 12px; z-index: 1; font-size: 14px; font-family: sans-serif; line-height: 18px; font-weight: 300;`;
     const firstRow = document.createElement('div');

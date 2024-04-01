@@ -3,7 +3,6 @@ import { useState, useEffect, useCallback } from "react";
 import { GetTradingSchedulesRequest, GetTradingSchedulesResponse, TradingSchedule } from "../../../node/grpc/contracts/shares";
 import { useIpcInvoke, useIpcListen } from "../../hooks";
 import { OHLCData, OrderState } from "../../../types";
-import { SeriesMarker, Time } from 'lightweight-charts';
 
 type GetCandlesResponse = OHLCData[];
 
@@ -82,8 +81,6 @@ export const useCandles = (onNewCandle: (d: OHLCData) => void, figiOrInstrumentI
                 end: now,
             });
 
-            console.log("39 hooks", new Date(candles[candles.length - 1].time));
-
             // TODO: Чтобы избежать лагов графика стоит ограничивать размер candles в N айтемов, в зависимости от размера окна и интервала
             setInitialData(candles);
         } catch (e) {
@@ -94,11 +91,10 @@ export const useCandles = (onNewCandle: (d: OHLCData) => void, figiOrInstrumentI
     };
 
     const subscribeCandles = async () => {
-        const res = await subscribe({
+        await subscribe({
             instrumentId: figiOrInstrumentId,
             interval,
         });
-        console.log("49 hooks", res);
     }
 
     const handleNewCandle = useCallback((e: Event, candle: OHLCData) => {
@@ -174,21 +170,4 @@ export const getTodaysSchedules = (): TradingSchedule[] => {
     }, [])
 
     return schedules
-};
-
-
-// "BBG004730RP0" /* GAZP */
-// "4c466956-d2ce-4a95-abb4-17947a65f18a" TGLD
-// "BBG004730ZJ9" /* VTBR */
-// "BBG004PYF2N3" /* POLY */
-let instrumentId = "BBG004PYF2N3" /* POLY */;
-
-export const useCurrentInstrumentId = (): [string, (c: string) => void] => {
-    const set = (candidate: string) => {
-        if (!candidate) throw new Error('candidate is required');
-
-        instrumentId = candidate;
-    };
-
-    return [instrumentId, set];
 };
