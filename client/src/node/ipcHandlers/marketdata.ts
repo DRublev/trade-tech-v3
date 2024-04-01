@@ -2,7 +2,7 @@ import { BrowserWindow, ipcMain, ipcRenderer } from "electron";
 import { ipcEvents } from "../../ipcEvents";
 import { marketdataService } from "../grpc/marketdata";
 import { Quant } from "./types";
-import { OHLC, OrderState } from './contracts/marketData';
+import { OHLC, OrderState } from '../grpc/contracts/marketData';
 import { OHLCData, OrderState as Order } from "../../types";
 import { UTCTimestamp } from "lightweight-charts";
 
@@ -11,13 +11,14 @@ const quantToNumber = (q: Quant): number => {
     return Number(q.units + (q.nano / nanoPrecision));
 }
 
+
 const candleToOhlc = (candle: OHLC): OHLCData => ({
     open: quantToNumber(candle.open),
     high: quantToNumber(candle.high),
     low: quantToNumber(candle.low),
     close: quantToNumber(candle.close),
     volume: candle.volume,
-    time: candle.time.valueOf() as UTCTimestamp,
+    time: candle.time.valueOf() / 1000 as UTCTimestamp,
 })
 const toOrderState = (candle: OrderState): Order => ({
     id: candle.IdempodentID,
@@ -27,7 +28,7 @@ const toOrderState = (candle: OrderState): Order => ({
     lotsRequested: candle.LotsRequested,
     lotsExecuted: candle.LotsExecuted,
     operationType: candle.OperationType,
-    time: candle.time.valueOf() as UTCTimestamp,
+    time: candle.time.valueOf() / 1000 as UTCTimestamp,
     strategy: candle.Strategy,
 })
 

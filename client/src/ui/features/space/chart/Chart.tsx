@@ -1,7 +1,7 @@
 import React, { FC, MutableRefObject, RefObject, useCallback, useEffect, useRef, useState } from 'react';
-import { ColorType, IChartApi, createChart, SeriesMarker, Time } from 'lightweight-charts';
+import { ColorType, IChartApi, createChart, SeriesMarker, Time, CreatePriceLineOptions, UTCTimestamp } from 'lightweight-charts';
 import { useChartDimensions } from "./hooks";
-import { OHLCData } from "../../../../types";
+import { OHLCData, OrderState } from "../../../../types";
 import { useCandles, useCurrentInstrumentId, useOrders } from '../hooks';
 
 type ChartProps = {
@@ -14,10 +14,13 @@ type UseChartProps = {
     initialData?: OHLCData[];
 }
 
+type DrawPriceLineParams = { price: number, title: string, direction: 1 | 2 };
+
 type ChartApi = {
     setInitialPriceSeries: (initialData: OHLCData[]) => void;
     updatePriceSeries: (newItem: OHLCData) => void;
     updateMarkers: (newMarkers: SeriesMarker<Time>) => void;
+    drawPriceLine: (params: DrawPriceLineParams) => () =>void;
 }
 
 const chartTheme = {
@@ -51,6 +54,9 @@ const candleSeriesTheme = {
     wickDownColor: '#ff7f7f',
     borderVisible: false,
 }
+
+const buyLineColor = '#9ce0b8'
+const sellLineColor = '#ef6060';
 
 const useChart = ({ containerRef, }: UseChartProps): [RefObject<HTMLDivElement>, ChartApi] => {
     const chartSize = useChartDimensions(containerRef);
@@ -95,6 +101,21 @@ const useChart = ({ containerRef, }: UseChartProps): [RefObject<HTMLDivElement>,
         candlesApiRef.current.setData(initialData);
     }, [candlesApiRef.current]);
 
+    const drawPriceLine = ({ price, title, direction }: DrawPriceLineParams) => {
+        const line: CreatePriceLineOptions = {
+            price,
+            title,
+            color: direction == 1 ? buyLineColor : sellLineColor,
+            lineWidth: 2,
+            lineStyle: 2, // LineStyle.Dashed
+            axisLabelVisible: true,
+        }
+        const createdLine = candlesApiRef.current.createPriceLine(line)
+        return () => {
+            candlesApiRef.current.removePriceLine(createdLine)
+        }
+    };
+
     useEffect(() => {
         if (chartApiRef.current) {
             chartApiRef.current.applyOptions({
@@ -110,15 +131,54 @@ const useChart = ({ containerRef, }: UseChartProps): [RefObject<HTMLDivElement>,
         }
     }, [markers]);
 
-    return [chartRef, { updatePriceSeries, setInitialPriceSeries, updateMarkers }];
+    return [chartRef, { updatePriceSeries, setInitialPriceSeries, updateMarkers, drawPriceLine }];
 };
+
+
+function orderToMarkerMapper(order: OrderState): SeriesMarker<Time> {
+    return {
+        time: order.time,
+        position: order.operationType === 1 ? 'belowBar' : 'aboveBar',
+        shape: 'circle',
+        color: order.operationType === 1 ? 'green' : 'red',
+        text: `${order.lotsExecuted} x ${order.price}`,
+        size: 2,
+    }
+}
+
 
 
 const Chart: FC<ChartProps> = ({ containerRef }) => {
     const [ref, api] = useChart({ containerRef })
     const [instrument] = useCurrentInstrumentId();
     const { initialData, isLoading } = useCandles(api.updatePriceSeries, instrument);
-    useOrders(api.updateMarkers, instrument);
+    const [removeLinesMap, setRemoveLinesMap] = useState<Record<string, () => void>>({});
+
+    const filterOrdersForMarkers = useCallback((order: OrderState) => {
+        if (order.lotsExecuted !== order.lotsRequested) return;
+        const marker = orderToMarkerMapper(order);
+        api.updateMarkers(marker)
+    }, []);
+    const drawWaitingPositions = useCallback((order: OrderState) => {
+        if (removeLinesMap[order.id]) {
+            removeLinesMap[order.id]();
+            setRemoveLinesMap({
+                ...removeLinesMap,
+                [order.id]: undefined,
+            });
+            return;
+        }
+        const removeLineFunc = api.drawPriceLine({
+            price: order.price,
+            title: order.price.toString(),
+            direction: order.operationType == 1 ? 1 : 2,
+        })
+        setRemoveLinesMap({
+            ...removeLinesMap,
+            [order.id]: removeLineFunc,
+        });
+    }, []);
+    useOrders([filterOrdersForMarkers, drawWaitingPositions], instrument);
 
     useEffect(() => {
         api.setInitialPriceSeries(initialData)

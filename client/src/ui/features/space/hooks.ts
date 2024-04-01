@@ -1,9 +1,8 @@
-import { GetCandlesRequest } from '.././contracts/marketData';
+import { GetCandlesRequest } from '../../../node/grpc/contracts/marketData';
 import { useIpcInoke, useIpcListen } from "../../hooks";
 import { OHLCData, OrderState } from "../../../types";
 import { useState, useEffect, useCallback } from "react";
-import { GetTradingSchedulesRequest, GetTradingSchedulesResponse, TradingSchedule } from "../../../../grpcGW/shares";
-import { SeriesMarker, Time } from 'lightweight-charts';
+import { GetTradingSchedulesRequest, GetTradingSchedulesResponse, TradingSchedule } from "../../../node/grpc/contracts/shares";
 
 type GetCandlesResponse = OHLCData[];
 
@@ -17,17 +16,10 @@ const useSubscribeOrders = () => useIpcInoke("SUBSCRIBE_ORDER");
 const useListenCandles = () => useIpcListen("NEW_CANDLE");
 const useListenOrders = () => useIpcListen("NEW_ORDER");
 
-function orderToMarkerMapper(order: OrderState): SeriesMarker<Time> {
-    return {
-        time: order.time,
-        position: order.operationType === 1 ? 'belowBar' : 'aboveBar',
-        shape: 'circle',
-        color: order.operationType === 1 ? 'green' : 'red',
-        text: `${order.lotsExecuted} x ${order.price}`,
-        size: 2,
-    }
-}
-export const useOrders = (onNewOrder: (d: SeriesMarker<Time>) => void, figiOrInstrumentId: string) => {
+
+type OnOrderCallback = (d: OrderState) => void;
+
+export const useOrders = (callback: OnOrderCallback | OnOrderCallback[], figiOrInstrumentId: string) => {
     const subscribe = useSubscribeOrders();
     const [registerOrderCb, unregisterOrderCb] = useListenOrders();
 
@@ -40,8 +32,16 @@ export const useOrders = (onNewOrder: (d: SeriesMarker<Time>) => void, figiOrIns
     const handleNewOrder = useCallback((e: Event, order: OrderState) => {
         if (!order) return;
 
-        onNewOrder(orderToMarkerMapper(order));
+        if (Array.isArray(callback)) {
+            Promise.all(callback.map(cb => () => cb(order)))
+        } else {
+            callback(order);
+        }
     }, []);
+
+    const unsubscribe = () => {
+        unregisterOrderCb(handleNewOrder);
+    }
 
     useEffect(() => {
         registerOrderCb(handleNewOrder);
@@ -50,10 +50,10 @@ export const useOrders = (onNewOrder: (d: SeriesMarker<Time>) => void, figiOrIns
     useEffect(() => {
         subscribeOrders();
 
-        return () => {
-            unregisterOrderCb(handleNewOrder);
-        }
+        return unsubscribe;
     }, [figiOrInstrumentId]);
+
+    return unsubscribe;
 }
 
 export const useCandles = (onNewCandle: (d: OHLCData) => void, figiOrInstrumentId: string, interval = 1) => {
