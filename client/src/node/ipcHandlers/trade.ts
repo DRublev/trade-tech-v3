@@ -15,6 +15,19 @@ ipcMain.handle(ipcEvents.START_TRADE, async (e, req) => {
 
     return response
 });
+ipcMain.handle(ipcEvents.STOP_TRADE, async (e, req) => {
+    const { instrumentId } = req;
+
+    if (!instrumentId) return Promise.reject("instrumentId является обязательным параметром");
+
+    const response = await tradeService.stop({
+        InstrumentId: instrumentId,
+        // TODO: Сделать эндпоинт, который бы отдавал с бека список стратегий с некоторой инфой, а на фронте его показывать как опции
+        Strategy: 'spread_v0'
+    });
+
+    return response
+});
 
 
 ipcMain.handle(ipcEvents.CHANGE_STRATEGY_CONFIG, async (e, req) => {

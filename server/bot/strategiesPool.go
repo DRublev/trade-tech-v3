@@ -4,9 +4,9 @@ import (
 	"errors"
 	"main/bot/broker"
 	config "main/bot/config"
+	errs "main/bot/errors"
 	"main/bot/orders"
 	"main/bot/strategies"
-	errs "main/bot/errors"
 	"main/types"
 	"sync"
 
@@ -58,7 +58,7 @@ func NewPool() *StrategyPool {
 // Start Запуск стратегии
 func (sp *StrategyPool) Start(key strategies.StrategyKey, instrumentID string) (bool, error) {
 	l := log.WithFields(log.Fields{
-		"method": "Start",
+		"method":       "Start",
 		"instrumentID": instrumentID,
 		"strategy":     key,
 	})
@@ -104,7 +104,7 @@ func (sp *StrategyPool) Start(key strategies.StrategyKey, instrumentID string) (
 		l.Trace("Starting strategy")
 		ok, err := s.Start(config, &ordersToPlaceCh, ordersStateCh)
 		if err != nil {
-			l.Errorf("Error starting strategy %v", err)
+			l.Errorf("Error starting strategy in pool %v", err)
 		}
 		okCh <- ok
 	}(strategy, ordersToPlaceCh, &ordersStateCh)
@@ -145,7 +145,7 @@ func (sp *StrategyPool) Start(key strategies.StrategyKey, instrumentID string) (
 // Stop Остановить работу стратегии
 func (sp *StrategyPool) Stop(key strategies.StrategyKey, instrumentID string) (bool, error) {
 	l := log.WithFields(log.Fields{
-		"method": "Stop",
+		"method":       "Stop",
 		"instrumentID": instrumentID,
 		"strategy":     key,
 	})
@@ -161,7 +161,7 @@ func (sp *StrategyPool) Stop(key strategies.StrategyKey, instrumentID string) (b
 	sp.strategies.RLock()
 	strategy, exists := sp.strategies.value[mapKey]
 	sp.strategies.RUnlock()
-	if exists {
+	if !exists {
 		l.Error("Strategy doesnt exists")
 		return false, errors.New("strategy not exists")
 	}
@@ -169,6 +169,10 @@ func (sp *StrategyPool) Stop(key strategies.StrategyKey, instrumentID string) (b
 	l.Trace("Trying to call Stop of a strategy instance")
 	ok, err := strategy.Stop()
 	l.Trace("Called Stop of a strategy instance")
+
+	sp.strategies.RLock()
+	delete(sp.strategies.value, mapKey)
+	sp.strategies.RUnlock()
 
 	return ok, err
 }

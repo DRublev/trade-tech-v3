@@ -1,6 +1,7 @@
 package spread
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"main/bot/orderbook"
@@ -86,11 +87,16 @@ type SpreadStrategy struct {
 	isSelling         isWorking
 
 	toPlaceOrders chan *types.PlaceOrder
+
+	stopCtx context.Context
 }
+
+var cancelSwitch context.CancelFunc
 
 func New() *SpreadStrategy {
 	inst := &SpreadStrategy{}
 	inst.toPlaceOrders = make(chan *types.PlaceOrder)
+	inst.stopCtx, cancelSwitch = context.WithCancel(context.Background())
 	return inst
 }
 
@@ -156,6 +162,9 @@ func (s *SpreadStrategy) Start(
 		l.Info("Start listening changes in orderbook")
 		for {
 			select {
+			case <-s.stopCtx.Done():
+				l.Info("Strategy stopped")
+				return
 			case ob, ok := <-*ch:
 				l.Trace("New orderbook change")
 				if !ok {
@@ -172,6 +181,9 @@ func (s *SpreadStrategy) Start(
 		l.Info("Start listening for new place order requests")
 		for {
 			select {
+			case <-s.stopCtx.Done():
+				l.Info("Strategy stopped")
+				return
 			case orderToPlace, ok := <-*source:
 				if !ok {
 					l.Warn("Place orders channel closed")
@@ -186,6 +198,9 @@ func (s *SpreadStrategy) Start(
 		l.Info("Start listening for orders state changes")
 		for {
 			select {
+			case <-s.stopCtx.Done():
+				l.Info("Strategy stopped")
+				return
 			case state, ok := <-*source:
 				if !ok {
 					l.Warn("Orders state channel closed")
@@ -202,11 +217,16 @@ func (s *SpreadStrategy) Start(
 
 func (s *SpreadStrategy) Stop() (bool, error) {
 	l.Info("Stopping strategy")
-	return false, nil
+	close(s.toPlaceOrders)
+	s.isBuying.value = true
+	s.isSelling.value = true
+	cancelSwitch()
+	return true, nil
 }
 
 func (s *SpreadStrategy) onOrderbook(ob *types.Orderbook) {
 	wg := &sync.WaitGroup{}
+
 	wg.Add(1)
 	go s.checkForRottenBuys(wg, ob)
 	wg.Add(1)

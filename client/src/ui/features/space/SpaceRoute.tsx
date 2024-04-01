@@ -19,19 +19,32 @@ const toolBarButtonProps = {
 
 export const ControlsPanel = () => {
     const startTrade = useIpcInvoke('START_TRADE');
+    const stopTrade = useIpcInvoke('STOP_TRADE');
     const navigate = useNavigate();
     const [instrument] = useCurrentInstrumentId();
     const [isStarted, setIsStarted] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
 
-    const onStartClick = async () => {
-        setIsStarted(!isStarted)
+    const toggleTrade = async () => {
         try {
-
-            await startTrade({
-                instrumentId: instrument,
-            });
+            let res: any = {};
+            if (isStarted) {
+                res = await stopTrade({
+                    instrumentId: instrument,
+                });
+            } else {
+                res = await startTrade({
+                    instrumentId: instrument,
+                });
+            }
+            if (res.Ok) {
+                setIsStarted(!isStarted);
+                return;
+            }
         } catch (e) {
             console.log('24 SpaceRoute', e);
+        } finally {
+            setIsLoading(false)
         }
     };
 
@@ -50,8 +63,8 @@ export const ControlsPanel = () => {
                             </Toolbar.Button>
                         }
                     />
-                    <Toolbar.Button value="start" asChild onClick={onStartClick} {...toolBarButtonProps}>
-                        {isStarted ? <StopIcon /> : <PlayIcon />}
+                    <Toolbar.Button value="start" asChild onClick={toggleTrade} {...toolBarButtonProps}>
+                        {isStarted ? <StopIcon color={isLoading ? "grey" : undefined} /> : <PlayIcon color={isLoading ? "grey" : undefined} />}
                     </Toolbar.Button>
                     <ConfigChangeModal
                         trigger={
