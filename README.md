@@ -31,8 +31,6 @@
 
 Скачать [protoc](https://grpc.io/docs/protoc-installation/)
 
-TODO: Докинуть установку плагинов для go и ts (прям командами)
-
 Установить плагины для ts
 ```sh
 npm i -g ts-proto

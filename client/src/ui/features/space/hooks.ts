@@ -1,19 +1,19 @@
-import { GetCandlesRequest } from '.././contracts/marketData';
-import { useIpcInoke, useIpcListen } from "../../hooks";
+import { GetCandlesRequest } from '../../../node/grpc/contracts/marketData';
+import { useIpcInvoke, useIpcListen } from "../../hooks";
 import { OHLCData, OrderState } from "../../../types";
 import { useState, useEffect, useCallback } from "react";
-import { GetTradingSchedulesRequest, GetTradingSchedulesResponse, TradingSchedule } from "../../../../grpcGW/shares";
+import { GetTradingSchedulesRequest, GetTradingSchedulesResponse, TradingSchedule } from "../../../node/grpc/contracts/shares";
 import { SeriesMarker, Time } from 'lightweight-charts';
 
 type GetCandlesResponse = OHLCData[];
 
-export const useGetCandles = (): (req: GetCandlesRequest) => Promise<GetCandlesResponse> => useIpcInoke("GET_CANDLES");
-export const useGetTradingSchedules = (): (req: GetTradingSchedulesRequest) => Promise<GetTradingSchedulesResponse> => useIpcInoke("GET_TRADING_SCHEDULES");
-export const useGetShares = () => useIpcInoke("GET_SHARES");
+export const useGetCandles = (): (req: GetCandlesRequest) => Promise<GetCandlesResponse> => useIpcInvoke("GET_CANDLES");
+export const useGetTradingSchedules = (): (req: GetTradingSchedulesRequest) => Promise<GetTradingSchedulesResponse> => useIpcInvoke("GET_TRADING_SCHEDULES");
+export const useGetShares = () => useIpcInvoke("GET_SHARES");
 
 // TODO: Нужен хук который сам бы хендлил отписку
-const useSubscribeCandles = () => useIpcInoke("SUBSCRIBE_CANDLES");
-const useSubscribeOrders = () => useIpcInoke("SUBSCRIBE_ORDER");
+const useSubscribeCandles = () => useIpcInvoke("SUBSCRIBE_CANDLES");
+const useSubscribeOrders = () => useIpcInvoke("SUBSCRIBE_ORDER");
 const useListenCandles = () => useIpcListen("NEW_CANDLE");
 const useListenOrders = () => useIpcListen("NEW_ORDER");
 
@@ -22,7 +22,7 @@ function orderToMarkerMapper(order: OrderState): SeriesMarker<Time> {
         time: order.time,
         position: order.operationType === 1 ? 'belowBar' : 'aboveBar',
         shape: 'circle',
-        color: order.operationType === 1 ? 'green' : 'red',
+        color: order.operationType === 1 ? '#2196F3' : '#f68410',
         text: `${order.lotsExecuted} x ${order.price}`,
         size: 2,
     }

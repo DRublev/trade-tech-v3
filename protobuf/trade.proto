@@ -1,5 +1,7 @@
 syntax = "proto3";
 
+import "google/protobuf/struct.proto";
+
 package trade;
 
 option go_package = "contracts.trade";
@@ -7,6 +9,8 @@ option go_package = "contracts.trade";
 service Trade {
     rpc Start(StartRequest) returns (StartResponse);
     rpc Stop(StopRequest) returns (StopResponse);
+    rpc ChangeConfig(ChangeConfigRequest) returns (ChangeConfigResponse);
+    rpc GetConfig(GetConfigRequest) returns (GetConfigResponse);
 }
 
 message StartRequest {
@@ -32,10 +36,19 @@ message StopResponse {
 message ChangeConfigRequest {
     string Strategy = 1;
     string InstrumentId = 2;
-    string Config = 3;
+    google.protobuf.Struct Config = 3;
 }
 
 message ChangeConfigResponse {
     bool Ok = 1;
     string Error = 2;
+}
+
+message GetConfigRequest {
+    string Strategy = 1;
+    string InstrumentId = 2;
+}
+
+message GetConfigResponse {
+    google.protobuf.Struct Config = 1;
 }

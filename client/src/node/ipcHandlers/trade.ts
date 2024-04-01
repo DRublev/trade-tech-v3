@@ -15,3 +15,30 @@ ipcMain.handle(ipcEvents.START_TRADE, async (e, req) => {
 
     return response
 });
+
+
+ipcMain.handle(ipcEvents.CHANGE_STRATEGY_CONFIG, async (e, req) => {
+    const { instrumentId, strategy, values } = req;
+
+    if (!instrumentId) return Promise.reject("instrumentId является обязательным параметром");
+    if (!strategy) return Promise.reject("strategy является обязательным параметром");
+    if (!values) return Promise.reject("values является обязательным параметром");
+
+    const response = await tradeService.changeConfig({
+        InstrumentId: instrumentId,
+        Strategy: strategy,
+        Config: values,
+    });
+
+    return response;
+})
+
+ipcMain.handle(ipcEvents.GET_STRATEGY_CONFIG, async (e, req) => {
+    const { instrumentId, strategy } = req;
+
+    if (!instrumentId) return Promise.reject("instrumentId является обязательным параметром");
+    if (!strategy) return Promise.reject("strategy является обязательным параметром");
+
+    const response = await tradeService.getConfig({ Strategy: strategy, InstrumentId: instrumentId });
+    return response.Config;
+});
