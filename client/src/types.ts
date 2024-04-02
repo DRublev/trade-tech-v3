@@ -15,6 +15,11 @@ export interface OHLCData {
     readonly volume: number;
 }
 
+export enum OrderOperations {
+    Buy = 1,
+    Sell = 2
+}
+
 export interface OrderState {
     readonly id: string;
     readonly instrumentId: string;
@@ -22,7 +27,7 @@ export interface OrderState {
     readonly status: number;
     readonly lotsRequested: number;
     readonly lotsExecuted: number;
-    readonly operationType: number;
+    readonly operationType: OrderOperations;
     readonly time: UTCTimestamp;
     readonly strategy: string;
 }

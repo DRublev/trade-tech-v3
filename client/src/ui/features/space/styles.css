@@ -1,5 +1,5 @@
 .chartContainer {
-    min-height: 80dvh;
+    min-height: 70dvh;
 }
 
 .controlsContainer {
@@ -13,4 +13,9 @@
     box-shadow: var(--shadow-3);
     background-color: var(--sage-2);
     z-index: 999;
+}
+
+.tradeLogsContainer {
+    max-width: 50%;
+    min-width: 45%;
 }

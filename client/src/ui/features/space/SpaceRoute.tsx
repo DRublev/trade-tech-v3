@@ -1,16 +1,18 @@
 import React, { useState, useRef } from 'react';
 import { Layout } from "../../components/Layout"
 import * as Toolbar from '@radix-ui/react-toolbar';
-import { Card, Flex } from "@radix-ui/themes";
+import { Box, Card, Flex, Section } from "@radix-ui/themes";
 import { ListBulletIcon, MixerHorizontalIcon, PersonIcon, PlayIcon, StopIcon } from '@radix-ui/react-icons';
 import style from '../../basicStyles.css';
-import Chart from "./chart";
+import Chart from "../chart";
 import s from './styles.css';
 import { SharesPop } from './SharesPopUp';
 import { useIpcInvoke } from '../../hooks';
-import { useCurrentInstrumentId } from './hooks';
+import { useCurrentInstrumentId } from '../../utils/useCurrentInstrumentId';
 import { useNavigate } from 'react-router-dom';
 import { ConfigChangeModal } from '../config';
+import { TradeLogs } from '../tradeSessionStats/TradeLogs';
+import { TradeStats } from '../tradeSessionStats/TradeStats';
 
 const toolBarButtonProps = {
     className: style.button,
@@ -19,19 +21,32 @@ const toolBarButtonProps = {
 
 export const ControlsPanel = () => {
     const startTrade = useIpcInvoke('START_TRADE');
+    const stopTrade = useIpcInvoke('STOP_TRADE');
     const navigate = useNavigate();
     const [instrument] = useCurrentInstrumentId();
     const [isStarted, setIsStarted] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
 
-    const onStartClick = async () => {
-        setIsStarted(!isStarted)
+    const toggleTrade = async () => {
         try {
-
-            await startTrade({
-                instrumentId: instrument,
-            });
+            let res: any = {};
+            if (isStarted) {
+                res = await stopTrade({
+                    instrumentId: instrument,
+                });
+            } else {
+                res = await startTrade({
+                    instrumentId: instrument,
+                });
+            }
+            if (res.Ok) {
+                setIsStarted(!isStarted);
+                return;
+            }
         } catch (e) {
             console.log('24 SpaceRoute', e);
+        } finally {
+            setIsLoading(false)
         }
     };
 
@@ -50,8 +65,8 @@ export const ControlsPanel = () => {
                             </Toolbar.Button>
                         }
                     />
-                    <Toolbar.Button value="start" asChild onClick={onStartClick} {...toolBarButtonProps}>
-                        {isStarted ? <StopIcon /> : <PlayIcon />}
+                    <Toolbar.Button value="start" asChild onClick={toggleTrade} {...toolBarButtonProps}>
+                        {isStarted ? <StopIcon color={isLoading ? "grey" : undefined} /> : <PlayIcon color={isLoading ? "grey" : undefined} />}
                     </Toolbar.Button>
                     <ConfigChangeModal
                         trigger={
@@ -79,6 +94,14 @@ export const SpaceRoute = () => {
             <Card ref={chartContainer} className={s.chartContainer}>
                 <Chart containerRef={chartContainer} />
             </Card>
+            <Flex p="0" gap="4" justify="between">
+                <Section width="auto" my="2" p="1" className={s.tradeLogsContainer}>
+                    <TradeStats />
+                </Section>
+                <Section width="auto" my="2" p="1" className={s.tradeLogsContainer}>
+                    <TradeLogs />
+                </Section>
+            </Flex>
             <Card className={s.controlsContainer}>
                 <ControlsPanel />
             </Card>

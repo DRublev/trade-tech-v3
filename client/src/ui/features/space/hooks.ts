@@ -1,9 +1,8 @@
 import { GetCandlesRequest } from '../../../node/grpc/contracts/marketData';
-import { useIpcInvoke, useIpcListen } from "../../hooks";
-import { OHLCData, OrderState } from "../../../types";
 import { useState, useEffect, useCallback } from "react";
 import { GetTradingSchedulesRequest, GetTradingSchedulesResponse, TradingSchedule } from "../../../node/grpc/contracts/shares";
-import { SeriesMarker, Time } from 'lightweight-charts';
+import { useIpcInvoke, useIpcListen } from "../../hooks";
+import { OHLCData, OrderState } from "../../../types";
 
 type GetCandlesResponse = OHLCData[];
 
@@ -17,17 +16,10 @@ const useSubscribeOrders = () => useIpcInvoke("SUBSCRIBE_ORDER");
 const useListenCandles = () => useIpcListen("NEW_CANDLE");
 const useListenOrders = () => useIpcListen("NEW_ORDER");
 
-function orderToMarkerMapper(order: OrderState): SeriesMarker<Time> {
-    return {
-        time: order.time,
-        position: order.operationType === 1 ? 'belowBar' : 'aboveBar',
-        shape: 'circle',
-        color: order.operationType === 1 ? '#2196F3' : '#f68410',
-        text: `${order.lotsExecuted} x ${order.price}`,
-        size: 2,
-    }
-}
-export const useOrders = (onNewOrder: (d: SeriesMarker<Time>) => void, figiOrInstrumentId: string) => {
+
+type OnOrderCallback = (d: OrderState) => void;
+
+export const useOrders = (callback: OnOrderCallback | OnOrderCallback[], figiOrInstrumentId: string) => {
     const subscribe = useSubscribeOrders();
     const [registerOrderCb, unregisterOrderCb] = useListenOrders();
 
@@ -40,8 +32,16 @@ export const useOrders = (onNewOrder: (d: SeriesMarker<Time>) => void, figiOrIns
     const handleNewOrder = useCallback((e: Event, order: OrderState) => {
         if (!order) return;
 
-        onNewOrder(orderToMarkerMapper(order));
+        if (Array.isArray(callback)) {
+            Promise.all(callback.map(cb => () => cb(order)))
+        } else {
+            callback(order);
+        }
     }, []);
+
+    const unsubscribe = () => {
+        unregisterOrderCb(handleNewOrder);
+    }
 
     useEffect(() => {
         registerOrderCb(handleNewOrder);
@@ -50,10 +50,10 @@ export const useOrders = (onNewOrder: (d: SeriesMarker<Time>) => void, figiOrIns
     useEffect(() => {
         subscribeOrders();
 
-        return () => {
-            unregisterOrderCb(handleNewOrder);
-        }
+        return unsubscribe;
     }, [figiOrInstrumentId]);
+
+    return unsubscribe;
 }
 
 export const useCandles = (onNewCandle: (d: OHLCData) => void, figiOrInstrumentId: string, interval = 1) => {
@@ -81,8 +81,6 @@ export const useCandles = (onNewCandle: (d: OHLCData) => void, figiOrInstrumentI
                 end: now,
             });
 
-            console.log("39 hooks", new Date(candles[candles.length - 1].time));
-
             // TODO: Чтобы избежать лагов графика стоит ограничивать размер candles в N айтемов, в зависимости от размера окна и интервала
             setInitialData(candles);
         } catch (e) {
@@ -93,11 +91,10 @@ export const useCandles = (onNewCandle: (d: OHLCData) => void, figiOrInstrumentI
     };
 
     const subscribeCandles = async () => {
-        const res = await subscribe({
+        await subscribe({
             instrumentId: figiOrInstrumentId,
             interval,
         });
-        console.log("49 hooks", res);
     }
 
     const handleNewCandle = useCallback((e: Event, candle: OHLCData) => {
@@ -173,21 +170,4 @@ export const getTodaysSchedules = (): TradingSchedule[] => {
     }, [])
 
     return schedules
-};
-
-
-// "BBG004730RP0" /* GAZP */
-// "4c466956-d2ce-4a95-abb4-17947a65f18a" TGLD
-// "BBG004730ZJ9" /* VTBR */
-// "BBG004PYF2N3" /* POLY */
-let instrumentId = "BBG004PYF2N3" /* POLY */;
-
-export const useCurrentInstrumentId = (): [string, (c: string) => void] => {
-    const set = (candidate: string) => {
-        if (!candidate) throw new Error('candidate is required');
-
-        instrumentId = candidate;
-    };
-
-    return [instrumentId, set];
 };
