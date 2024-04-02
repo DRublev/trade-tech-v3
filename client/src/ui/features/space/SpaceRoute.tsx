@@ -8,7 +8,7 @@ import Chart from "../chart";
 import s from './styles.css';
 import { SharesPop } from './SharesPopUp';
 import { useIpcInvoke } from '../../hooks';
-import { useCurrentInstrumentId } from '../../utils/useCurrentInstrumentId';
+import { useCurrentInstrument } from '../../utils/useCurrentInstrumentId';
 import { useNavigate } from 'react-router-dom';
 import { ConfigChangeModal } from '../config';
 import { TradeLogs } from '../tradeSessionStats/TradeLogs';
@@ -23,7 +23,7 @@ export const ControlsPanel = () => {
     const startTrade = useIpcInvoke('START_TRADE');
     const stopTrade = useIpcInvoke('STOP_TRADE');
     const navigate = useNavigate();
-    const [instrument] = useCurrentInstrumentId();
+    const [instrument] = useCurrentInstrument();
     const [isStarted, setIsStarted] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
 

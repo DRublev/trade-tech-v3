@@ -4,7 +4,7 @@
 // "BBG004PYF2N3" /* POLY */
 let instrumentId = "BBG004PYF2N3" /* POLY */;
 
-export const useCurrentInstrumentId = (): [string, (c: string) => void] => {
+export const useCurrentInstrument = (): [string, (c: string) => void] => {
     const set = (candidate: string) => {
         if (!candidate) throw new Error('candidate is required');
 

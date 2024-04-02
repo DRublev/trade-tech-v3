@@ -3,7 +3,7 @@ import { ColorType, IChartApi, createChart, SeriesMarker, Time, MouseEventHandle
 import { useChartDimensions } from "./hooks";
 import { OHLCData, OrderOperations, OrderState } from "../../../types";
 import { useCandles, useOrders } from '../space/hooks';
-import { useCurrentInstrumentId } from '../../utils/useCurrentInstrumentId';
+import { useCurrentInstrument } from '../../utils/useCurrentInstrumentId';
 
 type ChartProps = {
     containerRef: MutableRefObject<HTMLElement>;
@@ -173,7 +173,7 @@ function orderToMarkerMapper(order: OrderState): SeriesMarker<Time> {
 
 
 const Chart: FC<ChartProps> = ({ containerRef }) => {
-    const [instrument] = useCurrentInstrumentId();
+    const [instrument] = useCurrentInstrument();
     const [ref, api] = useChart({ containerRef, instrument })
     const { initialData, isLoading } = useCandles(api.updatePriceSeries, instrument);
     const [removeLinesMap, setRemoveLinesMap] = useState<Record<string, () => void>>({});
