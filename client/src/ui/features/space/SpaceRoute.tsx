@@ -6,7 +6,7 @@ import { ListBulletIcon, MixerHorizontalIcon, PersonIcon, PlayIcon, StopIcon } f
 import style from '../../basicStyles.css';
 import Chart from "../chart";
 import s from './styles.css';
-import { SharesPop } from './SharesPopUp';
+import { SharesPop } from './SharesPopup/SharesPopUp';
 import { useIpcInvoke } from '../../hooks';
 import { useCurrentInstrument } from '../../utils/useCurrentInstrumentId';
 import { useNavigate } from 'react-router-dom';

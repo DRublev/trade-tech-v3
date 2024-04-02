@@ -1,0 +1,16 @@
+.listScrollContainer {
+    width: 500px;
+    height: 500px;
+    color: white;
+    overflow: auto;
+}
+
+.triggerButton {
+    vertical-align: middle;
+}
+
+.container {
+    padding: 16px;
+    color: gray;
+    border-radius: var(--radius-3);
+}

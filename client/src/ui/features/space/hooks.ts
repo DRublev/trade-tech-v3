@@ -144,7 +144,7 @@ export const useSharesFromStore = () => {
     return { sharesFromStore, isLoading }
 };
 
-export const getTodaysSchedules = (): TradingSchedule[] => {
+export const useTodaysSchedules = (): TradingSchedule[] => {
     const getSchedules = useGetTradingSchedules();
     const [schedules, setSchedules] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -169,5 +169,5 @@ export const getTodaysSchedules = (): TradingSchedule[] => {
         load();
     }, [])
 
-    return schedules
+    return schedules;
 };

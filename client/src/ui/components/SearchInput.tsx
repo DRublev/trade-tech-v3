@@ -7,13 +7,13 @@ type Props = {
     onChange: ChangeEventHandler<HTMLInputElement>
 };
 
-export const SerarchInput = ({ placeholder, onChange }: Props) => {
+export const SearchInput = ({ placeholder, onChange }: Props) => {
     return (
-        <TextField.Root  style={{color: 'gray', marginBottom: '10px', padding: '5px' }}>
+        <TextField.Root style={{ color: 'gray', marginBottom: '10px', padding: '5px' }}>
             <TextField.Slot style={{ marginRight: '5px' }} >
                 <MagnifyingGlassIcon height="16" width="16" />
             </TextField.Slot>
-            <TextField.Input onChange={onChange} radius="large" placeholder={placeholder} style={{border: 'none', backgroundColor:'inherit'}}/>
+            <TextField.Input onChange={onChange} radius="large" placeholder={placeholder} style={{ border: 'none', backgroundColor: 'inherit' }} />
         </TextField.Root>
     )
 }
