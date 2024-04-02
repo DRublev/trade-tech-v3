@@ -1,7 +1,7 @@
 import React, { FC, MutableRefObject, RefObject, useCallback, useEffect, useRef, useState } from 'react';
 import { ColorType, IChartApi, createChart, SeriesMarker, Time, MouseEventHandler, CreatePriceLineOptions } from 'lightweight-charts';
 import { useChartDimensions } from "./hooks";
-import { OHLCData, OrderState } from "../../../types";
+import { OHLCData, OrderOperations, OrderState } from "../../../types";
 import { useCandles, useOrders } from '../space/hooks';
 import { useCurrentInstrumentId } from '../../utils/useCurrentInstrumentId';
 
@@ -162,9 +162,9 @@ const useChart = ({ containerRef, instrument }: UseChartProps): [RefObject<HTMLD
 function orderToMarkerMapper(order: OrderState): SeriesMarker<Time> {
     return {
         time: order.time,
-        position: order.operationType === 1 ? 'belowBar' : 'aboveBar',
+        position: order.operationType === OrderOperations.Buy ? 'belowBar' : 'aboveBar',
         shape: 'circle',
-        color: order.operationType === 1 ? 'green' : 'red',
+        color: order.operationType === OrderOperations.Buy ? 'green' : 'red',
         text: `${order.lotsExecuted} x ${order.price}`,
         size: 2,
     }
@@ -195,7 +195,7 @@ const Chart: FC<ChartProps> = ({ containerRef }) => {
         const removeLineFunc = api.drawPriceLine({
             price: order.price,
             title: order.price.toString(),
-            direction: order.operationType == 1 ? 1 : 2,
+            direction: order.operationType,
         })
         setRemoveLinesMap({
             ...removeLinesMap,

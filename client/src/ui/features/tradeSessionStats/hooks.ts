@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { OrderState } from "../../../types";
+import { OrderOperations, OrderState } from "../../../types";
 import { useCurrentInstrumentId } from "../../utils/useCurrentInstrumentId";
 import { useOrders } from "../space/hooks";
 
@@ -18,7 +18,7 @@ export const useTradeSessionStats = () => {
         const price = orderState.price * orderState.lotsExecuted;
 
         let profit = 0;
-        if (orderState.operationType == 1) {
+        if (orderState.operationType == OrderOperations.Buy) {
             for (let i = 0; i < orderState.lotsExecuted; i++) {
                 buyPrices.current.push(price);
             }
