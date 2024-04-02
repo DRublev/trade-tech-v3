@@ -11,7 +11,7 @@ import {
     TextField,
 } from "@radix-ui/themes";
 import { useNavigate } from "react-router-dom";
-import { useRegister } from "./hooks";
+import { useRegistration } from './hooks';
 import { InfoCircledIcon } from "@radix-ui/react-icons";
 // TODO: Эту херь нужно вынести в отдельный компонент с хуком и рефом
 import * as Toast from '@radix-ui/react-toast';
@@ -19,7 +19,7 @@ import * as Toast from '@radix-ui/react-toast';
 import s from "./styles.css";
 
 export const RegisterForm = () => {
-    const register = useRegister();
+    const [register] = useRegistration()
     const navigate = useNavigate();
     const [alertOpen, setAlertOpen] = useState(false);
     const [alert, setAlert] = useState(null);
@@ -34,7 +34,7 @@ export const RegisterForm = () => {
                 setAlert(null);
 
                 const data = Object.fromEntries(new FormData(event.currentTarget));
-                await register(data);
+                await register(data as Record<string, string>);
 
                 navigate("select-account");
             } catch (e) {

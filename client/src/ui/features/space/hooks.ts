@@ -1,5 +1,7 @@
 import { GetCandlesRequest } from '../../../node/grpc/contracts/marketData';
 import { useState, useEffect, useCallback } from "react";
+import { useAppDispatch, useAppSelector } from '../../../store';
+import { setShares } from './spaceSlice';
 import { GetTradingSchedulesRequest, GetTradingSchedulesResponse, TradingSchedule } from "../../../node/grpc/contracts/shares";
 import { useIpcInvoke, useIpcListen } from "../../hooks";
 import { OHLCData, OrderState } from "../../../types";
@@ -120,7 +122,8 @@ export const useCandles = (onNewCandle: (d: OHLCData) => void, figiOrInstrumentI
 }
 
 export const useSharesFromStore = () => {
-    const [sharesFromStore, setShares] = useState([]);
+    const dispatch = useAppDispatch();
+    const shares = useAppSelector(store => store.space.shares)
     const [isLoading, setIsLoading] = useState(false);
 
     const load = useCallback(async () => {
@@ -128,10 +131,10 @@ export const useSharesFromStore = () => {
             if (isLoading) return;
             setIsLoading(true);
             const response: any = await window.ipc.invoke('GET_SHARES_FROM_STORE');
-            setShares(response.shares)
+            dispatch(setShares(response.shares))
         } catch (error) {
             console.error(`get shares error: ${error}`);
-            setShares([]);
+            dispatch(setShares([]));
         } finally {
             setIsLoading(false);
         }
@@ -141,7 +144,7 @@ export const useSharesFromStore = () => {
         load();
     }, [])
 
-    return { sharesFromStore, isLoading }
+    return { shares, isLoading }
 };
 
 export const getTodaysSchedules = (): TradingSchedule[] => {
