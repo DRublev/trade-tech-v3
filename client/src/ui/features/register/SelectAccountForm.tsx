@@ -12,10 +12,13 @@ import { useAuth } from "../auth/useAuth";
 import * as Toast from "@radix-ui/react-toast";
 
 import s from "./styles.css";
+import { useAppDispatch, useAppSelector } from '../../../store';
+import { RawAccount, setAccounts } from '../accounts/accountsSlice';
 
 const useAccounts = () => {
-    const getAccounts = useGetAccount();
-    const [accounts, setAccounts] = useState([]);
+    const dispatch = useAppDispatch();
+    const accounts = useAppSelector(state => state.accounts.accounts)
+    const getAccounts = useGetAccount<void, {Accounts: RawAccount[]}>();
     const [isLoading, setIsLoading] = useState(false);
 
     const load = useCallback(async () => {
@@ -23,14 +26,14 @@ const useAccounts = () => {
             if (isLoading) return;
             setIsLoading(true);
             // TODO: Типизировать
-            const response: any = await getAccounts(null);
-            setAccounts(
-                response.Accounts.map((a: any) => ({ id: a.Id, name: a.Name || a.Id }))
-            );
+            const response = await getAccounts(null);
+            dispatch(setAccounts(
+                response.Accounts.map((a: RawAccount) => ({ id: a.Id, name: a.Name || a.Id }))
+            ));
         } catch (e) {
             // TODO: Показывать алерт
             console.log("19 SelectAccountForm", e);
-            setAccounts([]);
+            dispatch(setAccounts([]));
         } finally {
             setIsLoading(false);
         }

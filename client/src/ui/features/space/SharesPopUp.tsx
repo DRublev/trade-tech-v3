@@ -32,8 +32,8 @@ const ShareLine = (index: number, share: Share, isAvailable: boolean) => {
     )
 }
 
-export const SharesPop = ({trigger}: {trigger?: React.ReactNode}) => {
-    const { sharesFromStore } = useSharesFromStore();
+export const SharesPop = () => {
+    const { shares } = useSharesFromStore();
     const schedules = getTodaysSchedules();
 
     const [term, setTerm] = useState("")
@@ -46,7 +46,6 @@ export const SharesPop = ({trigger}: {trigger?: React.ReactNode}) => {
     const ShareListItem = () => {
 
         const isExchangeAvailable = (exchange: string): boolean => {
-            console.log(schedules)
             const schedule = schedules.find((sh: TradingSchedule) => sh.exchange === exchange)
             return schedule
                 ? schedule.days[0].isTradingDay
@@ -56,14 +55,11 @@ export const SharesPop = ({trigger}: {trigger?: React.ReactNode}) => {
         }
 
         return (
-            sharesFromStore
-                .filter((share: Share) => schedules.map(schedule => schedule.exchange).includes(share.exchange))
-                .filter((share: Share) => {
-                    return isContainsWithIgnoreCase(share.name, term) ||
-                        isContainsWithIgnoreCase(share.ticker, term) ||
-                        share.uid.includes(term)
-                }).map((share: Share, index) => ShareLine(index, share, isExchangeAvailable(share.exchange)))
-        )
+            shares.filter((share: Share) => {
+                return isContainsWithIgnoreCase(share.name, term) ||
+                    isContainsWithIgnoreCase(share.ticker, term) ||
+                    share.uid.includes(term)
+            }).map((share: Share, index) => ShareLine(index, share, isExchangeAvailable(share.exchange))))
     }
 
     const SharesPopUpContent = () => {
