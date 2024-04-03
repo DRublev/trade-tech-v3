@@ -39,6 +39,14 @@ func (s *Server) SetToken(ctx context.Context, in *auth.SetTokenRequest) (*auth.
 	return &auth.SetTokenResponse{}, err
 }
 
+func (s *Server) PruneTokens(ctx context.Context, in *auth.PruneTokensRequest) (*auth.PruneTokensResponse, error) {
+	authL.Trace("Prune tokens")
+	err := dbInstance.Prune([]string{"auth"})
+
+	authL.Info("PruneToken responding")
+	return &auth.PruneTokensResponse{}, err
+}
+
 func (s *Server) HasToken(ctx context.Context, in *auth.HasTokenRequest) (*auth.HasTokenResponse, error) {
 	authL.Info("HasToken requesting")
 

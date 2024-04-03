@@ -17,3 +17,13 @@ ipcMain.handle(ipcEvents.GET_AUTH_INFO, async (e) => {
         return Promise.reject('Не удалось получить данные из сторы: ' + err)
     }
 });
+
+ipcMain.handle(ipcEvents.PRUNE_TOKENS, async (e) => {
+    if (!safeStorage.isEncryptionAvailable()) return Promise.reject("Шифрование не доступно");
+
+    try {
+        return await authService.pruneTokens({});
+    } catch (err) {
+        return Promise.reject('Не удалось очистить токены ' + err)
+    }
+});
