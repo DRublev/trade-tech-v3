@@ -56,10 +56,11 @@ export default function OfflineBanner() {
   return (
     <>
       {showMessage && (
-        <div className={s.internetStatus}>
-          <p className={isOnline ? s.online : s.offline}>{message}</p>
-        </div>
-      )}
+        <div className={`${s.internetStatus} ${isOnline ? s.online : s.offline}`}>
+          <p >{message}</p>
+        </div >
+      )
+      }
     </>
   );
 }

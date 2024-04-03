@@ -5,9 +5,9 @@
   align-items: center;
   justify-content: center;
 }
-.offline{
-  color: var(--ruby-9);
+.internetStatus.offline{
+  background: var(--ruby-9);
 }
-.online{
-  color: var(--green-9);
+.internetStatus.online{
+  background: var(--green-9);
 }
