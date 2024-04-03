@@ -10,15 +10,13 @@ import { SelectAccountForm } from "./features/register/SelectAccountForm";
 export const Router = () => {
     return (
         <HashRouter>
-            <React.Fragment>
-                <Routes>
-                    <Route path="/" Component={ProtectedHoc(SpaceRoute)} />
-                    <Route path="/register" Component={RegisterRoute}>
-                        <Route path="select-account" Component={SelectAccountForm} />
-                        <Route index Component={RegisterForm} />
-                    </Route>
-                </Routes>
-            </React.Fragment>
+            <Routes>
+                <Route path="/" Component={ProtectedHoc(SpaceRoute)} />
+                <Route path="/register" Component={RegisterRoute}>
+                    <Route path="select-account" Component={SelectAccountForm} />
+                    <Route index Component={RegisterForm} />
+                </Route>
+            </Routes>
         </HashRouter >
     )
 };

@@ -1,17 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import s from './styles.css';
 
-
 export default function OfflineBanner() {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
-  const [message, setMessage] = useState(isOnline ? 'Подключение восстановлено' : 'Нет подключения к интернету');
+
+  const connectionRestoredMessage = 'Подключение восстановлено';
+  const noConnectionMessage = 'Нет подключения к интернету';
+  const message = isOnline ? connectionRestoredMessage : noConnectionMessage;
+
   const [showMessage, setShowMessage] = useState(!isOnline);
   const [timeoutId, setTimeoutId] = useState(null);
 
   const handleOnline = () => {
     setIsOnline(true);
-    setMessage('Подключение восстановлено');
     setShowMessage(true);
+
+    // Если уже есть активный таймер, очищаем его
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+
+    // Запускаем новый таймер
     const id = setTimeout(() => {
       setShowMessage(false);
     }, 2000);
@@ -20,7 +29,6 @@ export default function OfflineBanner() {
 
   const handleOffline = () => {
     setIsOnline(false);
-    setMessage('Нет подключения к интернету');
     setShowMessage(true);
   };
 
@@ -29,7 +37,11 @@ export default function OfflineBanner() {
     window.addEventListener('offline', handleOffline);
 
     if (isOnline) {
-      setShowMessage(false);
+      // Если онлайн при загрузке компонента, устанавливаем таймер
+      const id = setTimeout(() => {
+        setShowMessage(false);
+      }, 2000);
+      setTimeoutId(id);
     }
 
     return () => {
@@ -39,7 +51,7 @@ export default function OfflineBanner() {
         clearTimeout(timeoutId);
       }
     };
-  }, []);
+  }, [isOnline]); // Добавлен isOnline как зависимость
 
   return (
     <>
