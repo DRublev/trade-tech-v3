@@ -1,7 +1,9 @@
+import { ipcEvents } from "../../../ipcEvents";
 import { useIpcInvoke } from "../../hooks";
 
 
 
-export const useRegister = () => useIpcInvoke("REGISTER");
-export const useSetAccount = () => useIpcInvoke("SET_ACCOUNT");
-export const useGetAccount = () => useIpcInvoke("GET_ACCOUNTS");
+export const useRegister = () => useIpcInvoke(ipcEvents.REGISTER);
+export const usePruneTokens = () => useIpcInvoke(ipcEvents.PRUNE_TOKENS);
+export const useSetAccount = () => useIpcInvoke(ipcEvents.SET_ACCOUNT);
+export const useGetAccount = () => useIpcInvoke(ipcEvents.GET_ACCOUNTS);
