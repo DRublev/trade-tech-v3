@@ -4,7 +4,7 @@ import { Modal } from '../../components/Modal';
 import { ConfigForm } from './ConfigForm';
 import * as ScrollArea from '@radix-ui/react-scroll-area';
 import { ConfigFieldTypes, useConfig } from './hooks';
-import { useCurrentInstrumentId } from '../../utils/useCurrentInstrumentId';
+import { useCurrentInstrument } from '../../utils/useCurrentInstrumentId';
 import s from './ConfigChangeModal.css';
 
 type Props = {
@@ -14,7 +14,7 @@ type Props = {
 export const ConfigChangeModal: FC<Props> = ({ trigger }: Props) => {
     // TODO: Брать ключ стратегии из какого-то провайдера
     const strategy = "spread_v0";
-    const [instrumentId] = useCurrentInstrumentId();
+    const [instrumentId] = useCurrentInstrument();
     const { api, scheme, defaultValues } = useConfig(instrumentId, strategy);
     const [shouldClose, setShouldClose] = useState(undefined); // TODO: Костыль, надо подумать как сделать удобнее
 
@@ -39,7 +39,7 @@ export const ConfigChangeModal: FC<Props> = ({ trigger }: Props) => {
                 setTimeout(() => setShouldClose(false))
                 return;
             }
-            
+
             await api.change({ instrumentId, strategy, values });
             setShouldClose(true);
             setTimeout(() => setShouldClose(false))

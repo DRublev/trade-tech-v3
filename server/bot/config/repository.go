@@ -59,7 +59,7 @@ func New() *ConfigRepository {
 
 		debugConfig := getDebugConfig()
 		if debugConfig != nil {
-			instance.storage["spread_v0_BBG004PYF2N3"] = *debugConfig
+			instance.storage[fmt.Sprintf("spread_v0_%v", (*debugConfig)["InstrumentID"])] = *debugConfig
 		}
 
 	}
