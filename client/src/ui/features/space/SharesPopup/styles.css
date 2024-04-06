@@ -1,8 +1,9 @@
 .listScrollContainer {
     width: 500px;
     height: 500px;
+    padding-right: 16px;
     color: white;
-    overflow: auto;
+    overflow: hidden scroll;
 }
 
 .triggerButton {

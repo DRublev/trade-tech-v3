@@ -1,6 +1,6 @@
-import * as ScrollArea from '@radix-ui/react-scroll-area';
+import * as ToggleGroup from '@radix-ui/react-toggle-group';
 import { MixerHorizontalIcon } from "@radix-ui/react-icons";
-import { Box, Button, Card, Flex, Section, Text } from "@radix-ui/themes";
+import { Box, Button, Card, Container, Flex, Text } from "@radix-ui/themes";
 import React, { useCallback, useMemo, useState } from "react";
 import { PopoverWindow } from "../../../components/PopoverWindow";
 import style from '../../../basicStyles.css';
@@ -40,7 +40,7 @@ const SharesTriggerButton = () => (
 );
 
 export const SharesPop = ({ trigger }: { trigger?: React.ReactNode }) => {
-    const { sharesFromStore } = useSharesFromStore();
+    const { shares } = useSharesFromStore();
     const schedules = useTodaysSchedules();
     const schedulesByExchangeMap = useMemo<Record<string, TradingSchedule>>(() => {
         return schedules.reduce((acc, s) => ({ ...acc, [s.exchange]: s }), {})
@@ -56,7 +56,7 @@ export const SharesPop = ({ trigger }: { trigger?: React.ReactNode }) => {
             share.uid.includes(term);
         return tradesBySupportedExchange && fitsSearch;
     }, [term])
-    const filteredShares = useMemo(() => sharesFromStore.filter(shareFilter), [sharesFromStore, shareFilter])
+    const filteredShares = useMemo(() => shares.filter(shareFilter), [shares, shareFilter])
 
     const onSearchChange: React.ChangeEventHandler<HTMLInputElement> = useCallback(({ target }) => {
         const term = target.value;
@@ -76,8 +76,7 @@ export const SharesPop = ({ trigger }: { trigger?: React.ReactNode }) => {
         <PopoverWindow trigger={trigger ?? <SharesTriggerButton />}>
             <Card className={s.container}>
                 <SearchInput placeholder='Поиск...' onChange={onSearchChange} />
-                <ScrollArea.Root className={s.listScrollContainer}>
-                    <ScrollArea.Viewport>
+                <Container grow="1" shrink="1" className={s.listScrollContainer}>
                         {filteredShares.map(share => (
                             <ShareLine
                                 key={share.uid}
@@ -85,8 +84,7 @@ export const SharesPop = ({ trigger }: { trigger?: React.ReactNode }) => {
                                 isAvailable={isExchangeOpened(share.exchange)}
                             />
                         ))}
-                    </ScrollArea.Viewport>
-                </ScrollArea.Root>
+                </Container>
             </Card>
         </PopoverWindow>
     )
