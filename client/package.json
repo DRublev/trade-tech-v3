@@ -58,7 +58,7 @@
     "@radix-ui/react-switch": "^1.0.3",
     "@radix-ui/react-toast": "^1.1.5",
     "@radix-ui/react-toolbar": "^1.0.4",
-    "@radix-ui/themes": "^2.0.3",
+    "@radix-ui/themes": "^3.0.2",
     "@reduxjs/toolkit": "^2.2.3",
     "electron-squirrel-startup": "^1.0.0",
     "file-system-cache": "^2.4.4",

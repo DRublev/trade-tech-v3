@@ -4,17 +4,14 @@ import { useChartDimensions } from "./hooks";
 import { OHLCData, OrderOperations, OrderState } from "../../../types";
 import { useCandles, useOrders } from '../space/hooks';
 import { useCurrentInstrument } from '../../utils/useCurrentInstrumentId';
+import { Link } from '@radix-ui/themes';
 
 type ChartProps = {
     containerRef: MutableRefObject<HTMLElement>;
 
 };
 
-type UseChartProps = {
-    containerRef: MutableRefObject<HTMLElement>;
-    initialData?: OHLCData[];
-    instrument: string;
-}
+type UseChart = (containerRef: MutableRefObject<HTMLElement>, instrument: string, initialData?: OHLCData[]) => [RefObject<HTMLDivElement>, ChartApi];
 
 type DrawPriceLineParams = { price: number, title: string, direction: 1 | 2 };
 
@@ -60,18 +57,16 @@ const candleSeriesTheme = {
 const buyLineColor = '#9ce0b8'
 const sellLineColor = '#ef6060';
 
-const useChart = ({ containerRef, instrument }: UseChartProps): [RefObject<HTMLDivElement>, ChartApi] => {
+const legendStyle = `position: absolute; left: 12px; top: 40px; z-index: 1; font-size: 14px; font-family: sans-serif; line-height: 18px; font-weight: 300; z-index: 10;`
+
+const useChart: UseChart = (containerRef, instrument) => {
     const chartSize = useChartDimensions(containerRef);
     const chartRef = useRef();
     const chartApiRef = useRef<IChartApi>();
     const candlesApiRef = useRef<ReturnType<IChartApi['addCandlestickSeries']>>();
     const [markers, setMarkers] = useState<SeriesMarker<Time>[]>([]);
 
-    const legend = document.createElement('div');
-    legend.style = `position: absolute; left: 12px; top: 12px; z-index: 1; font-size: 14px; font-family: sans-serif; line-height: 18px; font-weight: 300;`;
-    const firstRow = document.createElement('div');
-    firstRow.innerHTML = instrument;
-    firstRow.style.color = 'white';
+    const legendRef = useRef<HTMLDivElement>();
 
     const updateMarkers = useCallback((newMarkers: SeriesMarker<Time>) => {
         setMarkers(markers => [...markers, newMarkers]);
@@ -88,15 +83,16 @@ const useChart = ({ containerRef, instrument }: UseChartProps): [RefObject<HTMLD
         candlesApiRef.current.setData(initialData);
     }, [candlesApiRef.current]);
 
-    const updateLegend: MouseEventHandler<Time> = (param) => {
+    const updateLegend: MouseEventHandler<Time> = useCallback((param) => {
         let priceFormatted = '';
         if (param.time) {
             const data: OHLCData = param.seriesData.get(candlesApiRef.current) as any;
             const price = data.close;
             priceFormatted = price.toFixed(2);
         }
-        firstRow.innerHTML = `${instrument} <strong>${priceFormatted}</strong>`;
-    };
+
+        legendRef.current.innerHTML = `${instrument} <strong>${priceFormatted}</strong>`;
+    }, [instrument, candlesApiRef.current]);
 
     useEffect(() => {
         chartApiRef.current = createChart("chart-container", {
@@ -113,17 +109,20 @@ const useChart = ({ containerRef, instrument }: UseChartProps): [RefObject<HTMLD
                 bottom: 0.2,
             },
         });
-        const container = document.querySelector('#chart-container');
-        if (container) {
-            legend.appendChild(firstRow);
-
-            container.appendChild(legend);
-        }
-
-        chartApiRef.current.subscribeCrosshairMove(updateLegend)
+        legendRef.current = document.querySelector('#chart-container #legend');
+        legendRef.current.style = legendStyle;
 
         // TODO: Add volume series
     }, []);
+
+    useEffect(() => {
+        legendRef.current.innerHTML = instrument;
+
+        chartApiRef.current.subscribeCrosshairMove(updateLegend);
+        return () => {
+            chartApiRef.current.unsubscribeCrosshairMove(updateLegend);
+        };
+    }, [instrument]);
 
     const drawPriceLine = ({ price, title, direction }: DrawPriceLineParams) => {
         const line: CreatePriceLineOptions = {
@@ -174,7 +173,7 @@ function orderToMarkerMapper(order: OrderState): SeriesMarker<Time> {
 
 const Chart: FC<ChartProps> = ({ containerRef }) => {
     const [instrument] = useCurrentInstrument();
-    const [ref, api] = useChart({ containerRef, instrument })
+    const [ref, api] = useChart(containerRef, instrument)
     const { initialData, isLoading } = useCandles(api.updatePriceSeries, instrument);
     const [removeLinesMap, setRemoveLinesMap] = useState<Record<string, () => void>>({});
 
@@ -209,7 +208,14 @@ const Chart: FC<ChartProps> = ({ containerRef }) => {
     }, [initialData])
 
     // TODO: Запилить лоадер
-    return <div id="chart-container" ref={ref} />
+    return <div id="chart-container" ref={ref}>
+
+        {/* НЕ УДАЛЯТЬ!!! Требования либы графиков */}
+        <div className="lw-attribution">
+            <Link href="https://tradingview.github.io/lightweight-charts/" target='_blank'>Powered by Lightweight Charts™</Link>
+        </div>
+        <div id="legend" />
+    </div>
 }
 
 export default Chart;

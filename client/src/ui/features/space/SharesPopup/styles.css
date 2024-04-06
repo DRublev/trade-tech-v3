@@ -1,9 +1,9 @@
 .listScrollContainer {
-    width: 500px;
+    min-width: 500px;
     height: 500px;
-    padding-right: 16px;
     color: white;
     overflow: hidden scroll;
+    border-radius: var(--radius-3);
 }
 
 .triggerButton {
@@ -11,7 +11,20 @@
 }
 
 .container {
-    padding: 16px;
     color: gray;
     border-radius: var(--radius-3);
+    padding: 0px;
+}
+
+.shareItem {
+    padding: var(--space-1) var(--space-2);
+}
+.shareItem:hover {
+    cursor: pointer;
+    background-color: var(--slate-4);
+}
+.shareItem[data-state="on"] {
+    color: var(--accent-9);
+    background-color: var(--accent-2);
+    /* background-color: var(--slate-4); */
 }

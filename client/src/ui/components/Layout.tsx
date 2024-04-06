@@ -1,5 +1,5 @@
-import { Container, Theme } from "@radix-ui/themes"
-import React, { FC } from "react"
+import { Container, Theme } from "@radix-ui/themes";
+import React, { FC } from "react";
 
 type Props = {
     children?: React.ReactNode

@@ -8,6 +8,7 @@ import { Quatation, Share, TradingSchedule } from "../../../../node/grpc/contrac
 import { useTodaysSchedules, useSharesFromStore } from '../hooks';
 import { SearchInput } from '../../../components/SearchInput';
 import s from './styles.css';
+import { useCurrentInstrument } from '../../..//utils/useCurrentInstrumentId';
 
 const nanoPrecision = 1_000_000_000;
 const quantToNumber = (q: Quatation | undefined): number => {
@@ -18,20 +19,18 @@ const isContainsWithIgnoreCase = (value: string, term: string): boolean => {
     return value.toLocaleLowerCase().includes(term.toLocaleLowerCase())
 }
 
-const ShareLine = ({ share, isAvailable }: { share: Share, isAvailable: boolean }) => {
-    return (
-        <Box mb="1">
-            <Flex key={share.ticker} justify="between">
-                <span>{share.name}</span>
-                {isAvailable
-                    ? <Text color="gray">{quantToNumber(share.minPriceIncrement)}</Text>
-                    : <Text color="red">Недоступен</Text>}
+const ShareLine = ({ share, isAvailable, ...props }: { share: Share, isAvailable: boolean }) => (
+    <Box {...props} className={s.shareItem} mb="2" p="3">
+        <Flex key={share.ticker} justify="between">
+            <span>{share.name}</span>
+            {isAvailable
+                ? <Text color="gray">{quantToNumber(share.minPriceIncrement)}</Text>
+                : <Text color="red">Недоступен</Text>}
 
-            </Flex>
-            <Text color="gray" size="1"> {share.ticker}</Text>
-        </Box>
-    )
-}
+        </Flex>
+        <Text color="gray" size="1"> {share.ticker}</Text>
+    </Box>
+);
 
 const SharesTriggerButton = () => (
     <Button highContrast variant="ghost" size="4" radius="full" className={`${style.button} ${s.triggerButton}`}>
@@ -42,6 +41,7 @@ const SharesTriggerButton = () => (
 export const SharesPop = ({ trigger }: { trigger?: React.ReactNode }) => {
     const { shares } = useSharesFromStore();
     const schedules = useTodaysSchedules();
+    const [currentInstrument, setCurrentInstrument] = useCurrentInstrument();
     const schedulesByExchangeMap = useMemo<Record<string, TradingSchedule>>(() => {
         return schedules.reduce((acc, s) => ({ ...acc, [s.exchange]: s }), {})
     }, [schedules]);
@@ -51,9 +51,11 @@ export const SharesPop = ({ trigger }: { trigger?: React.ReactNode }) => {
         // и хранить отдельно торгуемые и неторгуемые (не МОЕХ)
 
         const tradesBySupportedExchange = true || schedulesByExchangeMap[share.exchange];
-        const fitsSearch = !term || isContainsWithIgnoreCase(share.name, term) ||
+        if (!term) return tradesBySupportedExchange;
+        const fitsSearch = isContainsWithIgnoreCase(share.name, term) ||
             isContainsWithIgnoreCase(share.ticker, term) ||
-            share.uid.includes(term);
+            isContainsWithIgnoreCase(share.figi, term) ||
+            isContainsWithIgnoreCase(share.uid, term);
         return tradesBySupportedExchange && fitsSearch;
     }, [term])
     const filteredShares = useMemo(() => shares.filter(shareFilter), [shares, shareFilter])
@@ -71,19 +73,26 @@ export const SharesPop = ({ trigger }: { trigger?: React.ReactNode }) => {
             && schedule.days[0].startTime > new Date()
     }, [filteredShares, schedulesByExchangeMap]);
 
+    const handleInstrumentSelect = (uid: string) => {
+        if (!uid) return;
+        setCurrentInstrument(uid);
+    };
 
     return (
         <PopoverWindow trigger={trigger ?? <SharesTriggerButton />}>
             <Card className={s.container}>
                 <SearchInput placeholder='Поиск...' onChange={onSearchChange} />
-                <Container grow="1" shrink="1" className={s.listScrollContainer}>
+                <Container className={s.listScrollContainer}>
+                    <ToggleGroup.Root type="single" orientation="vertical" onValueChange={handleInstrumentSelect} value={currentInstrument}>
                         {filteredShares.map(share => (
-                            <ShareLine
-                                key={share.uid}
-                                share={share}
-                                isAvailable={isExchangeOpened(share.exchange)}
-                            />
+                            <ToggleGroup.Item key={share.uid} value={share.figi} asChild>
+                                <ShareLine
+                                    share={share}
+                                    isAvailable={isExchangeOpened(share)}
+                                />
+                            </ToggleGroup.Item>
                         ))}
+                    </ToggleGroup.Root>
                 </Container>
             </Card>
         </PopoverWindow>

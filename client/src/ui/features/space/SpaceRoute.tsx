@@ -30,6 +30,7 @@ export const ControlsPanel = () => {
     const toggleTrade = async () => {
         try {
             let res: any = {};
+
             if (isStarted) {
                 res = await stopTrade({
                     instrumentId: instrument,
@@ -56,8 +57,8 @@ export const ControlsPanel = () => {
 
     return (
         <Toolbar.Root>
-            <Flex align="center" justify="center" gap="4">
-                <Toolbar.ToggleGroup type="single">
+            <Toolbar.ToggleGroup type="single">
+                <Flex align="center" justify="center" gap="2" p="3">
                     <SharesPop
                         trigger={
                             <Toolbar.Button asChild {...toolBarButtonProps}>
@@ -78,8 +79,8 @@ export const ControlsPanel = () => {
                     <Toolbar.Button value="logout" asChild onClick={onAccountClick} {...toolBarButtonProps}>
                         <PersonIcon />
                     </Toolbar.Button>
-                </Toolbar.ToggleGroup>
-            </Flex>
+                </Flex>
+            </Toolbar.ToggleGroup>
         </Toolbar.Root>
     )
 }
