@@ -20,26 +20,6 @@ type IStrategyPool interface {
 	Stop(key strategies.StrategyKey, instrumentID string) (bool, error)
 }
 
-// StrategiesMap Хранилище запущенных стратегий
-type StrategiesMap struct {
-	sync.RWMutex
-	value map[string]strategies.IStrategy
-}
-
-func (sm *StrategiesMap) SetValue(key string, strategy strategies.IStrategy) {
-	sm.Lock()
-	sm.value[key] = strategy
-	sm.Unlock()
-}
-
-func (sm *StrategiesMap) GetValue(key string) (strategies.IStrategy, bool) {
-	defer sm.RUnlock()
-
-	sm.RLock()
-	strategy, exist := sm.value[key]
-	return strategy, exist
-}
-
 // StrategyPool Аггрегатор стратегий. Весь доступ к стратегии ведется через него
 type StrategyPool struct {
 	IStrategyPool
@@ -95,10 +75,7 @@ func (sp *StrategyPool) Start(key strategies.StrategyKey, instrumentID string) (
 		return false, errors.New("no config found for " + string(key) + " " + instrumentID)
 	}
 
-	// TODO: Перенести StrategyMap в отдельный файл с геттерами\сеттерами и контролить мьютекс там
-	sp.strategies.RLock()
-	_, exists := sp.strategies.value[sp.getMapKey(key, instrumentID)]
-	sp.strategies.RUnlock()
+	_, exists := sp.strategies.GetValue(sp.getMapKey(key, instrumentID))
 	if exists {
 		l.Trace("Strategy already exists")
 		return false, errors.New("strategy already exists")
@@ -110,9 +87,7 @@ func (sp *StrategyPool) Start(key strategies.StrategyKey, instrumentID string) (
 		return false, err
 	}
 
-	sp.strategies.Lock()
-	sp.strategies.value[sp.getMapKey(key, instrumentID)] = strategy
-	sp.strategies.Unlock()
+	sp.strategies.SetValue(sp.getMapKey(key, instrumentID), strategy)
 
 	l.Trace("Creating channels")
 	ordersToPlaceCh := make(chan *types.PlaceOrder)
