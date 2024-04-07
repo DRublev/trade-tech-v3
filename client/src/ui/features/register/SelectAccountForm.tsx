@@ -1,19 +1,19 @@
-import React, {
-    FormEventHandler,
-    useCallback,
-    useEffect,
-    useState,
-} from "react";
 import * as Form from "@radix-ui/react-form";
+import * as Toast from "@radix-ui/react-toast";
 import { Button, Card, Container, Flex, Heading, RadioGroup } from "@radix-ui/themes";
-import { useGetAccount, useSetAccount } from "./hooks";
+import React, {
+  FormEventHandler,
+  useCallback,
+  useEffect,
+  useState,
+} from "react";
 import { useNavigate } from "react-router";
 import { useAuth } from "../auth/useAuth";
-import * as Toast from "@radix-ui/react-toast";
+import { useGetAccount, usePruneTokens, useSetAccount } from "./hooks";
 
-import s from "./styles.css";
 import { useAppDispatch, useAppSelector } from '../../../store';
 import { RawAccount, setAccounts } from '../accounts/accountsSlice';
+import s from "./styles.css";
 
 const useAccounts = () => {
     const dispatch = useAppDispatch();
@@ -51,6 +51,7 @@ export const SelectAccountForm = () => {
     const { setShouldUpdateAuthInfo } = useAuth();
     const setAccount = useSetAccount();
     const navigate = useNavigate();
+    const pruneTokens = usePruneTokens();
     const [alertOpen, setAlertOpen] = useState(false);
     const [alert, setAlert] = useState(null);
 
@@ -79,6 +80,12 @@ export const SelectAccountForm = () => {
         },
         []
     );
+
+    const onLogout = useCallback(async () => {
+      console.log('onLogout click');
+      await pruneTokens({});
+      navigate('/register');
+    }, [])
 
     return (
         <Toast.Provider>
@@ -111,6 +118,9 @@ export const SelectAccountForm = () => {
                             <Form.Submit asChild>
                                 <Button className={s.submitBtn}>Дальше</Button>
                             </Form.Submit>
+                            <Button onClick={onLogout}>
+                              Выйти
+                            </Button>
                         </Flex>
                     </Form.Root>
                 </Card>

@@ -741,7 +741,7 @@ export const TradingDay = {
     if (message.date !== undefined) {
       Timestamp.encode(toTimestamp(message.date), writer.uint32(10).fork()).ldelim();
     }
-    if (message.isTradingDay === true) {
+    if (message.isTradingDay !== false) {
       writer.uint32(16).bool(message.isTradingDay);
     }
     if (message.startTime !== undefined) {
@@ -942,7 +942,7 @@ export const TradingDay = {
     if (message.date !== undefined) {
       obj.date = message.date.toISOString();
     }
-    if (message.isTradingDay === true) {
+    if (message.isTradingDay !== false) {
       obj.isTradingDay = message.isTradingDay;
     }
     if (message.startTime !== undefined) {
