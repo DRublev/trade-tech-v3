@@ -66,7 +66,7 @@ export const RegisterForm = () => {
                                     Введите токен доступа
                                 </Form.Message>
                                 <Form.Control required type="password" asChild>
-                                    <TextField.Input placeholder="Токен доступа" />
+                                    <TextField.Root placeholder="Токен доступа" />
                                 </Form.Control>
                             </Form.Field>
 

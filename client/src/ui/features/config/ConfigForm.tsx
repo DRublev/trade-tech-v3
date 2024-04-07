@@ -1,9 +1,9 @@
+import * as Form from "@radix-ui/react-form";
+import { Button, Container, Flex, Text, TextField } from '@radix-ui/themes';
 import type { FC, FormEventHandler } from 'react';
 import React from 'react';
-import { ConfigScheme } from './types';
-import { Button, Container, Flex, Text, TextFieldInput } from '@radix-ui/themes';
-import * as Form from "@radix-ui/react-form";
 import s from './ConfigForm.css';
+import { ConfigScheme } from './types';
 
 type Props = {
     scheme: ConfigScheme;
@@ -29,8 +29,7 @@ export const ConfigForm: FC<Props> = ({ scheme, defaultValues = {}, onSubmit }: 
                                 <Text>{f.label}</Text>
                             </Form.Label>
                             <Form.Control required={f.required} type={f.htmlType} asChild>
-                                <TextFieldInput
-                                    type={f.htmlType}
+                                <TextField.Root
                                     placeholder={f.placeholder}
                                     min={f.min}
                                     max={f.max}

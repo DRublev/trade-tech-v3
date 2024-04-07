@@ -8,7 +8,7 @@ type Props = {
 export const Layout: FC<Props> = ({ children }) => {
     return <>
         <Theme appearance='dark'>
-            <Container shrink="1" grow="1">
+            <Container flexShrink="1" flexGrow="1">
                 {children}
             </Container>
         </Theme>
