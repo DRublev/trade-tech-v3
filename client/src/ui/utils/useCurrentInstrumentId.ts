@@ -1,14 +1,15 @@
-// "BBG004730RP0" /* GAZP */
-// "4c466956-d2ce-4a95-abb4-17947a65f18a" TGLD
-// "BBG004730ZJ9" /* VTBR */
-// "BBG004PYF2N3" /* POLY */
-let instrumentId = "BBG004PYF2N3" /* POLY */;
+import { useAppDispatch, useAppSelector } from "../../store";
+import { setCurrentInstrument } from "../features/space/spaceSlice";
 
-export const useCurrentInstrumentId = (): [string, (c: string) => void] => {
+
+export const useCurrentInstrument = (): [string, (c: string) => void] => {
+    const dispatch = useAppDispatch();
+    const instrumentId = useAppSelector(s => s.space.currentInstrument);
+
     const set = (candidate: string) => {
         if (!candidate) throw new Error('candidate is required');
 
-        instrumentId = candidate;
+        dispatch(setCurrentInstrument(candidate));
     };
 
     return [instrumentId, set];

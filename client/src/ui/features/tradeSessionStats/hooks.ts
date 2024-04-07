@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { OrderOperations, OrderState } from "../../../types";
-import { useCurrentInstrumentId } from "../../utils/useCurrentInstrumentId";
+import { useCurrentInstrument } from "../../utils/useCurrentInstrumentId";
 import { useOrders } from "../space/hooks";
 
 
 export const useTradeSessionStats = () => {
-    const [instrument] = useCurrentInstrumentId();
+    const [instrument] = useCurrentInstrument();
     const [turnover, setTurnover] = useState(0);
     const [profit, setProfit] = useState(0);
     const [tradesAmount, setTradesAmount] = useState(0);
@@ -46,7 +46,7 @@ export const useTradeSessionStats = () => {
 
 type OrderLog = OrderState;
 export const useTradeLogs = () => {
-    const [instrument] = useCurrentInstrumentId();
+    const [instrument] = useCurrentInstrument();
     const [logs, setLogs] = useState<OrderLog[]>([]);
 
     const handleOrderStateChange = (orderState: OrderState) => {

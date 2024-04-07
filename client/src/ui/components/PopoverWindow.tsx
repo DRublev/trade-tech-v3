@@ -7,12 +7,13 @@ type Props = {
 };
 
 export const PopoverWindow: FC<Props> = ({ children, trigger }) => {
+    const container = (document.querySelector(".radix-themes") || document.body) as HTMLElement;
     return (
         <Popover.Root>
             <Popover.Trigger style={{ border: 'none', backgroundColor: 'inherit' }}>
                 {trigger}
             </Popover.Trigger>
-            <Popover.Portal>
+            <Popover.Portal container={container}>
                 <Popover.Content style={{ backgroundColor: '#18191B', color: 'white' }}>
                     {children}
                 </Popover.Content>

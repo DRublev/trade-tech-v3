@@ -5,7 +5,7 @@ import { ArrowUpIcon, ArrowDownIcon } from "@radix-ui/react-icons";
 import { Card, Flex, Heading, ScrollArea, Text, Tooltip } from "@radix-ui/themes";
 import { OrderOperations } from "../../../types";
 
-type Props = never;
+type Props = object;
 
 const BuyLabel = () => (
     <Tooltip content="Покупка">

@@ -6,9 +6,9 @@ import { ListBulletIcon, MixerHorizontalIcon, PersonIcon, PlayIcon, StopIcon } f
 import style from '../../basicStyles.css';
 import Chart from "../chart";
 import s from './styles.css';
-import { SharesPop } from './SharesPopUp';
+import { SharesPop } from './SharesPopup/SharesPopUp';
 import { useIpcInvoke } from '../../hooks';
-import { useCurrentInstrumentId } from '../../utils/useCurrentInstrumentId';
+import { useCurrentInstrument } from '../../utils/useCurrentInstrumentId';
 import { useNavigate } from 'react-router-dom';
 import { ConfigChangeModal } from '../config';
 import { TradeLogs } from '../tradeSessionStats/TradeLogs';
@@ -23,13 +23,14 @@ export const ControlsPanel = () => {
     const startTrade = useIpcInvoke('START_TRADE');
     const stopTrade = useIpcInvoke('STOP_TRADE');
     const navigate = useNavigate();
-    const [instrument] = useCurrentInstrumentId();
+    const [instrument] = useCurrentInstrument();
     const [isStarted, setIsStarted] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
 
     const toggleTrade = async () => {
         try {
             let res: any = {};
+
             if (isStarted) {
                 res = await stopTrade({
                     instrumentId: instrument,
@@ -56,8 +57,8 @@ export const ControlsPanel = () => {
 
     return (
         <Toolbar.Root>
-            <Flex align="center" justify="center" gap="4">
-                <Toolbar.ToggleGroup type="single">
+            <Toolbar.ToggleGroup type="single">
+                <Flex align="center" justify="center" gap="2" p="3">
                     <SharesPop
                         trigger={
                             <Toolbar.Button asChild {...toolBarButtonProps}>
@@ -78,8 +79,8 @@ export const ControlsPanel = () => {
                     <Toolbar.Button value="logout" asChild onClick={onAccountClick} {...toolBarButtonProps}>
                         <PersonIcon />
                     </Toolbar.Button>
-                </Toolbar.ToggleGroup>
-            </Flex>
+                </Flex>
+            </Toolbar.ToggleGroup>
         </Toolbar.Root>
     )
 }

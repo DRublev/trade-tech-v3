@@ -4,7 +4,7 @@ import { useTradeSessionStats } from './hooks';
 import { Card, Heading, Text, Flex } from '@radix-ui/themes';
 import { DoubleArrowUpIcon, ListBulletIcon, ReloadIcon } from '@radix-ui/react-icons';
 
-type Props = never;
+type Props = object;
 
 export const TradeStats: FC<Props> = () => {
     const [turnover, profit, tradesAmount] = useTradeSessionStats();
