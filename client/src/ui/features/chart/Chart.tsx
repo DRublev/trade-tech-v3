@@ -110,7 +110,7 @@ const useChart: UseChart = (containerRef, instrument) => {
             },
         });
         legendRef.current = document.querySelector('#chart-container #legend');
-        legendRef.current.style = legendStyle;
+        legendRef.current.style.cssText = legendStyle;
 
         // TODO: Add volume series
     }, []);

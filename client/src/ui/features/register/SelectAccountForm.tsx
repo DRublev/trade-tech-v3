@@ -18,7 +18,7 @@ import s from "./styles.css";
 const useAccounts = () => {
     const dispatch = useAppDispatch();
     const accounts = useAppSelector(state => state.accounts.accounts)
-    const getAccounts = useGetAccount<void, {Accounts: RawAccount[]}>();
+    const getAccounts = useGetAccount();
     const [isLoading, setIsLoading] = useState(false);
 
     const load = useCallback(async () => {
