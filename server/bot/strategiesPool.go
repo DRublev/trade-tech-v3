@@ -26,6 +26,20 @@ type StrategiesMap struct {
 	value map[string]strategies.IStrategy
 }
 
+func (sm *StrategiesMap) SetValue(key string, strategy strategies.IStrategy) {
+	sm.Lock()
+	sm.value[key] = strategy
+	sm.Unlock()
+}
+
+func (sm *StrategiesMap) GetValue(key string) (strategies.IStrategy, bool) {
+	defer sm.RUnlock()
+
+	sm.RLock()
+	strategy, exist := sm.value[key]
+	return strategy, exist
+}
+
 // StrategyPool Аггрегатор стратегий. Весь доступ к стратегии ведется через него
 type StrategyPool struct {
 	IStrategyPool
@@ -53,6 +67,11 @@ func NewPool() *StrategyPool {
 	// TODO: Подписаться на os.Exit и вызвать Stop для каждой стратегии
 
 	return pool
+}
+
+func (sp *StrategyPool) IsStarted(key strategies.StrategyKey, instrumentID string) (bool, error) {
+	_, exists := sp.strategies.GetValue(sp.getMapKey(key, instrumentID))
+	return exists, nil
 }
 
 // Start Запуск стратегии
