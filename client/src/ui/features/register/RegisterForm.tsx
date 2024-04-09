@@ -1,4 +1,4 @@
-import React, { FormEventHandler, useCallback, useState } from "react";
+import React, { FormEventHandler, useCallback, useEffect, useState } from "react";
 import * as Form from "@radix-ui/react-form";
 import {
     Button,
@@ -25,6 +25,10 @@ export const RegisterForm = () => {
     const [alertOpen, setAlertOpen] = useState(false);
     const [alert, setAlert] = useState(null);
     const logger = useLogger({ component: 'RegisterForm' });
+
+    useEffect(() => {
+        logger.info("test from register screen")
+    }, []);
 
     const handleSubmit: FormEventHandler<HTMLFormElement> = useCallback(
         async (event) => {
@@ -69,7 +73,7 @@ export const RegisterForm = () => {
                                     Введите токен доступа
                                 </Form.Message>
                                 <Form.Control required type="password" asChild>
-                                    <TextField.Input placeholder="Токен доступа" />
+                                    <TextField.Root placeholder="Токен доступа" />
                                 </Form.Control>
                             </Form.Field>
 

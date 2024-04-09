@@ -7,7 +7,10 @@ require (
 	github.com/russianinvestments/invest-api-go-sdk v1.10.0
 )
 
-require go.uber.org/multierr v1.11.0 // indirect
+require (
+	github.com/magnetde/loki v0.0.0-20210705232130-887aa0db0110 // indirect
+	go.uber.org/multierr v1.11.0 // indirect
+)
 
 require (
 	cloud.google.com/go/compute v1.23.3 // indirect
