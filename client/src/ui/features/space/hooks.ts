@@ -1,23 +1,70 @@
-import { GetCandlesRequest } from "../../../../grpcGW/marketData";
-import { useIpcInoke, useIpcListen } from "../../hooks";
-import { OHLCData } from "../../../types";
+import { GetCandlesRequest } from '../../../node/grpc/contracts/marketData';
 import { useState, useEffect, useCallback } from "react";
+import { useAppDispatch, useAppSelector } from '../../../store';
+import { setShares } from './spaceSlice';
+import { GetTradingSchedulesRequest, GetTradingSchedulesResponse, TradingSchedule } from "../../../node/grpc/contracts/shares";
+import { useIpcInvoke, useIpcListen } from "../../hooks";
+import { OHLCData, OrderState } from "../../../types";
 
 type GetCandlesResponse = OHLCData[];
 
-export const useGetCandles = (): (req: GetCandlesRequest) => Promise<GetCandlesResponse> => useIpcInoke("GET_CANDLES");
+export const useGetCandles = (): (req: GetCandlesRequest) => Promise<GetCandlesResponse> => useIpcInvoke("GET_CANDLES");
+export const useGetTradingSchedules = (): (req: GetTradingSchedulesRequest) => Promise<GetTradingSchedulesResponse> => useIpcInvoke("GET_TRADING_SCHEDULES");
+export const useGetShares = () => useIpcInvoke("GET_SHARES");
 
 // TODO: Нужен хук который сам бы хендлил отписку
-const useSubscribeCandles = () => useIpcInoke("SUBSCRIBE_CANDLES");
+const useSubscribeCandles = () => useIpcInvoke("SUBSCRIBE_CANDLES");
+const useSubscribeOrders = () => useIpcInvoke("SUBSCRIBE_ORDER");
 const useListenCandles = () => useIpcListen("NEW_CANDLE");
+const useListenOrders = () => useIpcListen("NEW_ORDER");
 
-export const useCandles = (figiOrInstrumentId: string = "BBG004730N88", interval = 1) => {
+
+type OnOrderCallback = (d: OrderState) => void;
+
+export const useOrders = (callback: OnOrderCallback | OnOrderCallback[], figiOrInstrumentId: string) => {
+    const subscribe = useSubscribeOrders();
+    const [registerOrderCb, unregisterOrderCb] = useListenOrders();
+
+    const subscribeOrders = async () => {
+        await subscribe({
+            instrumentId: figiOrInstrumentId,
+        });
+    }
+
+    const handleNewOrder = useCallback((e: Event, order: OrderState) => {
+        if (!order) return;
+
+        if (Array.isArray(callback)) {
+            Promise.all(callback.map(cb => () => cb(order)))
+        } else {
+            callback(order);
+        }
+    }, []);
+
+    const unsubscribe = () => {
+        unregisterOrderCb(handleNewOrder);
+    }
+
+    useEffect(() => {
+        registerOrderCb(handleNewOrder);
+    }, [handleNewOrder]);
+
+    useEffect(() => {
+        subscribeOrders();
+
+        return unsubscribe;
+    }, [figiOrInstrumentId]);
+
+    return unsubscribe;
+}
+
+export const useCandles = (onNewCandle: (d: OHLCData) => void, figiOrInstrumentId: string, interval = 1) => {
     const getCandles = useGetCandles();
     const subscribe = useSubscribeCandles();
 
-    const [onCandles, off] = useListenCandles();
+    const [registerCandleCb, unregisterCandleCb] = useListenCandles();
 
-    const [data, setData] = useState<OHLCData[]>([]);
+    const [initialData, setInitialData] = useState<OHLCData[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
 
@@ -37,7 +84,7 @@ export const useCandles = (figiOrInstrumentId: string = "BBG004730N88", interval
             });
 
             // TODO: Чтобы избежать лагов графика стоит ограничивать размер candles в N айтемов, в зависимости от размера окна и интервала
-            setData(candles.filter(d => d));
+            setInitialData(candles);
         } catch (e) {
             setError(e);
         } finally {
@@ -46,38 +93,84 @@ export const useCandles = (figiOrInstrumentId: string = "BBG004730N88", interval
     };
 
     const subscribeCandles = async () => {
-        const res = await subscribe({
+        await subscribe({
             instrumentId: figiOrInstrumentId,
             interval,
         });
-        console.log("49 hooks", res);
     }
-    const sub = async () => {
-        await onCandles(handleNewCandle)
-    };
 
-    const handleNewCandle = (e: Event, candle: OHLCData) => {
-        console.log("56 hooks", candle);
-        if (!candle) return;
-        const lastCandleDate = data[data.length - 1].date;
-        if (lastCandleDate.getMinutes() === candle.date.getMinutes()) {
-            setData(data.splice(data.length - 1, 1, candle));
-        } else {
-            data.push(candle);
-            setData(data);
-        }
-    }
+    const handleNewCandle = useCallback((e: Event, candle: OHLCData) => {
+        if (!candle || !candle.time) return;
+
+        onNewCandle(candle);
+    }, []);
+
+    useEffect(() => {
+        registerCandleCb(handleNewCandle);
+    }, [handleNewCandle]);
 
     useEffect(() => {
         getInitialCandels();
-        sub();
         subscribeCandles();
 
         return () => {
-            off(handleNewCandle);
+            unregisterCandleCb(handleNewCandle);
         }
-
     }, [figiOrInstrumentId]);
 
-    return { data, isLoading, error };
+    return { initialData, isLoading, error };
 }
+
+export const useSharesFromStore = () => {
+    const dispatch = useAppDispatch();
+    const shares = useAppSelector(store => store.space.shares)
+    const [isLoading, setIsLoading] = useState(false);
+
+    const load = useCallback(async () => {
+        try {
+            if (isLoading) return;
+            setIsLoading(true);
+            const response: any = await window.ipc.invoke('GET_SHARES_FROM_STORE');
+            dispatch(setShares(response.shares))
+        } catch (error) {
+            console.error(`get shares error: ${error}`);
+            dispatch(setShares([]));
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        load();
+    }, [])
+
+    return { shares, isLoading }
+};
+
+export const useTodaysSchedules = (): TradingSchedule[] => {
+    const getSchedules = useGetTradingSchedules();
+    const [schedules, setSchedules] = useState([]);
+    const [isLoading, setIsLoading] = useState(false);
+
+    const load = useCallback(async () => {
+        const now = new Date();
+
+        try {
+            if (isLoading) return;
+            setIsLoading(true);
+            const response: any = (await getSchedules({ exchange: "", from: now, to: now })).exchanges;
+            setSchedules(response)
+        } catch (error) {
+            console.error(`get shares error: ${error}`);
+            setSchedules([]);
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        load();
+    }, [])
+
+    return schedules;
+};

@@ -1,53 +1,106 @@
-import React, { FormEventHandler, useCallback } from "react";
-import * as Form from '@radix-ui/react-form';
-import { Button, Card, Flex, Switch, TextField } from "@radix-ui/themes";
+import React, { FormEventHandler, useCallback, useState } from "react";
+import * as Form from "@radix-ui/react-form";
+import {
+    Button,
+    Callout,
+    Card,
+    Container,
+    Flex,
+    Heading,
+    Link,
+    TextField,
+} from "@radix-ui/themes";
 import { useNavigate } from "react-router-dom";
-import { useRegister } from "./hooks";
+import { useRegistration } from './hooks';
+import { InfoCircledIcon } from "@radix-ui/react-icons";
+// TODO: Эту херь нужно вынести в отдельный компонент с хуком и рефом
+import * as Toast from '@radix-ui/react-toast';
 
+import s from "./styles.css";
 
 export const RegisterForm = () => {
-    const regitster = useRegister();
+    const [register] = useRegistration()
     const navigate = useNavigate();
+    const [alertOpen, setAlertOpen] = useState(false);
+    const [alert, setAlert] = useState(null);
 
-    const handleSubmit: FormEventHandler<HTMLFormElement> = useCallback(async (event) => {
-        try {
+
+    const handleSubmit: FormEventHandler<HTMLFormElement> = useCallback(
+        async (event) => {
             event.preventDefault();
             event.stopPropagation();
-            const data = Object.fromEntries(new FormData(event.currentTarget));
-            await regitster(data);
-            navigate('select-account');
-        } catch (e) {
-            // TODO: Выводить алерт
-            console.log("22 RegisterForm", e);
-        }
-    }, []);
+            try {
+                setAlertOpen(false);
+                setAlert(null);
+
+                const data = Object.fromEntries(new FormData(event.currentTarget));
+                await register(data as Record<string, string>);
+
+                navigate("select-account");
+            } catch (e) {
+                setAlertOpen(true);
+                setAlert({
+                    message: e.message || e
+                });
+            }
+        },
+        []
+    );
 
     return (
-        <Card size="3">
-            <Form.Root onSubmit={handleSubmit}>
-                <Flex direction="column" gap="3">
-                    <Form.Field name="token">
-                        <Flex align="baseline" justify="between" gap="5">
-                            <Form.Label>Токен</Form.Label>
-                            <Form.Message match="valueMissing">Введите токен доступа</Form.Message>
-                        </Flex>
-                        <Form.Control required type="password" asChild>
-                            <TextField.Input placeholder="Токен доступа" />
-                        </Form.Control>
-                    </Form.Field>
+        <Toast.Provider>
+            <Container>
+                <img src="/static/images/logo.svg" className={s.logo} />
+                <Card size="3" variant="ghost" className={s.card}>
+                    <Form.Root onSubmit={handleSubmit}>
+                        <Flex direction="column" gap="3">
+                            <Form.Field name="token">
+                                <Flex align="baseline" justify="between" gap="5">
+                                    <Form.Label>
+                                        <Heading className={s.heading}>
+                                            Нам нужен токен, чтобы начать работу
+                                        </Heading>
+                                    </Form.Label>
+                                </Flex>
+                                <Form.Message match="valueMissing">
+                                    Введите токен доступа
+                                </Form.Message>
+                                <Form.Control required type="password" asChild>
+                                    <TextField.Root placeholder="Токен доступа" />
+                                </Form.Control>
+                            </Form.Field>
 
-                    <Form.Field name="isSandbox">
-                        <Flex align="center" gap="3">
-                            <Form.Control asChild type="checkbox">
-                                <Switch defaultChecked id="is-sandbox" role="checkbox" onChange={e => { e.preventDefault(); e.stopPropagation() }} />
-                            </Form.Control>
-                            <Form.Label htmlFor="is-sandbox">Песочница</Form.Label>
-                        </Flex>
-                    </Form.Field>
+                            <Callout.Root className={s.hintbox}>
+                                <Callout.Icon>
+                                    <InfoCircledIcon />
+                                </Callout.Icon>
+                                <Callout.Text>
+                                    Вы&nbsp;можете взять его в&nbsp;
+                                    <Link href="https://www.tinkoff.ru/invest/settings/">
+                                        настройках Тинькофф Инвестиций
+                                    </Link>
+                                    .<br />
+                                    Нужен токен с&nbsp;полным доступом, к&nbsp;отдельному счету,
+                                    только для этого бота
+                                </Callout.Text>
+                            </Callout.Root>
 
-                    <Form.Submit asChild><Button>Запомнить</Button></Form.Submit>
-                </Flex>
-            </Form.Root>
-        </Card>
-    )
-}
+                            <Form.Submit asChild>
+                                <Button className={s.submitBtn}>Запомнить</Button>
+                            </Form.Submit>
+                        </Flex>
+                    </Form.Root>
+                </Card>
+
+                <Toast.Root open={alertOpen} onOpenChange={setAlertOpen} className={s.ToastRoot}>
+                    <Toast.Title>Упс! Возникла ошибка</Toast.Title>
+                    <Toast.Description className={s.ToastDescription}>{alert?.message}</Toast.Description>
+                    <Toast.Action className={s.ToastAction} altText="Бля бля" asChild>
+                        <Button variant="surface" color="amber">Бля</Button>
+                    </Toast.Action>
+                </Toast.Root>
+                <Toast.Viewport className={s.ToastViewport} />
+            </Container>
+        </Toast.Provider>
+    );
+};

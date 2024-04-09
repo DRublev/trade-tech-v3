@@ -6,7 +6,7 @@
 - В интерфейсе `Broker` описать метод получения свечей
   ```go
     // types/broker.go
-    type Broker interface {
+    type IBroker interface {
         // ...
         GetCandles(string, Interval, time.Time, time.Time) ([]OHLC, error)
     }
@@ -56,7 +56,7 @@
         // Инициализируем investgo sdk
         sdk, err := c.getSdk()
         if err != nil {
-            fmt.Println("Cannot init sdk! ", err)
+            log.Errorf("Cannot init sdk! %v", err)
             return []types.OHLC{}, err
         }
 
@@ -66,7 +66,8 @@
         // Получаем свечи по инструменту за определенный промежуток времени и интервал (переодичность)
         candlesRes, err := candlesService.GetCandles(instrumentId, investapi.CandleInterval(interval), start, end)
         if err != nil {
-            fmt.Println("Cannot get candles", err)
+			log.Warnff("Cannot get candles %v", err)
+
             return []types.OHLC{}, err
         }
 
@@ -98,7 +99,7 @@
     package marketData;
 
     // Название пакета для go
-    option go_package = "grpcGW.marketdata";
+    option go_package = "contracts.marketdata";
 
     import "google/protobuf/timestamp.proto";
 
@@ -142,7 +143,7 @@
     // server/server/init.go
     import (
         // ...
-	    marketdata "main/grpcGW/grpcGW.marketdata"
+	    marketdata "main/server/contracts/contracts.marketdata"
         // ...
     )
 
@@ -165,19 +166,19 @@
 
     import (
         "context"
-        "fmt"
         "main/bot"
-        marketdata "main/grpcGW/grpcGW.marketdata"
+        marketdata "main/server/contracts/contracts.marketdata"
         "main/types"
 
         "google.golang.org/protobuf/types/known/timestamppb"
+	    log "github.com/sirupsen/logrus"
     )
 
     // Обьявляем нвоый обработчик эндпоинта GetCandles
     func (s *Server) GetCandles(ctx context.Context, in *marketdata.GetCandlesRequest) (*marketdata.GetCandlesResponse, error) {
         err := bot.Init(ctx, types.Tinkoff)
         if err != nil {
-            fmt.Println("marketdata GetCandles request err", err)
+            lot.Warnf("marketdata GetCandles request err %v", err)
             return &marketdata.GetCandlesResponse{Candles: []*marketdata.GetCandlesResponse_OHLC{}}, err
         }
 
@@ -221,7 +222,7 @@
             })
         }
 
-        fmt.Println("marketdata GetCandles request")
+        log.Trace("marketdata GetCandles request")
         return &marketdata.GetCandlesResponse{Candles: res}, nil
     }
 

@@ -3,7 +3,7 @@ syntax = "proto3";
 package marketData;
 
 // Название пакета для go
-option go_package = "grpcGW.marketdata";
+option go_package = "contracts.marketdata";
 
 import "google/protobuf/timestamp.proto";
 
@@ -11,7 +11,25 @@ service MarketData {
     // Название нашего эндпоинта
     rpc GetCandles(GetCandlesRequest) returns (GetCandlesResponse);
     rpc SubscribeCandles(SubscribeCandlesRequest) returns (stream OHLC);
+    rpc SubscribeOrders(SubscribeOrderRequest) returns (stream OrderState);
+    rpc SubscribeOrderbook(SubscribeOrderbookRequest) returns (stream Orderbook);
 }
+
+message OrderState {
+    string IdempodentID = 1;
+    int32 ExecutionStatus = 2;
+    int32 OperationType = 3;
+    int32 LotsRequested = 4;
+    int32 LotsExecuted = 5;
+    double PricePerLot = 6;
+    google.protobuf.Timestamp time = 7;
+    string InstrumentID = 8;
+    string Strategy = 9;
+}
+
+message SubscribeOrderRequest {
+}
+
 
 
 // Что ждем от клиента
@@ -44,4 +62,24 @@ message GetCandlesResponse {
 message SubscribeCandlesRequest {
     string instrumentId = 1;
     int32 interval = 2;
+}
+
+message BidAsk {
+    Quant price = 1;
+    int64 quantity = 2;
+}
+
+message Orderbook {
+    string instrumentId = 1;
+    int32 depth = 2;
+    google.protobuf.Timestamp time = 3;
+    Quant limitUp = 4;
+    Quant limitDown = 5;
+    repeated BidAsk bids = 6;
+    repeated BidAsk asks = 7;
+}
+
+message SubscribeOrderbookRequest {
+    string instrumentId = 1;
+    int32 depth = 2;
 }

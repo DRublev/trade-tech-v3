@@ -7,7 +7,6 @@ type Props = { sandboxOnly?: boolean, children: any };
 export const ProtectedRoute = ({ children, sandboxOnly }: Props) => {
     const { isAuthorized, isSandbox, isLoaded, account } = useAuth();
     const location = useLocation();
-    console.log("10 ProtectedRoute", isAuthorized, sandboxOnly, isSandbox);
 
     // TODO: Loader
     if (!isLoaded) return <>Loading...</>;

@@ -23,4 +23,6 @@ go.work
 client/storage
 storage
 
-.vscode
+node_modules
+.vscode/
+.vscode/*

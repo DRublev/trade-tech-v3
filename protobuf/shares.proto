@@ -1,0 +1,73 @@
+syntax = "proto3";
+
+package shares;
+
+option go_package = "contracts.shares";
+
+import "google/protobuf/timestamp.proto";
+
+service Shares {
+    rpc GetShares(GetInstrumentsRequest) returns (GetSharesResponse);
+    rpc GetTradingSchedules(GetTradingSchedulesRequest) returns (GetTradingSchedulesResponse);
+}
+
+message Quatation { 
+    int32 units = 1;
+    int32 nano = 2;
+}
+
+message Share {
+    string figi = 1;
+    string name = 2;
+    string exchange = 3;
+    string ticker = 4;
+    int32 lot = 5;
+    google.protobuf.Timestamp ipoDate = 6;
+    int32 tradingStatus = 7;
+    Quatation minPriceIncrement = 8;
+    string uid = 9;
+    google.protobuf.Timestamp first1minCandleDate = 10;
+    google.protobuf.Timestamp first1dayCandleDate = 11;
+
+}
+
+message GetInstrumentsRequest {
+     int32 instrumentStatus = 2;
+}
+
+message GetSharesResponse {
+    repeated Share instruments = 1;
+}
+
+message GetTradingSchedulesRequest {
+    string exchange = 1;
+    google.protobuf.Timestamp from = 3; 
+    google.protobuf.Timestamp to = 4;
+}
+
+message GetTradingSchedulesResponse {
+    repeated TradingSchedule exchanges = 1;
+}
+
+message TradingSchedule {
+        string exchange = 1;
+        repeated TradingDay days = 2;
+}
+
+message TradingDay {
+    google.protobuf.Timestamp date = 1;                     
+    bool isTradingDay = 2;              
+	google.protobuf.Timestamp startTime = 3;                   
+	google.protobuf.Timestamp endTime = 4;                        
+	google.protobuf.Timestamp openingAuctionStartTime = 5;     
+	google.protobuf.Timestamp closingAuctionEndTime = 6;          
+	google.protobuf.Timestamp eveningOpeningAuctionStartTime = 7; 
+	google.protobuf.Timestamp eveningStartTime = 8; 
+	google.protobuf.Timestamp eveningEndTime = 9; 
+	google.protobuf.Timestamp clearingStartTime = 10;
+	google.protobuf.Timestamp clearingEndTime = 11;  
+	google.protobuf.Timestamp premarketStartTime = 12;            
+	google.protobuf.Timestamp premarketEndTime = 13;             
+	google.protobuf.Timestamp closingAuctionStartTime = 14;      
+	google.protobuf.Timestamp peningAuctionEndTime = 15;         
+}

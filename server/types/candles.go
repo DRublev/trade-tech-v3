@@ -1,18 +1,14 @@
 package types
 
 import (
+	"fmt"
 	"time"
 )
 
+// Interval  Интервал на графике (минута, 5 минут, час и тп)
 type Interval byte
 
-type Quant struct {
-	// Целая часть цены
-	Units int
-	// Дробная часть цены
-	Nano int
-}
-
+// OHLC Педставление свечи
 type OHLC struct {
 	// Цена открытия
 	Open Quant
@@ -21,7 +17,11 @@ type OHLC struct {
 	// Минимальная цена за интервал
 	Low Quant
 	// Цена закрытия
-	Close Quant
-	Time  time.Time
+	Close  Quant
+	Time   time.Time
 	Volume int64
+}
+
+func (o *OHLC) String() string {
+	return fmt.Sprintf("OHLC: t %v; o %v; h %v; l %v; c %v; v %v", o.Time, o.Open, o.High, o.Low, o.Close, o.Volume)
 }
