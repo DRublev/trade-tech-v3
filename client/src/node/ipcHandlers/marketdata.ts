@@ -6,6 +6,9 @@ import { OHLC, OrderState } from '../grpc/contracts/marketData';
 import { OHLCData, OrderState as Order } from "../../types";
 import { UTCTimestamp } from "lightweight-charts";
 import { ClientReadableStream } from "@grpc/grpc-js";
+import { createLogger } from "../logger";
+
+const log = createLogger({ controller: 'marketdata' });
 
 const nanoPrecision = 1_000_000_000;
 const quantToNumber = (q: Quant): number => {
@@ -36,6 +39,8 @@ const toOrderState = (candle: OrderState): Order => ({
 ipcMain.handle(ipcEvents.GET_CANDLES, async (e, req) => {
     const { instrumentId, start, end, interval } = req;
 
+    log.info('Get candles');
+
     if (!instrumentId) return Promise.reject('InstrumentId обязательный параметр');
     if (!start) return Promise.reject('start обязательный параметр');
     if (!interval) return Promise.reject('interval обязательный параметр');
@@ -47,7 +52,10 @@ ipcMain.handle(ipcEvents.GET_CANDLES, async (e, req) => {
             start,
             end: end || Date.now(),
         }, (e, resp) => {
-            if (e) return reject(e);
+            if (e) {
+                log.error("Getting candles error", e);
+                return reject(e);
+            }
             const { candles } = resp || { candles: [] };
             resolve(candles.map(candleToOhlc))
         });
@@ -69,6 +77,7 @@ const createStream = () => {
 
     });
     stream.on('error', (err) => {
+        log.error("Error in marketdata stream", err);
         Promise.allSettled(subscribers.map(cb => cb(null, err)))
     });
 };
@@ -86,7 +95,7 @@ ipcMain.handle(ipcEvents.SUBSCRIBE_ORDER, async (e, req) => {
     if (!instrumentId) return Promise.reject('InstrumentId обязательный параметр');
 
     const [win] = BrowserWindow.getAllWindows()
-    // TODO: Сюда бы обработку ошибок
+    // TODO: Сюда бы обработку ошибок (не лог)
     subscribeForOrderStateChange((order: OrderState, error?: Error) => {
         if (!order || order.InstrumentID != instrumentId) return;
         win.webContents.send(ipcEvents.NEW_ORDER, toOrderState(order));
@@ -115,11 +124,12 @@ ipcMain.handle(ipcEvents.SUBSCRIBE_CANDLES, async (e, req) => {
                 resolve(true);
             });
             stream.on('error', (err) => {
-                console.log("60 marketdata", err);
+                log.error("Candles stream error", err);
                 reject(err);
             })
             resolve(true);
         } catch (e) {
+            log.error("Candles stream creation error", e);
             reject(e);
         }
     });

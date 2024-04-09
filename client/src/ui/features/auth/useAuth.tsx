@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect } from "react";
 import { useAppDispatch, useAppSelector } from '../../../store';
 import { DEFAULT_AUTH_INFO, setAuthData, setLoaded } from './authSlice';
 
@@ -15,7 +15,7 @@ export const useAuth = () => {
     const getAuthInfo = useCallback(async () => {
         const info = await window.ipc.invoke('GET_AUTH_INFO');
 
-        return info || { isAuthorised: false, isSandbox: true, account: null };
+        return info || { isAuthorised: false, isSandbox: false, account: null };
     }, []);
 
     const setShouldUpdateAuthInfo = useCallback(() => {

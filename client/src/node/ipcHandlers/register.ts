@@ -3,13 +3,19 @@ import { ipcEvents } from "../../ipcEvents";
 import storage from '../Storage';
 import { accountsService } from '../grpc/accounts';
 import { authService } from '../grpc/auth';
+import { createLogger } from "../logger";
+
+const log = createLogger({ controller: 'register' });
 
 type Payload = {
     token: string;
     isSandbox?: boolean;
 };
 ipcMain.handle(ipcEvents.REGISTER, async (e, data: Payload) => {
-    if (!safeStorage.isEncryptionAvailable()) return Promise.reject("Шифрование не доступно");
+    if (!safeStorage.isEncryptionAvailable()) {
+        log.error("Шифрование не доступно")
+        return Promise.reject("Шифрование не доступно");
+    }
 
     const { token, isSandbox } = data;
     if (!token) return Promise.reject("token является обязательным параметром");
@@ -20,10 +26,14 @@ ipcMain.handle(ipcEvents.REGISTER, async (e, data: Payload) => {
 });
 
 ipcMain.handle(ipcEvents.GET_ACCOUNTS, async (e) => {
+    log.info("Getting accounts");
     const res = await new Promise((resolve, reject) => {
         accountsService.getAccounts({}, (e, accs) => {
-            if (e) return reject(e);
-            resolve(accs)
+            if (e) {
+                log.error("Error getting accounts", e);
+                return reject(e);
+            }
+            resolve(accs);
         });
     });
     return res;
@@ -31,10 +41,14 @@ ipcMain.handle(ipcEvents.GET_ACCOUNTS, async (e) => {
 
 ipcMain.handle(ipcEvents.SET_ACCOUNT, async (e, data) => {
     if (!data.id) return Promise.reject('id является обязательным параметром');
+    log.info("Setting account");
 
     storage.save('accountId', data.id);
     return new Promise((resolve, reject) => accountsService.setAccount({ AccountId: data.id }, (e, res) => {
-        if (e) return reject(e);
+        if (e) {
+            log.error("Error setting account", e);
+            return reject(e);
+        }
         resolve({});
     }));
 });

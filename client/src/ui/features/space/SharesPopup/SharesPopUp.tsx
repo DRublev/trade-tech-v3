@@ -1,7 +1,7 @@
 import * as ToggleGroup from '@radix-ui/react-toggle-group';
 import { MixerHorizontalIcon } from "@radix-ui/react-icons";
 import { Box, Button, Card, Container, Flex, Text } from "@radix-ui/themes";
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { PopoverWindow } from "../../../components/PopoverWindow";
 import style from '../../../basicStyles.css';
 import { Quatation, Share, TradingSchedule } from "../../../../node/grpc/contracts/shares";
@@ -9,6 +9,7 @@ import { useTodaysSchedules, useSharesFromStore } from '../hooks';
 import { SearchInput } from '../../../components/SearchInput';
 import s from './styles.css';
 import { useCurrentInstrument } from '../../..//utils/useCurrentInstrumentId';
+import { useLogger } from '../../../hooks';
 
 const nanoPrecision = 1_000_000_000;
 const quantToNumber = (q: Quatation | undefined): number => {
@@ -41,6 +42,7 @@ const SharesTriggerButton = () => (
 export const SharesPop = ({ trigger }: { trigger?: React.ReactNode }) => {
     const { shares } = useSharesFromStore();
     const schedules = useTodaysSchedules();
+    const logger = useLogger({ component: 'SharesPop' });
     const [currentInstrument, setCurrentInstrument] = useCurrentInstrument();
     const schedulesByExchangeMap = useMemo<Record<string, TradingSchedule>>(() => {
         return schedules.reduce((acc, s) => ({ ...acc, [s.exchange]: s }), {})
@@ -77,6 +79,13 @@ export const SharesPop = ({ trigger }: { trigger?: React.ReactNode }) => {
         if (!uid) return;
         setCurrentInstrument(uid);
     };
+
+    useEffect(() => {
+        logger.trace('Shares popup opened');
+        return () => {
+            logger.trace('Shares popup closed');
+        }
+    }, [])
 
     return (
         <PopoverWindow trigger={trigger ?? <SharesTriggerButton />}>
