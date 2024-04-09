@@ -127,3 +127,15 @@ func (ow *OrderWatcher) notify(state types.OrderExecutionState) {
 	l.Info("Notifying about new order state")
 	*ow.notifyCh <- state
 }
+
+func (ow *OrderWatcher) ErrNotify(order types.PlaceOrder) {
+	orderErr := &types.OrderExecutionState{
+		LotsExecuted:       int(order.Quantity),
+		ExecutedOrderPrice: float64(order.Price),
+		InstrumentID:       order.InstrumentID,
+		Direction:          order.Direction,
+		Status:             types.ErrorPlacing,
+	}
+
+	*ow.notifyCh <- *orderErr
+}

@@ -156,6 +156,7 @@ func (s *SpreadStrategy) Start(
 
 	s.nextOrderCooldown = time.NewTimer(time.Duration(0) * time.Millisecond)
 
+	// стакан!
 	s.obCh = ch
 
 	go func(ch *chan *types.Orderbook) {
@@ -405,22 +406,14 @@ func (s *SpreadStrategy) onOrderSateChange(state types.OrderExecutionState) {
 
 	l.Infof("Order state changed %v", state)
 
+	if state.Status == types.ErrorPlacing {
+		l.Error("Order placing error. State restored")
+	}
+
 	newState := *s.state.Get()
 
-	if state.Direction == types.Buy {
-		l.Trace("Updating state after buy order executed")
-		newState.holdingShares += int32(state.LotsExecuted / int(s.config.LotSize))
-		newState.pendingBuyShares -= int32(state.LotsExecuted / int(s.config.LotSize))
-		newState.notConfirmedBlockedMoney -= float32(state.ExecutedOrderPrice)
-		newState.leftBalance -= float32(state.ExecutedOrderPrice)
-		l.Tracef(
-			"Lots executed %v of %v; Executed buy price %v",
-			state.ExecutedOrderPrice,
-			state.LotsExecuted,
-			state.LotsRequested,
-		)
-	}
-	if state.Direction == types.Sell {
+	if (state.Direction == types.Sell && state.Status != types.ErrorPlacing) ||
+		(state.Direction == types.Buy && state.Status == types.ErrorPlacing) {
 		l.Trace("Updating state after sell order executed")
 
 		newState.pendingSellShares -= int32(state.LotsExecuted / int(s.config.LotSize))
@@ -431,6 +424,19 @@ func (s *SpreadStrategy) onOrderSateChange(state types.OrderExecutionState) {
 			state.LotsExecuted,
 			state.LotsRequested,
 			state.ExecutedOrderPrice,
+		)
+	} else if (state.Direction == types.Buy && state.Status != types.ErrorPlacing) ||
+		(state.Direction == types.Sell && state.Status == types.ErrorPlacing) {
+		l.Trace("Updating state after buy order executed")
+		newState.holdingShares += int32(state.LotsExecuted / int(s.config.LotSize))
+		newState.pendingBuyShares -= int32(state.LotsExecuted / int(s.config.LotSize))
+		newState.notConfirmedBlockedMoney -= float32(state.ExecutedOrderPrice)
+		newState.leftBalance -= float32(state.ExecutedOrderPrice)
+		l.Tracef(
+			"Lots executed %v of %v; Executed buy price %v",
+			state.ExecutedOrderPrice,
+			state.LotsExecuted,
+			state.LotsRequested,
 		)
 	}
 	s.state.Set(newState)
