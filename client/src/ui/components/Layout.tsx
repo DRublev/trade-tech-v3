@@ -1,5 +1,8 @@
-import { Container, Theme } from "@radix-ui/themes";
-import React, { FC } from "react";
+
+import { Container, Theme } from "@radix-ui/themes"
+import React, { FC } from "react"
+import OfflineBanner from './OfflineBanner/OfflineBanner';
+
 
 type Props = {
     children?: React.ReactNode
@@ -8,7 +11,10 @@ type Props = {
 export const Layout: FC<Props> = ({ children }) => {
     return <>
         <Theme appearance='dark'>
-            <Container flexShrink="1" flexGrow="1">
+
+            <OfflineBanner />
+            <Container shrink="1" grow="1">
+
                 {children}
             </Container>
         </Theme>

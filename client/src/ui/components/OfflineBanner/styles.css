@@ -1,0 +1,13 @@
+
+.internetStatus{
+  display: flex;
+  height: 32px;
+  align-items: center;
+  justify-content: center;
+}
+.internetStatus.offline{
+  background: var(--ruby-9);
+}
+.internetStatus.online{
+  background: var(--green-9);
+}

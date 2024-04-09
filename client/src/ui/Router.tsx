@@ -17,6 +17,6 @@ export const Router = () => {
                     <Route index Component={RegisterForm} />
                 </Route>
             </Routes>
-        </HashRouter>
+        </HashRouter >
     )
 };
