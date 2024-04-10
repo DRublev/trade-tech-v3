@@ -9,12 +9,12 @@ import (
 	server "main/server"
 
 	"github.com/joho/godotenv"
-	log "github.com/sirupsen/logrus"
 	"github.com/magnetde/loki"
+	log "github.com/sirupsen/logrus"
 )
 
 var (
-	port = flag.Int("port", 50051, "The server port")
+	port        = flag.Int("port", 50051, "The server port")
 	logsAddress = flag.String("logsAddress", "http://79.174.80.98:3100", "The server port")
 )
 
@@ -33,14 +33,24 @@ func init() {
 func main() {
 	flag.Parse()
 
-	hook := loki.NewHook(*logsAddress, loki.WithName("trade-tech"), loki.WithLabel("env", "dev"), loki.WithLabel("app", "server"), loki.WithLevel(log.InfoLevel))
-	defer hook.Close()
-	log.AddHook(hook)
-
-	if env, ok := os.LookupEnv("ENV"); !ok || env != "PROD" {
+	env, ok := os.LookupEnv("ENV")
+	if !ok || env != "PROD" {
 		if err := godotenv.Load(); err != nil {
 			log.Fatal("Cannot load env!")
 		}
+	}
+	if ok && env == "PROD" {
+		uid := getId()
+		hook := loki.NewHook(
+			*logsAddress,
+			loki.WithName("trade-tech"),
+			loki.WithLabel("env", "dev"),
+			loki.WithLabel("app", "server"),
+			loki.WithLabel("uid", uid),
+			loki.WithLevel(log.InfoLevel),
+		)
+		defer hook.Close()
+		log.AddHook(hook)
 	}
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
@@ -51,3 +61,4 @@ func main() {
 
 	os.Exit(1)
 }
+

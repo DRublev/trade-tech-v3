@@ -10,7 +10,7 @@ ipcMain.handle(ipcEvents.GET_AUTH_INFO, async (e) => {
     if (!safeStorage.isEncryptionAvailable()) return Promise.reject("Шифрование не доступно");
 
     try {
-        log.trace('GET_AUTH_INFO');
+        log.info('GET_AUTH_INFO');
         const isSandbox = await storage.get('isSandbox');
         const account = await storage.get('accountId');
 
