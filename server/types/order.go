@@ -78,6 +78,7 @@ const (
 	New       ExecutionStatus = 4
 	// PartiallyFill Исполнен не полностью, не все лоты проданы/куплены
 	PartiallyFill ExecutionStatus = 5
+	ErrorPlacing  ExecutionStatus = 6
 )
 
 func (s *ExecutionStatus) String() string {
@@ -92,6 +93,8 @@ func (s *ExecutionStatus) String() string {
 		return "New"
 	case 5:
 		return "PartiallyFill"
+	case 6:
+		return "ErrorPlacing"
 	default:
 		return "Unspecified"
 	}
