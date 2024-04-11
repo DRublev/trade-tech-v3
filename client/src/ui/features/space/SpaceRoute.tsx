@@ -7,7 +7,7 @@ import style from '../../basicStyles.css';
 import Chart from "../chart";
 import s from './styles.css';
 import { SharesPop } from './SharesPopup/SharesPopUp';
-import { useIpcInvoke } from '../../hooks';
+import { useIpcInvoke, useLogger } from '../../hooks';
 import { useCurrentInstrument } from '../../utils/useCurrentInstrumentId';
 import { useNavigate } from 'react-router-dom';
 import { ConfigChangeModal } from '../config';
@@ -26,9 +26,11 @@ export const ControlsPanel = () => {
     const [instrument] = useCurrentInstrument();
     const [isStarted, setIsStarted] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const logger = useLogger({ component: 'ControlsPanel' });
 
     const toggleTrade = async () => {
         try {
+            logger.info("Switching trade", { isStarted })
             let res: any = {};
 
             if (isStarted) {
@@ -42,16 +44,17 @@ export const ControlsPanel = () => {
             }
             if (res.Ok) {
                 setIsStarted(!isStarted);
-                return;
             }
         } catch (e) {
-            console.log('24 SpaceRoute', e);
+            logger.error(e, "Error switching trade state");
         } finally {
-            setIsLoading(false)
+            setIsLoading(false);
+            logger.trace("Trade switched", { isStarted });
         }
     };
 
     const onAccountClick = () => {
+        logger.info("Going to accounts select screen")
         navigate('/register/select-account');
     };
 

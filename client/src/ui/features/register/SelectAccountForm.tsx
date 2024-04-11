@@ -13,26 +13,33 @@ import { useGetAccount, usePruneTokens, useSetAccount } from "./hooks";
 
 import { useAppDispatch, useAppSelector } from '../../../store';
 import { RawAccount, setAccounts } from '../accounts/accountsSlice';
+import { useLogger } from "../../hooks";
 import s from "./styles.css";
 
 const useAccounts = () => {
     const dispatch = useAppDispatch();
     const accounts = useAppSelector(state => state.accounts.accounts)
-    const getAccounts = useGetAccount();
+    const getAccounts = useGetAccount<void, { Accounts: RawAccount[] }>();
+
     const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState(null);
+    const logger = useLogger({ component: 'useAccounts' });
 
     const load = useCallback(async () => {
         try {
             if (isLoading) return;
+            setError(null);
+            logger.trace('Loading accounts');
             setIsLoading(true);
             // TODO: Типизировать
             const response = await getAccounts(null);
+            logger.trace('Accounts loaded', { count: response.Accounts.length });
             dispatch(setAccounts(
                 response.Accounts.map((a: RawAccount) => ({ id: a.Id, name: a.Name || a.Id }))
             ));
         } catch (e) {
-            // TODO: Показывать алерт
-            console.log("19 SelectAccountForm", e);
+            setError(e);
+            logger.error('Failed to load accounts', e);
             dispatch(setAccounts([]));
         } finally {
             setIsLoading(false);
@@ -43,23 +50,25 @@ const useAccounts = () => {
         load();
     }, []);
 
-    return { accounts, isLoading };
+    return { accounts, isLoading, error };
 };
 
 export const SelectAccountForm = () => {
-    const { accounts, isLoading } = useAccounts();
+    const { accounts, isLoading, error } = useAccounts();
     const { setShouldUpdateAuthInfo } = useAuth();
     const setAccount = useSetAccount();
     const navigate = useNavigate();
     const pruneTokens = usePruneTokens();
     const [alertOpen, setAlertOpen] = useState(false);
     const [alert, setAlert] = useState(null);
+    const logger = useLogger({ component: 'SelectAccountForm' });
 
     const handleSubmit: FormEventHandler<HTMLFormElement> = useCallback(
         async (event) => {
             event.preventDefault();
             event.stopPropagation();
             try {
+                logger.info('Setting account');
                 setAlertOpen(false);
                 setAlert(null);
 
@@ -73,19 +82,24 @@ export const SelectAccountForm = () => {
                     message: e.message || e,
                 });
 
-                console.log("24 SelectAccountForm", e);
-
+                logger.error('Failed to set account', e);
                 // TODO: Сетить serverErrorMessage
             }
         },
         []
     );
 
+
+    useEffect(() => {
+        setAlertOpen(!!error);
+        setAlert({ message: error?.message || error });
+    }, [error]);
+
     const onLogout = useCallback(async () => {
       console.log('onLogout click');
       await pruneTokens({});
       navigate('/register');
-    }, [])
+    }, []);
 
     return (
         <Toast.Provider>
@@ -132,11 +146,13 @@ export const SelectAccountForm = () => {
                 >
                     <Toast.Title>Упс! Возникла ошибка</Toast.Title>
                     <Toast.Description className={s.ToastDescription}>
+                        Мы получили о ней сведения и примем меры
+                        <br />
                         {alert?.message}
                     </Toast.Description>
-                    <Toast.Action className={s.ToastAction} altText="Бля бля" asChild>
+                    <Toast.Action className={s.ToastAction} altText="Ок" asChild>
                         <Button variant="surface" color="amber">
-                            Бля
+                            Не ок
                         </Button>
                     </Toast.Action>
                 </Toast.Root>

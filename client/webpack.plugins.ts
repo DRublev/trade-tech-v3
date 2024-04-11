@@ -14,5 +14,5 @@ export const plugins = [
     patterns: [
       { from: 'src/static', to: 'static' }
     ]
-  })
+  }),
 ];

@@ -1,4 +1,4 @@
-import React, { FormEventHandler, useCallback, useState } from "react";
+import React, { FormEventHandler, useCallback, useEffect, useState } from "react";
 import * as Form from "@radix-ui/react-form";
 import {
     Button,
@@ -17,19 +17,25 @@ import { InfoCircledIcon } from "@radix-ui/react-icons";
 import * as Toast from '@radix-ui/react-toast';
 
 import s from "./styles.css";
+import { useLogger } from "../../hooks";
 
 export const RegisterForm = () => {
     const [register] = useRegistration()
     const navigate = useNavigate();
     const [alertOpen, setAlertOpen] = useState(false);
     const [alert, setAlert] = useState(null);
+    const logger = useLogger({ component: 'RegisterForm' });
 
+    useEffect(() => {
+        logger.info("test from register screen")
+    }, []);
 
     const handleSubmit: FormEventHandler<HTMLFormElement> = useCallback(
         async (event) => {
             event.preventDefault();
             event.stopPropagation();
             try {
+                logger.info("Submitting form");
                 setAlertOpen(false);
                 setAlert(null);
 
@@ -42,6 +48,7 @@ export const RegisterForm = () => {
                 setAlert({
                     message: e.message || e
                 });
+                logger.error('Error while submitting form', e);
             }
         },
         []
@@ -94,9 +101,13 @@ export const RegisterForm = () => {
 
                 <Toast.Root open={alertOpen} onOpenChange={setAlertOpen} className={s.ToastRoot}>
                     <Toast.Title>Упс! Возникла ошибка</Toast.Title>
-                    <Toast.Description className={s.ToastDescription}>{alert?.message}</Toast.Description>
-                    <Toast.Action className={s.ToastAction} altText="Бля бля" asChild>
-                        <Button variant="surface" color="amber">Бля</Button>
+                    <Toast.Description className={s.ToastDescription}>
+                        Мы получили о ней сведения и примем меры
+                        <br />
+                        {alert?.message}
+                    </Toast.Description>
+                    <Toast.Action className={s.ToastAction} altText="Ок" asChild>
+                        <Button variant="surface" color="amber">Не ок</Button>
                     </Toast.Action>
                 </Toast.Root>
                 <Toast.Viewport className={s.ToastViewport} />

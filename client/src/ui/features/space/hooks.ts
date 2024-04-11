@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useAppDispatch, useAppSelector } from '../../../store';
 import { setShares } from './spaceSlice';
 import { GetTradingSchedulesRequest, GetTradingSchedulesResponse, TradingSchedule } from "../../../node/grpc/contracts/shares";
-import { useIpcInvoke, useIpcListen } from "../../hooks";
+import { useIpcInvoke, useIpcListen, useLogger } from "../../hooks";
 import { OHLCData, OrderState } from "../../../types";
 
 type GetCandlesResponse = OHLCData[];
@@ -67,6 +67,7 @@ export const useCandles = (onNewCandle: (d: OHLCData) => void, figiOrInstrumentI
     const [initialData, setInitialData] = useState<OHLCData[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
+    const logger = useLogger({ component: 'useCandles' });
 
     const now = new Date();
     // TODO: Рассчитывать на основании интервала
@@ -74,6 +75,7 @@ export const useCandles = (onNewCandle: (d: OHLCData) => void, figiOrInstrumentI
 
     const getInitialCandels = async () => {
         try {
+            logger.info('Getting candles', { instrument: figiOrInstrumentId });
             setIsLoading(true);
 
             const candles = await getCandles({
@@ -87,6 +89,7 @@ export const useCandles = (onNewCandle: (d: OHLCData) => void, figiOrInstrumentI
             setInitialData(candles);
         } catch (e) {
             setError(e);
+            logger.error("Error getting candles", e);
         } finally {
             setIsLoading(false);
         }

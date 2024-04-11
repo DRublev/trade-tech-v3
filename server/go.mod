@@ -7,11 +7,15 @@ require (
 	github.com/russianinvestments/invest-api-go-sdk v1.10.0
 )
 
-require go.uber.org/multierr v1.11.0 // indirect
+require (
+	github.com/magnetde/loki v0.0.0-20210705232130-887aa0db0110 // indirect
+	go.uber.org/multierr v1.11.0 // indirect
+)
 
 require (
 	cloud.google.com/go/compute v1.23.3 // indirect
 	cloud.google.com/go/compute/metadata v0.2.3 // indirect
+	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.0.0-rc.5 // indirect

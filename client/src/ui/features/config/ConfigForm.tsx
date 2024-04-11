@@ -30,6 +30,7 @@ export const ConfigForm: FC<Props> = ({ scheme, defaultValues = {}, onSubmit }: 
                             </Form.Label>
                             <Form.Control required={f.required} type={f.htmlType} asChild>
                                 <TextField.Root
+                                    type={f.htmlType as any}
                                     placeholder={f.placeholder}
                                     min={f.min}
                                     max={f.max}

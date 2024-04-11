@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { OrderOperations, OrderState } from "../../../types";
 import { useCurrentInstrument } from "../../utils/useCurrentInstrumentId";
 import { useOrders } from "../space/hooks";
+import { useLogger } from "../../hooks";
 
 
 export const useTradeSessionStats = () => {
@@ -9,9 +10,11 @@ export const useTradeSessionStats = () => {
     const [turnover, setTurnover] = useState(0);
     const [profit, setProfit] = useState(0);
     const [tradesAmount, setTradesAmount] = useState(0);
-    const buyPrices = useRef([])
+    const buyPrices = useRef([]);
+    const logger = useLogger({ component: 'useTradeSessionStats' });
 
     const handleOrderStateChange = useCallback((orderState: OrderState) => {
+        logger.trace('Got info about new order', { isPartiallyExecuted: orderState.lotsExecuted != orderState.lotsRequested });
         // Частично исполненная зхаявка, пока хз как их считать
         if (orderState.lotsExecuted != orderState.lotsRequested) return;
 
