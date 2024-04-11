@@ -34,6 +34,12 @@ export interface HasTokenResponse {
   HasToken: boolean;
 }
 
+export interface PruneTokensRequest {
+}
+
+export interface PruneTokensResponse {
+}
+
 function createBaseSetTokenRequest(): SetTokenRequest {
   return { Token: "", IsSandbox: false };
 }
@@ -43,7 +49,7 @@ export const SetTokenRequest = {
     if (message.Token !== "") {
       writer.uint32(10).string(message.Token);
     }
-    if (message.IsSandbox === true) {
+    if (message.IsSandbox !== false) {
       writer.uint32(16).bool(message.IsSandbox);
     }
     return writer;
@@ -91,7 +97,7 @@ export const SetTokenRequest = {
     if (message.Token !== "") {
       obj.Token = message.Token;
     }
-    if (message.IsSandbox === true) {
+    if (message.IsSandbox !== false) {
       obj.IsSandbox = message.IsSandbox;
     }
     return obj;
@@ -157,7 +163,7 @@ function createBaseClearTokenRequest(): ClearTokenRequest {
 
 export const ClearTokenRequest = {
   encode(message: ClearTokenRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-    if (message.ForSandbox === true) {
+    if (message.ForSandbox !== false) {
       writer.uint32(8).bool(message.ForSandbox);
     }
     return writer;
@@ -192,7 +198,7 @@ export const ClearTokenRequest = {
 
   toJSON(message: ClearTokenRequest): unknown {
     const obj: any = {};
-    if (message.ForSandbox === true) {
+    if (message.ForSandbox !== false) {
       obj.ForSandbox = message.ForSandbox;
     }
     return obj;
@@ -300,7 +306,7 @@ function createBaseHasTokenResponse(): HasTokenResponse {
 
 export const HasTokenResponse = {
   encode(message: HasTokenResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-    if (message.HasToken === true) {
+    if (message.HasToken !== false) {
       writer.uint32(8).bool(message.HasToken);
     }
     return writer;
@@ -335,7 +341,7 @@ export const HasTokenResponse = {
 
   toJSON(message: HasTokenResponse): unknown {
     const obj: any = {};
-    if (message.HasToken === true) {
+    if (message.HasToken !== false) {
       obj.HasToken = message.HasToken;
     }
     return obj;
@@ -347,6 +353,92 @@ export const HasTokenResponse = {
   fromPartial<I extends Exact<DeepPartial<HasTokenResponse>, I>>(object: I): HasTokenResponse {
     const message = createBaseHasTokenResponse();
     message.HasToken = object.HasToken ?? false;
+    return message;
+  },
+};
+
+function createBasePruneTokensRequest(): PruneTokensRequest {
+  return {};
+}
+
+export const PruneTokensRequest = {
+  encode(_: PruneTokensRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): PruneTokensRequest {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBasePruneTokensRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(_: any): PruneTokensRequest {
+    return {};
+  },
+
+  toJSON(_: PruneTokensRequest): unknown {
+    const obj: any = {};
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<PruneTokensRequest>, I>>(base?: I): PruneTokensRequest {
+    return PruneTokensRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<PruneTokensRequest>, I>>(_: I): PruneTokensRequest {
+    const message = createBasePruneTokensRequest();
+    return message;
+  },
+};
+
+function createBasePruneTokensResponse(): PruneTokensResponse {
+  return {};
+}
+
+export const PruneTokensResponse = {
+  encode(_: PruneTokensResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): PruneTokensResponse {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBasePruneTokensResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(_: any): PruneTokensResponse {
+    return {};
+  },
+
+  toJSON(_: PruneTokensResponse): unknown {
+    const obj: any = {};
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<PruneTokensResponse>, I>>(base?: I): PruneTokensResponse {
+    return PruneTokensResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<PruneTokensResponse>, I>>(_: I): PruneTokensResponse {
+    const message = createBasePruneTokensResponse();
     return message;
   },
 };
@@ -380,12 +472,22 @@ export const AuthService = {
     responseSerialize: (value: HasTokenResponse) => Buffer.from(HasTokenResponse.encode(value).finish()),
     responseDeserialize: (value: Buffer) => HasTokenResponse.decode(value),
   },
+  pruneTokens: {
+    path: "/auth.Auth/PruneTokens",
+    requestStream: false,
+    responseStream: false,
+    requestSerialize: (value: PruneTokensRequest) => Buffer.from(PruneTokensRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer) => PruneTokensRequest.decode(value),
+    responseSerialize: (value: PruneTokensResponse) => Buffer.from(PruneTokensResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer) => PruneTokensResponse.decode(value),
+  },
 } as const;
 
 export interface AuthServer extends UntypedServiceImplementation {
   setToken: handleUnaryCall<SetTokenRequest, SetTokenResponse>;
   clearToken: handleUnaryCall<ClearTokenRequest, ClearTokenResponse>;
   hasToken: handleUnaryCall<HasTokenRequest, HasTokenResponse>;
+  pruneTokens: handleUnaryCall<PruneTokensRequest, PruneTokensResponse>;
 }
 
 export interface AuthClient extends Client {
@@ -433,6 +535,21 @@ export interface AuthClient extends Client {
     metadata: Metadata,
     options: Partial<CallOptions>,
     callback: (error: ServiceError | null, response: HasTokenResponse) => void,
+  ): ClientUnaryCall;
+  pruneTokens(
+    request: PruneTokensRequest,
+    callback: (error: ServiceError | null, response: PruneTokensResponse) => void,
+  ): ClientUnaryCall;
+  pruneTokens(
+    request: PruneTokensRequest,
+    metadata: Metadata,
+    callback: (error: ServiceError | null, response: PruneTokensResponse) => void,
+  ): ClientUnaryCall;
+  pruneTokens(
+    request: PruneTokensRequest,
+    metadata: Metadata,
+    options: Partial<CallOptions>,
+    callback: (error: ServiceError | null, response: PruneTokensResponse) => void,
   ): ClientUnaryCall;
 }
 

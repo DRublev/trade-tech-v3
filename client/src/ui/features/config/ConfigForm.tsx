@@ -1,9 +1,9 @@
+import * as Form from "@radix-ui/react-form";
+import { Button, Container, Flex, Text, TextField } from '@radix-ui/themes';
 import type { FC, FormEventHandler } from 'react';
 import React from 'react';
-import { ConfigScheme } from './types';
-import { Button, Container, Flex, Text, TextField } from '@radix-ui/themes';
-import * as Form from "@radix-ui/react-form";
 import s from './ConfigForm.css';
+import { ConfigScheme } from './types';
 
 type Props = {
     scheme: ConfigScheme;
