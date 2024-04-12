@@ -1,7 +1,5 @@
 import pino from "pino";
 import axios from 'axios';
-import path from 'path';
-import fs from 'fs';
 
 const lokiOptions = {
     address: "http://79.174.80.98:3100",
@@ -26,8 +24,6 @@ let pendingChunk: LogEntry[] = [];
 const maxChunkSize = 30;
 const sendTimeout = 10 * 1000; // 10 sec
 let sendTimerId: any;
-
-// ! Важно чтобы совпадало с путем из uniqId в го
 
 let uid: string;
 
@@ -72,7 +68,7 @@ const send = () => {
     axios.post(lokiOptions.address + "/loki/api/v1/push", logs).then(() => {
         pendingChunk = [];
     }).catch(e => {
-        console.error('Error sending log', e.status || e.data || e);
+        console.error('Error sending log', e.status || (e.response && e.response.data) || e);
         if (pendingChunk.length >= maxChunkSize * 10) {
             const time = Date.now();
             chunk.push({

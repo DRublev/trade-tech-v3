@@ -9,6 +9,7 @@ type TypedBindings = Bindings & {
 
 const getUid = () => {
     try {
+        // ! Важно чтобы совпадало с путем из uniqId в го
         const rootDir = path.resolve(process.cwd(), '..');
         const uidStore = path.join(rootDir, "storage", 'uniqId');    
         const data = fs.readFileSync(uidStore, 'utf8');
