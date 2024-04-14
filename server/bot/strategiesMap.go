@@ -18,9 +18,10 @@ func (sm *StrategiesMap) SetValue(key string, strategy strategies.IStrategy) {
 }
 
 func (sm *StrategiesMap) GetValue(key string) (strategies.IStrategy, bool) {
+	sm.RLock()
+
 	defer sm.RUnlock()
 
-	sm.RLock()
 	strategy, exist := sm.value[key]
 	return strategy, exist
 }
