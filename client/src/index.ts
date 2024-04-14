@@ -70,12 +70,6 @@ app.on('window-all-closed', () => {
     app.quit();
   }
 });
-// app.on('will-finish-launching', () => {
-//   const goLaunchProcess = utilityProcess.fork('src/launchGoServer.js', [app.isPackaged ? '--packaged' : '']);
-//   goLaunchProcess.once('spawn', () => {
-//     logger.info('go server starting');
-//   });
-// })
 
 app.on('activate', () => {
   // On OS X it's common to re-create a window in the app when the

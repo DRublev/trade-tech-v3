@@ -9,9 +9,9 @@ const launch = () => {
     const isPackaged = process.argv[process.argv.length - 1] == '--packaged';
     const logFileCmd = isPackaged ? '' : ' >> logs';
     const serverPath = path.join(isPackaged ? process.resourcesPath : '..', serverFilename);
-    console.log('1 launchGoServer', serverPath);
+    console.log('Launching server by path: ', serverPath);
     exec(`ENV=PROD ./${serverFilename}${logFileCmd}`, (err, stdout, stderr) => {
-        console.log('12 launchGoServer', err, stderr, stdout);
+        console.log('Launch server out:', err, stderr, stdout);
     })
 };
 
