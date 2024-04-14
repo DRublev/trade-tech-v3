@@ -13,6 +13,7 @@ import { useNavigate } from 'react-router-dom';
 import { ConfigChangeModal } from '../config';
 import { TradeLogs } from '../tradeSessionStats/TradeLogs';
 import { TradeStats } from '../tradeSessionStats/TradeStats';
+import { ipcEvents } from '../../../ipcEvents';
 
 const toolBarButtonProps = {
     className: style.button,
@@ -21,6 +22,7 @@ const toolBarButtonProps = {
 
 export const ControlsPanel = () => {
     const startTrade = useIpcInvoke('START_TRADE');
+    const isStartedReq = useIpcInvoke<unknown, {Ok: boolean}>(ipcEvents.IS_STARTED);
     const stopTrade = useIpcInvoke('STOP_TRADE');
     const navigate = useNavigate();
     const [instrument] = useCurrentInstrument();
@@ -57,6 +59,11 @@ export const ControlsPanel = () => {
         logger.info("Going to accounts select screen")
         navigate('/register/select-account');
     };
+
+    React.useEffect(() => {
+      isStartedReq({instrumentId: instrument})
+        .then(res => setIsStarted(res.Ok));
+    }, [])
 
     return (
         <Toolbar.Root>

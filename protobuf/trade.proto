@@ -9,6 +9,7 @@ option go_package = "contracts.trade";
 service Trade {
     rpc Start(StartRequest) returns (StartResponse);
     rpc Stop(StopRequest) returns (StopResponse);
+    rpc IsStarted(StartRequest) returns (StartResponse); 
     rpc ChangeConfig(ChangeConfigRequest) returns (ChangeConfigResponse);
     rpc GetConfig(GetConfigRequest) returns (GetConfigResponse);
 }
@@ -31,6 +32,16 @@ message StopRequest {
 message StopResponse {
     bool Ok = 1;
     string Error = 2;
+}
+
+message IsStartedRequest {
+  string Strategy = 1;
+  string InstrumentId = 2;   
+}
+
+message IsStartedResponse {
+  bool Ok = 1;
+  string Error = 2;
 }
 
 message ChangeConfigRequest {
