@@ -67,6 +67,7 @@ func (s *Server) ChangeConfig(ctx context.Context, in *trade.ChangeConfigRequest
 	for key, value := range in.Config.AsMap() {
 		config[key] = value
 	}
+	config["InstrumentID"] = in.InstrumentId
 
 	err := configRepository.Set(configKey, config)
 	errMsg := ""

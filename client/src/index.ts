@@ -54,11 +54,15 @@ const createWindow = (): void => {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.on('ready', () => {
-  const goLaunchProcess = utilityProcess.fork('src/launchGoServer.js', [app.isPackaged ? '--packaged' : '']);
-  goLaunchProcess.once('spawn', () => {
-    logger.info('go server starting');
+  if (process.env.ENV === 'PROD') {
+    const goLaunchProcess = utilityProcess.fork('src/launchGoServer.js', [app.isPackaged ? '--packaged' : '']);
+    goLaunchProcess.once('spawn', () => {
+      logger.info('go server starting');
+      createWindow();
+    });
+  } else {
     createWindow();
-  });
+  }
   fetchSharesList();
 });
 

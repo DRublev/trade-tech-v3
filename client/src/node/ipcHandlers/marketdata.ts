@@ -69,8 +69,8 @@ const subscribers: HandleOrderCallback[] = [];
 let stream: ClientReadableStream<OrderState>;
 const createStream = () => {
     stream = marketdataService.subscribeOrders({})
-    stream.on('data', (order: OrderState) => {
-        Promise.allSettled(subscribers.map(cb => cb(order)))
+    stream.on('data', async (order: OrderState) => {
+        await Promise.allSettled(subscribers.map(cb => cb(order)))
     });
     stream.on('end', () => {
         Promise.allSettled(subscribers.map(cb => cb(null, new Error('end of stream'))))
@@ -78,15 +78,16 @@ const createStream = () => {
     });
     stream.on('error', (err) => {
         log.error("Error in marketdata stream", err);
+
         Promise.allSettled(subscribers.map(cb => cb(null, err)))
     });
 };
 
 const subscribeForOrderStateChange = (callback: HandleOrderCallback) => {
+    subscribers.push(callback)
     if (!stream) {
         createStream();
     }
-    subscribers.push(callback)
 };
 
 ipcMain.handle(ipcEvents.SUBSCRIBE_ORDER, async (e, req) => {
@@ -94,15 +95,36 @@ ipcMain.handle(ipcEvents.SUBSCRIBE_ORDER, async (e, req) => {
 
     if (!instrumentId) return Promise.reject('InstrumentId обязательный параметр');
 
-    const [win] = BrowserWindow.getAllWindows()
-    // TODO: Сюда бы обработку ошибок (не лог)
-    subscribeForOrderStateChange((order: OrderState, error?: Error) => {
-        if (!order || order.InstrumentID != instrumentId) return;
-        win.webContents.send(ipcEvents.NEW_ORDER, toOrderState(order));
+
+    const res = await new Promise((resolve, reject) => {
+        const [win] = BrowserWindow.getAllWindows()
+
+        const s = marketdataService.subscribeOrders({})
+        s.on('data', async (order: OrderState) => {
+            log.info("New order " + JSON.stringify(order))
+
+            if (!order || order.InstrumentID != instrumentId) return;
+            try {
+                win.webContents.send(ipcEvents.NEW_ORDER, toOrderState(order));
+            } catch (e) {
+                log.error('Error in marketdata stream', e)
+            }
+        });
+        s.on('end', () => {
+            // Promise.allSettled(subscribers.map(cb => cb(null, new Error('end of stream'))))
+            return resolve(true)
+        });
+        s.on('error', (err) => {
+            log.error("Error in marketdata stream", err);
+            console.log('83 marketdata', err);
+
+            return reject(err)
+        });
     });
+    // TODO: Сюда бы обработку ошибок (не лог)
 
     // TODO: Возвращать метод/строку для отписки
-    return;
+    return res;
 });
 
 ipcMain.handle(ipcEvents.SUBSCRIBE_CANDLES, async (e, req) => {

@@ -59,7 +59,7 @@ export const SharesPop = ({ trigger }: { trigger?: React.ReactNode }) => {
             isContainsWithIgnoreCase(share.figi, term) ||
             isContainsWithIgnoreCase(share.uid, term);
         return tradesBySupportedExchange && fitsSearch;
-    }, [term])
+    }, [term, schedulesByExchangeMap])
     const filteredShares = useMemo(() => shares.filter(shareFilter), [shares, shareFilter])
 
     const onSearchChange: React.ChangeEventHandler<HTMLInputElement> = useCallback(({ target }) => {
@@ -68,11 +68,17 @@ export const SharesPop = ({ trigger }: { trigger?: React.ReactNode }) => {
     }, []);
 
     const isExchangeOpened = useCallback((share: Share) => {
-        if (!schedulesByExchangeMap[share.exchange]) return;
-        const schedule = schedulesByExchangeMap[share.exchange];
+        const exchange = share.exchange === 'MOEX_EVENING_WEEKEND' ? 'MOEX_CLOSE' : share.exchange;
+        const schedule = schedulesByExchangeMap[exchange];
+        if (!schedule) {
+            console.log('73 SharesPopUp', share.exchange, schedulesByExchangeMap);
+
+            return;
+        }
+
         return schedule.days[0].isTradingDay
-            && schedule.days[0].endTime < new Date()
-            && schedule.days[0].startTime > new Date()
+            && schedule.days[0].endTime > new Date()
+            && schedule.days[0].startTime < new Date()
     }, [filteredShares, schedulesByExchangeMap]);
 
     const handleInstrumentSelect = (uid: string) => {
