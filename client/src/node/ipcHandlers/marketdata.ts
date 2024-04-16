@@ -127,6 +127,17 @@ ipcMain.handle(ipcEvents.SUBSCRIBE_ORDER, async (e, req) => {
     return res;
 });
 
+const subscribed: Record<string, boolean> = {};
+
+ipcMain.handle(ipcEvents.UNSUBSCRIBE_CANDLES, async (e, req) => {
+    const { instrumentId } = req;
+    if (!instrumentId) return Promise.reject('InstrumentId обязательный параметр');
+    if (subscribed[instrumentId]) {
+        delete subscribed[instrumentId];
+    }
+    return Promise.resolve(true);
+});
+
 ipcMain.handle(ipcEvents.SUBSCRIBE_CANDLES, async (e, req) => {
     const { instrumentId, interval } = req;
 
@@ -138,12 +149,16 @@ ipcMain.handle(ipcEvents.SUBSCRIBE_CANDLES, async (e, req) => {
     const res = new Promise((resolve, reject) => {
         try {
             // TODO: Хорошо бы это делать в воркере или background процессе
-            const stream = marketdataService.subscribeCandles({ instrumentId, interval })
+            const stream = marketdataService.subscribeCandles({ instrumentId, interval });
+            subscribed[instrumentId] = true;
             stream.on('data', (candle: OHLC) => {
+                if (!subscribed[instrumentId]) return;
                 win.webContents.send(ipcEvents.NEW_CANDLE, candleToOhlc(candle));
             });
             stream.on('end', () => {
+                delete subscribed[instrumentId];
                 resolve(true);
+
             });
             stream.on('error', (err) => {
                 log.error("Candles stream error", err);

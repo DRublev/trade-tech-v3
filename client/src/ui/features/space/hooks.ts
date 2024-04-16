@@ -1,10 +1,11 @@
 import { GetCandlesRequest } from '../../../node/grpc/contracts/marketData';
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useAppDispatch, useAppSelector } from '../../../store';
 import { setShares } from './spaceSlice';
 import { GetTradingSchedulesRequest, GetTradingSchedulesResponse, TradingSchedule } from "../../../node/grpc/contracts/shares";
 import { useIpcInvoke, useIpcListen, useLogger } from "../../hooks";
 import { OHLCData, OrderState } from "../../../types";
+import { useCurrentInstrument } from '../../utils/useCurrentInstrumentId';
 
 type GetCandlesResponse = OHLCData[];
 
@@ -14,6 +15,7 @@ export const useGetShares = () => useIpcInvoke("GET_SHARES");
 
 // TODO: Нужен хук который сам бы хендлил отписку
 const useSubscribeCandles = () => useIpcInvoke("SUBSCRIBE_CANDLES");
+const useUnsubscribeCandles = () => useIpcInvoke("UNSUBSCRIBE_CANDLES");
 const useSubscribeOrders = () => useIpcInvoke("SUBSCRIBE_ORDER");
 const useListenCandles = () => useIpcListen("NEW_CANDLE");
 const useListenOrders = () => useIpcListen("NEW_ORDER");
@@ -61,9 +63,12 @@ export const useOrders = (callback: OnOrderCallback | OnOrderCallback[], figiOrI
 export const useCandles = (onNewCandle: (d: OHLCData) => void, figiOrInstrumentId: string, interval = 1) => {
     const getCandles = useGetCandles();
     const subscribe = useSubscribeCandles();
+    const unsubscribe = useUnsubscribeCandles();
 
     const [registerCandleCb, unregisterCandleCb] = useListenCandles();
 
+    const [instrumentId] = useCurrentInstrument();
+    const prevInstrument = useRef(instrumentId);
     const [initialData, setInitialData] = useState<OHLCData[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -120,6 +125,13 @@ export const useCandles = (onNewCandle: (d: OHLCData) => void, figiOrInstrumentI
             unregisterCandleCb(handleNewCandle);
         }
     }, [figiOrInstrumentId]);
+
+    useEffect(() => {
+        if (prevInstrument.current !== instrumentId) {
+            unsubscribe({ instrumentId: prevInstrument.current });
+            prevInstrument.current = instrumentId;
+        }
+    }, [instrumentId]);
 
     return { initialData, isLoading, error };
 }

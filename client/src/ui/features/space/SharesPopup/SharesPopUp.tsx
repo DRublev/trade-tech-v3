@@ -70,11 +70,7 @@ export const SharesPop = ({ trigger }: { trigger?: React.ReactNode }) => {
     const isExchangeOpened = useCallback((share: Share) => {
         const exchange = share.exchange === 'MOEX_EVENING_WEEKEND' ? 'MOEX_CLOSE' : share.exchange;
         const schedule = schedulesByExchangeMap[exchange];
-        if (!schedule) {
-            console.log('73 SharesPopUp', share.exchange, schedulesByExchangeMap);
-
-            return;
-        }
+        if (!schedule) return;
 
         return schedule.days[0].isTradingDay
             && schedule.days[0].endTime > new Date()
@@ -83,6 +79,7 @@ export const SharesPop = ({ trigger }: { trigger?: React.ReactNode }) => {
 
     const handleInstrumentSelect = (uid: string) => {
         if (!uid) return;
+        
         setCurrentInstrument(uid);
     };
 
@@ -100,7 +97,7 @@ export const SharesPop = ({ trigger }: { trigger?: React.ReactNode }) => {
                 <Container className={s.listScrollContainer}>
                     <ToggleGroup.Root type="single" orientation="vertical" onValueChange={handleInstrumentSelect} value={currentInstrument}>
                         {filteredShares.map(share => (
-                            <ToggleGroup.Item key={share.uid} value={share.figi} asChild>
+                            <ToggleGroup.Item key={share.uid} value={share.uid} asChild>
                                 <ShareLine
                                     share={share}
                                     isAvailable={isExchangeOpened(share)}

@@ -376,6 +376,7 @@ func (c *TinkoffBrokerPort) PlaceOrder(order *types.PlaceOrder) (types.OrderID, 
 		Units: 0,
 		Nano:  10000000, // Ok
 		// Nano: 10000, // VTBR
+		// Nano: 10000000, // TMOS
 	}
 	if cachedInstrument != nil {
 		minPriceIncrement = cachedInstrument.MinPriceIncrement

@@ -6,6 +6,7 @@ import * as ScrollArea from '@radix-ui/react-scroll-area';
 import { ConfigFieldTypes, useConfig } from './hooks';
 import { useCurrentInstrument } from '../../utils/useCurrentInstrumentId';
 import s from './ConfigChangeModal.css';
+import { useLogger } from '../../../ui/hooks';
 
 type Props = {
     trigger: React.ReactNode;
@@ -17,6 +18,7 @@ export const ConfigChangeModal: FC<Props> = ({ trigger }: Props) => {
     const [instrumentId] = useCurrentInstrument();
     const { api, scheme, defaultValues } = useConfig(instrumentId, strategy);
     const [shouldClose, setShouldClose] = useState(undefined); // TODO: Костыль, надо подумать как сделать удобнее
+    const logger = useLogger({ component: 'ConfigChangeModal' })
 
     const onSubmit = useCallback(async (rawValues: Record<string, any>) => {
         try {
@@ -44,7 +46,7 @@ export const ConfigChangeModal: FC<Props> = ({ trigger }: Props) => {
             setShouldClose(true);
             setTimeout(() => setShouldClose(false))
         } catch (e) {
-            console.error('22 ConfigChangeModal', e);
+            logger.error('Error changing config', e);
             // TODO: Алерт, а лучше месседж в форму с разбором ошибки
         }
     }, [scheme, api, defaultValues]);
