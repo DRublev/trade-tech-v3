@@ -13,6 +13,8 @@ import { useNavigate } from 'react-router-dom';
 import { ConfigChangeModal } from '../config';
 import { TradeLogs } from '../tradeSessionStats/TradeLogs';
 import { TradeStats } from '../tradeSessionStats/TradeStats';
+import { useConfig } from '../config/hooks';
+import { mergeObjects } from '../config/mergeObjects';
 
 const toolBarButtonProps = {
     className: style.button,
@@ -46,6 +48,9 @@ export const ControlsPanel = () => {
                 setIsStarted(!isStarted);
             }
         } catch (e) {
+            if (e.message.includes("no config found for")) {
+                alert("Сначала установите настройки стратегии")
+            }
             logger.error(e, "Error switching trade state");
         } finally {
             setIsLoading(false);
