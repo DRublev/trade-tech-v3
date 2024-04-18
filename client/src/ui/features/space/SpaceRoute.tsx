@@ -14,6 +14,8 @@ import { ConfigChangeModal } from '../config';
 import { TradeLogs } from '../tradeSessionStats/TradeLogs';
 import { TradeStats } from '../tradeSessionStats/TradeStats';
 import { ipcEvents } from '../../../ipcEvents';
+import { useDispatch } from 'react-redux';
+import { setCurrentAccount } from '../auth/authSlice';
 
 const toolBarButtonProps = {
     className: style.button,
@@ -25,6 +27,7 @@ export const ControlsPanel = () => {
     const isStartedReq = useIpcInvoke<unknown, {Ok: boolean}>(ipcEvents.IS_STARTED);
     const stopTrade = useIpcInvoke('STOP_TRADE');
     const navigate = useNavigate();
+    const dispatch = useDispatch();
     const [instrument] = useCurrentInstrument();
     const [isStarted, setIsStarted] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -56,7 +59,8 @@ export const ControlsPanel = () => {
     };
 
     const onAccountClick = () => {
-        logger.info("Going to accounts select screen")
+        logger.info("Going to accounts select screen");
+        dispatch(setCurrentAccount({account: undefined}));
         navigate('/register/select-account');
     };
 
