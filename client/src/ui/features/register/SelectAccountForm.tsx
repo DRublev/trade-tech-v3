@@ -7,9 +7,9 @@ import React, {
   useEffect,
   useState,
 } from "react";
-import { useNavigate } from "react-router";
+import { Navigate, useNavigate } from "react-router";
 import { useAuth } from "../auth/useAuth";
-import { useGetAccount, usePruneTokens, useSetAccount } from "./hooks";
+import { useGetAccounts, usePruneTokens, useSetAccount } from "./hooks";
 
 import { useAppDispatch, useAppSelector } from '../../../store';
 import { RawAccount, setAccounts } from '../accounts/accountsSlice';
@@ -19,7 +19,7 @@ import s from "./styles.css";
 const useAccounts = () => {
     const dispatch = useAppDispatch();
     const accounts = useAppSelector(state => state.accounts.accounts)
-    const getAccounts = useGetAccount();
+    const getAccounts = useGetAccounts();
 
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -54,9 +54,9 @@ const useAccounts = () => {
 };
 
 export const SelectAccountForm = () => {
+    const { isAuthorized, account } = useAppSelector(state => state.auth);
     const { accounts, isLoading, error } = useAccounts();
-    const { setShouldUpdateAuthInfo } = useAuth();
-    const setAccount = useSetAccount();
+    const { selectAccount } = useAuth();
     const navigate = useNavigate();
     const pruneTokens = usePruneTokens();
     const [alertOpen, setAlertOpen] = useState(false);
@@ -72,10 +72,8 @@ export const SelectAccountForm = () => {
                 setAlertOpen(false);
                 setAlert(null);
 
-                setShouldUpdateAuthInfo();
                 const data = Object.fromEntries(new FormData(event.currentTarget));
-                await setAccount({ id: data.account });
-                navigate("/");
+                await selectAccount(data.account);
             } catch (e) {
                 setAlertOpen(true);
                 setAlert({
@@ -100,6 +98,10 @@ export const SelectAccountForm = () => {
       await pruneTokens({});
       navigate('/register');
     }, []);
+
+    if (isAuthorized && account) {
+      return <Navigate to="/" />;
+    }
 
     return (
         <Toast.Provider>
