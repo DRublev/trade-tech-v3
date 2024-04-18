@@ -52,3 +52,15 @@ ipcMain.handle(ipcEvents.SET_ACCOUNT, async (e, data) => {
         resolve({});
     }));
 });
+
+ipcMain.handle(ipcEvents.GET_ACCOUNT, async () => {
+    log.info("Getting account");
+
+    return new Promise((resolve, reject) => accountsService.getAccount({}, (e, acc) => {
+        if (e) {
+            log.error("Error getting account", e);
+            return reject(e);
+        }
+        resolve(acc);
+    }));
+});
