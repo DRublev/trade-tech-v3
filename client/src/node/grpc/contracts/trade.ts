@@ -33,6 +33,16 @@ export interface StopResponse {
   Error: string;
 }
 
+export interface IsStartedRequest {
+  Strategy: string;
+  InstrumentId: string;
+}
+
+export interface IsStartedResponse {
+  Ok: boolean;
+  Error: string;
+}
+
 export interface ChangeConfigRequest {
   Strategy: string;
   InstrumentId: string;
@@ -343,6 +353,154 @@ export const StopResponse = {
   },
   fromPartial<I extends Exact<DeepPartial<StopResponse>, I>>(object: I): StopResponse {
     const message = createBaseStopResponse();
+    message.Ok = object.Ok ?? false;
+    message.Error = object.Error ?? "";
+    return message;
+  },
+};
+
+function createBaseIsStartedRequest(): IsStartedRequest {
+  return { Strategy: "", InstrumentId: "" };
+}
+
+export const IsStartedRequest = {
+  encode(message: IsStartedRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.Strategy !== "") {
+      writer.uint32(10).string(message.Strategy);
+    }
+    if (message.InstrumentId !== "") {
+      writer.uint32(18).string(message.InstrumentId);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): IsStartedRequest {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseIsStartedRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.Strategy = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.InstrumentId = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): IsStartedRequest {
+    return {
+      Strategy: isSet(object.Strategy) ? globalThis.String(object.Strategy) : "",
+      InstrumentId: isSet(object.InstrumentId) ? globalThis.String(object.InstrumentId) : "",
+    };
+  },
+
+  toJSON(message: IsStartedRequest): unknown {
+    const obj: any = {};
+    if (message.Strategy !== "") {
+      obj.Strategy = message.Strategy;
+    }
+    if (message.InstrumentId !== "") {
+      obj.InstrumentId = message.InstrumentId;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<IsStartedRequest>, I>>(base?: I): IsStartedRequest {
+    return IsStartedRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<IsStartedRequest>, I>>(object: I): IsStartedRequest {
+    const message = createBaseIsStartedRequest();
+    message.Strategy = object.Strategy ?? "";
+    message.InstrumentId = object.InstrumentId ?? "";
+    return message;
+  },
+};
+
+function createBaseIsStartedResponse(): IsStartedResponse {
+  return { Ok: false, Error: "" };
+}
+
+export const IsStartedResponse = {
+  encode(message: IsStartedResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.Ok !== false) {
+      writer.uint32(8).bool(message.Ok);
+    }
+    if (message.Error !== "") {
+      writer.uint32(18).string(message.Error);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): IsStartedResponse {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseIsStartedResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 8) {
+            break;
+          }
+
+          message.Ok = reader.bool();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.Error = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): IsStartedResponse {
+    return {
+      Ok: isSet(object.Ok) ? globalThis.Boolean(object.Ok) : false,
+      Error: isSet(object.Error) ? globalThis.String(object.Error) : "",
+    };
+  },
+
+  toJSON(message: IsStartedResponse): unknown {
+    const obj: any = {};
+    if (message.Ok !== false) {
+      obj.Ok = message.Ok;
+    }
+    if (message.Error !== "") {
+      obj.Error = message.Error;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<IsStartedResponse>, I>>(base?: I): IsStartedResponse {
+    return IsStartedResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<IsStartedResponse>, I>>(object: I): IsStartedResponse {
+    const message = createBaseIsStartedResponse();
     message.Ok = object.Ok ?? false;
     message.Error = object.Error ?? "";
     return message;
@@ -663,6 +821,15 @@ export const TradeService = {
     responseSerialize: (value: StopResponse) => Buffer.from(StopResponse.encode(value).finish()),
     responseDeserialize: (value: Buffer) => StopResponse.decode(value),
   },
+  isStarted: {
+    path: "/trade.Trade/IsStarted",
+    requestStream: false,
+    responseStream: false,
+    requestSerialize: (value: StartRequest) => Buffer.from(StartRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer) => StartRequest.decode(value),
+    responseSerialize: (value: StartResponse) => Buffer.from(StartResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer) => StartResponse.decode(value),
+  },
   changeConfig: {
     path: "/trade.Trade/ChangeConfig",
     requestStream: false,
@@ -686,6 +853,7 @@ export const TradeService = {
 export interface TradeServer extends UntypedServiceImplementation {
   start: handleUnaryCall<StartRequest, StartResponse>;
   stop: handleUnaryCall<StopRequest, StopResponse>;
+  isStarted: handleUnaryCall<StartRequest, StartResponse>;
   changeConfig: handleUnaryCall<ChangeConfigRequest, ChangeConfigResponse>;
   getConfig: handleUnaryCall<GetConfigRequest, GetConfigResponse>;
 }
@@ -717,6 +885,21 @@ export interface TradeClient extends Client {
     metadata: Metadata,
     options: Partial<CallOptions>,
     callback: (error: ServiceError | null, response: StopResponse) => void,
+  ): ClientUnaryCall;
+  isStarted(
+    request: StartRequest,
+    callback: (error: ServiceError | null, response: StartResponse) => void,
+  ): ClientUnaryCall;
+  isStarted(
+    request: StartRequest,
+    metadata: Metadata,
+    callback: (error: ServiceError | null, response: StartResponse) => void,
+  ): ClientUnaryCall;
+  isStarted(
+    request: StartRequest,
+    metadata: Metadata,
+    options: Partial<CallOptions>,
+    callback: (error: ServiceError | null, response: StartResponse) => void,
   ): ClientUnaryCall;
   changeConfig(
     request: ChangeConfigRequest,

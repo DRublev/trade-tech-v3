@@ -6,6 +6,7 @@ import (
 	"main/bot/broker"
 	accounts "main/server/contracts/contracts.accounts"
 	"main/types"
+	"strings"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -54,4 +55,15 @@ func (s *Server) SetAccount(ctx context.Context, in *accounts.SetAccountRequest)
 
 	accL.Info("SetAccount responding")
 	return &accounts.SetAccountResponse{}, err
+}
+
+func (s *Server) GetAccount(ctx context.Context, in *accounts.GetAccountRequest) (*accounts.GetAccountResponse, error) {
+	accL.Info("GetAccount requested")
+
+	accL.Trace("Getting account id")
+	accountIdRaw, err := dbInstance.Get([]string{"accounts"})
+
+	accId := strings.TrimRight(string(accountIdRaw), "\r\n")
+	accL.Infof("GetAccount responding: %v", accId)
+	return &accounts.GetAccountResponse{AccountId: accId}, err
 }

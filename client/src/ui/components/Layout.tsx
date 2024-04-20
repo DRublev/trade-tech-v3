@@ -14,7 +14,6 @@ export const Layout: FC<Props> = ({ children }) => {
 
             <OfflineBanner />
             <Container flexShrink="1" flexGrow="1">
-
                 {children}
             </Container>
         </Theme>

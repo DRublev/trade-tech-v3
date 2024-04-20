@@ -57,6 +57,17 @@ func (s *Server) Stop(ctx context.Context, in *trade.StopRequest) (*trade.StopRe
 	}, err
 }
 
+func (s *Server) IsStarted(ctx context.Context, in *trade.StartRequest) (*trade.StartResponse, error) {
+	tradeL.Info("IsStarted requested")
+	strategyPool := bot.NewPool()
+	isStarted, err := strategyPool.IsStarted(strategies.StrategyKey(in.Strategy), in.InstrumentId)
+
+	tradeL.Tracef("IsStarted responding: %v (%v for %v)", isStarted, in.Strategy, in.InstrumentId)
+	return &trade.StartResponse{
+		Ok: isStarted,
+	}, err
+}
+
 func (s *Server) ChangeConfig(ctx context.Context, in *trade.ChangeConfigRequest) (*trade.ChangeConfigResponse, error) {
 	tradeL.Info("ChangeConfig requested")
 
