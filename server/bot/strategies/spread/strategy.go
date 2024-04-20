@@ -56,6 +56,8 @@ type State struct {
 	pendingSellShares int32
 
 	lastBuyPrice float32
+
+	placedOrders []types.OrderExecutionState
 }
 
 func (s *State) String() string {
@@ -367,12 +369,23 @@ func (s *SpreadStrategy) sell(wg *sync.WaitGroup, ob *types.Orderbook) {
 		}).Info("Stop loss broken")
 	}
 
+
 	order := &types.PlaceOrder{
 		InstrumentID: s.config.InstrumentID,
 		Quantity:     int64(state.holdingShares),
 		Direction:    types.Sell,
 		Price:        types.Price(price),
 	}
+
+	if hasStopLossBroken {
+		for _, o := range state.placedOrders {
+			if o.Direction == types.Buy && o.Status != types.New {
+				order.CancelOrder = o.ID
+				break
+			}
+		}
+	}
+
 	l.Infof("Order to place: %v", order)
 
 	s.toPlaceOrders <- order
@@ -401,9 +414,6 @@ func (s *SpreadStrategy) checkForRottenSells(wg *sync.WaitGroup, ob *types.Order
 }
 
 func (s *SpreadStrategy) onOrderSateChange(state types.OrderExecutionState) {
-	// TODO: Обновлять последнюю цену покупки
-	// TODO: Обновлять Оставшийся баланс и остальной стейт
-
 	l.Infof("Order state changed %v", state)
 
 	if state.Status == types.ErrorPlacing {
@@ -411,34 +421,70 @@ func (s *SpreadStrategy) onOrderSateChange(state types.OrderExecutionState) {
 	}
 
 	newState := *s.state.Get()
+	defer l.WithField("state", s.state.Get()).Info("State updated")
 
-	if (state.Direction == types.Sell && state.Status != types.ErrorPlacing) ||
-		(state.Direction == types.Buy && state.Status == types.ErrorPlacing) {
+	if state.Status == types.New {
+		newState.placedOrders = append(newState.placedOrders, state)
+		s.state.Set(newState)
+		return
+	}
+	if state.Status == types.Fill {
+		filteredOrders := []types.OrderExecutionState{}
+
+		for _, order := range newState.placedOrders {
+			if order.ID != state.ID {
+				filteredOrders = append(filteredOrders, order)
+			}
+		}
+
+		newState.placedOrders = filteredOrders
+		s.state.Set(newState)
+		return
+	}
+
+	if state.Status != types.PartiallyFill &&
+		state.Status != types.Fill &&
+		state.Status != types.ErrorPlacing &&
+		state.Status != types.Cancelled {
+		l.Warnf("Not processed order state change: %v", state)
+		return
+	}
+
+	isBuyPlaceError := state.Direction == types.Buy && state.Status == types.ErrorPlacing
+	isSellPlaceError := state.Direction == types.Sell && state.Status == types.ErrorPlacing
+	isBuyCancel := state.Direction == types.Buy && state.Status == types.Cancelled
+	isSellCancel := state.Direction == types.Sell && state.Status == types.Cancelled
+	isSellOk := state.Direction == types.Sell && !isSellPlaceError && !isSellCancel
+	isBuyOk := state.Direction == types.Buy && !isBuyPlaceError && !isBuyCancel
+
+	if isSellOk || isBuyPlaceError || isBuyCancel {
 		l.Trace("Updating state after sell order executed")
 
 		newState.pendingSellShares -= int32(state.LotsExecuted / int(s.config.LotSize))
 		newState.leftBalance += float32(state.ExecutedOrderPrice)
 		newState.holdingShares -= int32(state.LotsExecuted / int(s.config.LotSize))
-		l.Tracef(
-			"Lots executed %v of %v; Executed sell price %v",
+		l.Infof(
+			"Lots executed (cancelled %v, erroPlacing: %v) %v of %v; Executed sell price %v",
+			isBuyPlaceError,
+			isBuyCancel,
 			state.LotsExecuted,
 			state.LotsRequested,
 			state.ExecutedOrderPrice,
 		)
-	} else if (state.Direction == types.Buy && state.Status != types.ErrorPlacing) ||
-		(state.Direction == types.Sell && state.Status == types.ErrorPlacing) {
+	} else if isBuyOk || isSellPlaceError || isSellCancel {
 		l.Trace("Updating state after buy order executed")
 		newState.holdingShares += int32(state.LotsExecuted / int(s.config.LotSize))
 		newState.pendingBuyShares -= int32(state.LotsExecuted / int(s.config.LotSize))
 		newState.notConfirmedBlockedMoney -= float32(state.ExecutedOrderPrice)
 		newState.leftBalance -= float32(state.ExecutedOrderPrice)
-		l.Tracef(
-			"Lots executed %v of %v; Executed buy price %v",
+		l.Infof(
+			"Lots executed (cancelled %v, erroPlacing: %v) %v of %v; Executed buy price %v",
+			isSellCancel,
+			isSellPlaceError,
 			state.ExecutedOrderPrice,
 			state.LotsExecuted,
 			state.LotsRequested,
 		)
 	}
 	s.state.Set(newState)
-	l.WithField("state", s.state.Get()).Info("State updated")
 }
