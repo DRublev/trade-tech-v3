@@ -51,6 +51,9 @@ export const ControlsPanel = () => {
                 setIsStarted(!isStarted);
             }
         } catch (e) {
+            if (e.message.includes("no config found for")) {
+                alert("Сначала установите настройки стратегии")
+            }
             logger.error(e, "Error switching trade state");
         } finally {
             setIsLoading(false);

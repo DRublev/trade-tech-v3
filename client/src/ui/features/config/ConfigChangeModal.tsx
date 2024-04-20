@@ -3,9 +3,11 @@ import React, { useCallback, useState } from 'react';
 import { Modal } from '../../components/Modal';
 import { ConfigForm } from './ConfigForm';
 import * as ScrollArea from '@radix-ui/react-scroll-area';
-import { ConfigFieldTypes, useConfig } from './hooks';
+import { useConfig } from './hooks';
 import { useCurrentInstrument } from '../../utils/useCurrentInstrumentId';
 import s from './ConfigChangeModal.css';
+import { useLogger } from '../../../ui/hooks';
+import { mergeObjects } from './mergeObjects';
 
 type Props = {
     trigger: React.ReactNode;
@@ -17,34 +19,17 @@ export const ConfigChangeModal: FC<Props> = ({ trigger }: Props) => {
     const [instrumentId] = useCurrentInstrument();
     const { api, scheme, defaultValues } = useConfig(instrumentId, strategy);
     const [shouldClose, setShouldClose] = useState(undefined); // TODO: Костыль, надо подумать как сделать удобнее
+    const logger = useLogger({ component: 'ConfigChangeModal' })
 
     const onSubmit = useCallback(async (rawValues: Record<string, any>) => {
         try {
-            let changedFields = 0;
-            const values: Record<string, any> = {};
-            for (const fieldKey in rawValues) {
-                if (!(fieldKey in defaultValues) || rawValues[fieldKey] != defaultValues[fieldKey]) {
-                    changedFields++;
-                }
-                const field = scheme.fields.find(f => f.name === fieldKey);
-                if (!field) continue;
-                if (field.type === ConfigFieldTypes.number || field.type === ConfigFieldTypes.money) {
-                    values[fieldKey] = Number(rawValues[fieldKey]);
-                    continue;
-                }
-                values[fieldKey] = rawValues[fieldKey];
-            }
-            if (!changedFields) {
-                setShouldClose(true);
-                setTimeout(() => setShouldClose(false))
-                return;
-            }
+            const [values] = mergeObjects(rawValues, defaultValues, scheme);
 
             await api.change({ instrumentId, strategy, values });
             setShouldClose(true);
             setTimeout(() => setShouldClose(false))
         } catch (e) {
-            console.error('22 ConfigChangeModal', e);
+            logger.error('Error changing config', e);
             // TODO: Алерт, а лучше месседж в форму с разбором ошибки
         }
     }, [scheme, api, defaultValues]);
