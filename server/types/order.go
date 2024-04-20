@@ -29,7 +29,7 @@ type Order struct {
 // Price Абстракция для представления цены
 type Price float64
 
-// PlaceOrder Еще не выставленная заявка, содержит поля для выставления заявки
+// PlaceOrder Еще не выставленный оредер, содержит поля для выставления
 type PlaceOrder struct {
 	IdempodentID IdempodentID
 
@@ -43,6 +43,11 @@ type PlaceOrder struct {
 
 	// ID  инструмента (акции, фонда и тп.)
 	InstrumentID string
+
+	// Если передан, то перед выставлением ордера будет закрыт ордер с данным ID
+	// Если не смогли закрыть ордер, то вернем ошибку и не выставим
+	// TODO: Когда будем рефачить общение стратегии с брокером, нужно избавиться от этого поля
+	CancelOrder OrderID
 }
 
 func (o *PlaceOrder) String() string {
@@ -102,11 +107,12 @@ func (s *ExecutionStatus) String() string {
 
 // OrderExecutionState Состояние исполнения ордера
 type OrderExecutionState struct {
-	ID                OrderID
-	IdempodentID      IdempodentID
-	Status            ExecutionStatus
-	LotsRequested     int
-	LotsExecuted      int
+	ID            OrderID
+	IdempodentID  IdempodentID
+	Status        ExecutionStatus
+	LotsRequested int
+	LotsExecuted  int
+	// Полная стоимость (цена за лот * лот * количество акций в сделке)
 	InitialOrderPrice float64
 	// Полная стоимость (цена за лот * лот * количество акций в сделке)
 	ExecutedOrderPrice float64

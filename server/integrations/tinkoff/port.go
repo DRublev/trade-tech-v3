@@ -2,6 +2,7 @@ package tinkoff
 
 import (
 	"context"
+	"errors"
 	"main/types"
 	"os"
 	"os/signal"
@@ -354,6 +355,13 @@ func (c *TinkoffBrokerPort) PlaceOrder(order *types.PlaceOrder) (types.OrderID, 
 	}
 	oc := sdk.NewOrdersServiceClient()
 
+	if len(order.CancelOrder) > 0 {
+		err = c.CancelOrder(order.CancelOrder)
+		if err != nil {
+			return "", errors.New("error closing order")
+		}
+	}
+
 	direction := investapi.OrderDirection_ORDER_DIRECTION_BUY
 	if order.Direction == types.Sell {
 		direction = investapi.OrderDirection_ORDER_DIRECTION_SELL
@@ -561,4 +569,23 @@ func (c *TinkoffBrokerPort) GetOrderState(orderID types.OrderID) (types.OrderExe
 
 	sdkL.Infof("Got order state %v", orderState)
 	return orderState, nil
+}
+
+func (c *TinkoffBrokerPort) CancelOrder(orderID types.OrderID) error {
+	sdkL.WithFields(log.Fields{
+		"orderID": orderID,
+	}).Infof("Cancelling order")
+
+	sdk, err := c.GetSdk()
+	if err != nil {
+		sdkL.Errorf("Cannot init sdk: %v", err)
+		return err
+	}
+	oc := sdk.NewOrdersServiceClient()
+
+	accID := c.getAccountId()
+
+	_, err = oc.CancelOrder(accID, string(orderID))
+
+	return err
 }
