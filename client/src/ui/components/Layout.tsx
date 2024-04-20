@@ -2,6 +2,7 @@
 import { Container, Theme } from "@radix-ui/themes"
 import React, { FC } from "react"
 import OfflineBanner from './OfflineBanner/OfflineBanner';
+import { useResizeBasedOnContent } from "../utils/useResizeBasedOnContent";
 
 
 type Props = {
@@ -9,6 +10,8 @@ type Props = {
 };
 
 export const Layout: FC<Props> = ({ children }) => {
+    useResizeBasedOnContent();
+
     return <>
         <Theme appearance='dark'>
 

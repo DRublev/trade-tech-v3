@@ -6,6 +6,7 @@ import { Provider } from 'react-redux';
 
 const root = createRoot(document.querySelector('#root') || document.body);
 
+
 root.render(<React.Fragment>
     <Provider store={store}>
         <Router />
