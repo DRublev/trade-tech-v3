@@ -94,11 +94,11 @@ func (ow *OrderWatcher) PairWithOrderID(idempodentID types.IdempodentID, orderID
 			return
 		}
 
-		if s.Status != types.New && s.Status != types.Unspecified {
+		if s.Status != types.Unspecified {
 			l.Info("State of order", s)
 			ow.notify(s)
 		} else {
-			l.Info("Initial state is NEW, no need to notify")
+			l.Warn("Initial state is Unspecified, no need to notify")
 		}
 	}()
 
