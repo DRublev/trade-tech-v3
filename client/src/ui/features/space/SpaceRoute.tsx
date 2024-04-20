@@ -13,8 +13,9 @@ import { useNavigate } from 'react-router-dom';
 import { ConfigChangeModal } from '../config';
 import { TradeLogs } from '../tradeSessionStats/TradeLogs';
 import { TradeStats } from '../tradeSessionStats/TradeStats';
-import { useConfig } from '../config/hooks';
-import { mergeObjects } from '../config/mergeObjects';
+import { ipcEvents } from '../../../ipcEvents';
+import { useDispatch } from 'react-redux';
+import { setCurrentAccount } from '../auth/authSlice';
 
 const toolBarButtonProps = {
     className: style.button,
@@ -23,8 +24,10 @@ const toolBarButtonProps = {
 
 export const ControlsPanel = () => {
     const startTrade = useIpcInvoke('START_TRADE');
+    const isStartedReq = useIpcInvoke<unknown, {Ok: boolean}>(ipcEvents.IS_STARTED);
     const stopTrade = useIpcInvoke('STOP_TRADE');
     const navigate = useNavigate();
+    const dispatch = useDispatch();
     const [instrument] = useCurrentInstrument();
     const [isStarted, setIsStarted] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -59,9 +62,15 @@ export const ControlsPanel = () => {
     };
 
     const onAccountClick = () => {
-        logger.info("Going to accounts select screen")
+        logger.info("Going to accounts select screen");
+        dispatch(setCurrentAccount({account: undefined}));
         navigate('/register/select-account');
     };
+
+    React.useEffect(() => {
+      isStartedReq({instrumentId: instrument})
+        .then(res => setIsStarted(res.Ok));
+    }, [])
 
     return (
         <Toolbar.Root>

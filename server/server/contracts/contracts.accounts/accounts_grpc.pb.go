@@ -21,6 +21,7 @@ const _ = grpc.SupportPackageIsVersion7
 const (
 	Accounts_GetAccounts_FullMethodName = "/accounts.Accounts/GetAccounts"
 	Accounts_SetAccount_FullMethodName  = "/accounts.Accounts/SetAccount"
+	Accounts_GetAccount_FullMethodName  = "/accounts.Accounts/GetAccount"
 )
 
 // AccountsClient is the client API for Accounts service.
@@ -29,6 +30,7 @@ const (
 type AccountsClient interface {
 	GetAccounts(ctx context.Context, in *GetAccountsRequest, opts ...grpc.CallOption) (*GetAccountsResponse, error)
 	SetAccount(ctx context.Context, in *SetAccountRequest, opts ...grpc.CallOption) (*SetAccountResponse, error)
+	GetAccount(ctx context.Context, in *GetAccountRequest, opts ...grpc.CallOption) (*GetAccountResponse, error)
 }
 
 type accountsClient struct {
@@ -57,12 +59,22 @@ func (c *accountsClient) SetAccount(ctx context.Context, in *SetAccountRequest, 
 	return out, nil
 }
 
+func (c *accountsClient) GetAccount(ctx context.Context, in *GetAccountRequest, opts ...grpc.CallOption) (*GetAccountResponse, error) {
+	out := new(GetAccountResponse)
+	err := c.cc.Invoke(ctx, Accounts_GetAccount_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AccountsServer is the server API for Accounts service.
 // All implementations must embed UnimplementedAccountsServer
 // for forward compatibility
 type AccountsServer interface {
 	GetAccounts(context.Context, *GetAccountsRequest) (*GetAccountsResponse, error)
 	SetAccount(context.Context, *SetAccountRequest) (*SetAccountResponse, error)
+	GetAccount(context.Context, *GetAccountRequest) (*GetAccountResponse, error)
 	mustEmbedUnimplementedAccountsServer()
 }
 
@@ -75,6 +87,9 @@ func (UnimplementedAccountsServer) GetAccounts(context.Context, *GetAccountsRequ
 }
 func (UnimplementedAccountsServer) SetAccount(context.Context, *SetAccountRequest) (*SetAccountResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetAccount not implemented")
+}
+func (UnimplementedAccountsServer) GetAccount(context.Context, *GetAccountRequest) (*GetAccountResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetAccount not implemented")
 }
 func (UnimplementedAccountsServer) mustEmbedUnimplementedAccountsServer() {}
 
@@ -125,6 +140,24 @@ func _Accounts_SetAccount_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Accounts_GetAccount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetAccountRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AccountsServer).GetAccount(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Accounts_GetAccount_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AccountsServer).GetAccount(ctx, req.(*GetAccountRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Accounts_ServiceDesc is the grpc.ServiceDesc for Accounts service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -139,6 +172,10 @@ var Accounts_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SetAccount",
 			Handler:    _Accounts_SetAccount_Handler,
+		},
+		{
+			MethodName: "GetAccount",
+			Handler:    _Accounts_GetAccount_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

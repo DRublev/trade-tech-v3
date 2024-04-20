@@ -22,8 +22,10 @@ const authSlice = createSlice({
     name: 'auth',
     initialState: DEFAULT_AUTH_INFO,
     reducers: {
+        setCurrentAccount: (state, {payload}) => {
+          state.account = payload.account;
+        },
         setAuthData: (state, {payload}) => {
-            state.account = payload.account;
             state.isLoaded = payload.isLoaded;
             state.isSandbox = payload.isSandbox;
             state.isAuthorized = payload.isAuthorized;
@@ -45,6 +47,6 @@ const authSlice = createSlice({
     },
 });
 
-export const {logout, setAuthData, setError, setLoaded} = authSlice.actions;
+export const {logout, setAuthData, setError, setLoaded, setCurrentAccount} = authSlice.actions;
 
 export default authSlice.reducer;

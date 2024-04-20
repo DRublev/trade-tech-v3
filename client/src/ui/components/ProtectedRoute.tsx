@@ -1,11 +1,11 @@
 import { Navigate, useLocation } from "react-router-dom"
-import { useAuth } from "../features/auth/useAuth"
 import React from "react"
+import { useAppSelector } from "../../../src/store";
 
 type Props = { sandboxOnly?: boolean, children: any };
 
 export const ProtectedRoute = ({ children, sandboxOnly }: Props) => {
-    const { isAuthorized, isSandbox, isLoaded, account } = useAuth();
+    const { isAuthorized, isSandbox, isLoaded, account } = useAppSelector(state => state.auth);
     const location = useLocation();
 
     // TODO: Loader
