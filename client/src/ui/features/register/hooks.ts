@@ -3,7 +3,7 @@ import { useIpcInvoke } from "../../hooks";
 import { useCallback } from 'react';
 import { useAppDispatch } from '../../../store';
 import { setRegisterData } from './registerSlice';
-import { RawAccount } from "../accounts/accountsSlice";
+import type { RawAccount } from "../accounts/accountsSlice";
 
 export const useRegister = () => useIpcInvoke(ipcEvents.REGISTER);
 export const usePruneTokens = () => useIpcInvoke(ipcEvents.PRUNE_TOKENS);

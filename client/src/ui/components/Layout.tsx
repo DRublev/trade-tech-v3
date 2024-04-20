@@ -13,8 +13,7 @@ export const Layout: FC<Props> = ({ children }) => {
         <Theme appearance='dark'>
 
             <OfflineBanner />
-            <Container flexShrink={"1"} flexGrow={"1"}>
-
+            <Container flexShrink="1" flexGrow="1">
                 {children}
             </Container>
         </Theme>

@@ -44,7 +44,6 @@ func main() {
 		hook := loki.NewHook(
 			*logsAddress,
 			loki.WithName("trade-tech"),
-			loki.WithLabel("env", "dev"),
 			loki.WithLabel("app", "server"),
 			loki.WithLabel("uid", uid),
 			loki.WithLevel(log.InfoLevel),
