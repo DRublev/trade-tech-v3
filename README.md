@@ -31,7 +31,7 @@
 
 Скачать [protoc](https://grpc.io/docs/protoc-installation/)
 
-Установить плагины для ts
+Установить плагины для ts 
 ```sh
 npm i -g ts-proto
 npm i -g protoc-gen-ts
