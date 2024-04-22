@@ -2,8 +2,9 @@ const { exec } = require('child_process');
 const path = require('path');
 
 
-const UNIX_SERVER_FILENAME = "server";
-const WIN_SERVER_FILENAME = "server.exe";
+const UNIX_SERVER_FILENAME = "app-binary-macos";
+const WIN_SERVER_FILENAME = "app-binary-windows.exe";
+
 const serverFilename = process.platform == 'win32' ? WIN_SERVER_FILENAME : UNIX_SERVER_FILENAME;
 const launch = () => {
     const isPackaged = process.argv[process.argv.length - 1] == '--packaged';

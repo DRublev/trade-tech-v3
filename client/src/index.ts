@@ -5,9 +5,18 @@ import { app, shell, BrowserWindow, utilityProcess } from 'electron';
 declare const MAIN_WINDOW_WEBPACK_ENTRY: string;
 declare const MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY: string;
 
+
 import './node/ipcHandlers'
 import { getShares } from './node/ipcHandlers/instruments';
 import logger from './logger';
+import { autoUpdater, UpdateDownloadedEvent } from 'electron-updater';
+import dialog = Electron.Main.dialog;
+import MessageBoxOptions = Electron.MessageBoxOptions;
+
+const server = 'https://github.com/DRublev/trade-tech-v3';
+const url = `${server}/releases/${app.getVersion()}`;
+
+autoUpdater.setFeedURL(url)
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require('electron-squirrel-startup')) {
@@ -81,6 +90,25 @@ app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) {
     createWindow();
   }
+});
+
+autoUpdater.on('update-downloaded', (event: UpdateDownloadedEvent) => {
+  const { releaseNotes, releaseName } = event;
+  const dialogOpts: MessageBoxOptions = {
+    type: 'info',
+    buttons: ['Перезапустить', 'Позже'],
+    title: 'Приложение обновлено',
+    message: [...releaseNotes].map(String).join('\n'),
+    detail: 'Новая версия приложения была загружена. Перезапустить приложение для применения обновления?',
+  }
+
+  dialog.showMessageBox(null, dialogOpts).then((returnValue ) => {
+    if (returnValue.response === 0) autoUpdater.quitAndInstall();
+  });
+});
+
+app.on('ready', function () {
+  autoUpdater.checkForUpdates();
 });
 
 
