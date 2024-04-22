@@ -27,5 +27,4 @@ jobs:
           ELECTRON_FORGE_GITHUB_TOKEN: ${{ secrets.REPO_TOKEN }}
           SECRET: ${{ secrets.ENCRYPT_SECRET }}
           ENV: "PROD"
-        run: |
-          run: npm run publish
+        run: npm run publish
