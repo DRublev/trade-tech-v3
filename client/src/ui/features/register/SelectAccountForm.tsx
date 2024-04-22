@@ -2,10 +2,10 @@ import * as Form from "@radix-ui/react-form";
 import * as Toast from "@radix-ui/react-toast";
 import { Button, Card, Container, Flex, Heading, RadioGroup } from "@radix-ui/themes";
 import React, {
-  FormEventHandler,
-  useCallback,
-  useEffect,
-  useState,
+    FormEventHandler,
+    useCallback,
+    useEffect,
+    useState,
 } from "react";
 import { Navigate, useNavigate } from "react-router";
 import { useAuth } from "../auth/useAuth";
@@ -94,13 +94,13 @@ export const SelectAccountForm = () => {
     }, [error]);
 
     const onLogout = useCallback(async () => {
-      console.log('onLogout click');
-      await pruneTokens({});
-      navigate('/register');
+        logger.info('Logout clicked')
+        await pruneTokens({});
+        navigate('/register');
     }, []);
 
     if (isAuthorized && account) {
-      return <Navigate to="/" />;
+        return <Navigate to="/" />;
     }
 
     return (
@@ -124,7 +124,8 @@ export const SelectAccountForm = () => {
                                                 required
                                                 type="radio"
                                                 value={account.id}
-                                            ></Form.Control>
+                                            >
+                                            </Form.Control>
                                             <Form.Label>{account.name}</Form.Label>
                                         </Flex>
                                     ))}
@@ -134,6 +135,7 @@ export const SelectAccountForm = () => {
                             <Form.Submit asChild>
                                 <Button className={s.submitBtn}>Дальше</Button>
                             </Form.Submit>
+
                             <Button onClick={onLogout} color="crimson">
                               Выйти
                             </Button>

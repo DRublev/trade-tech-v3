@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Layout } from "../../components/Layout"
 import * as Toolbar from '@radix-ui/react-toolbar';
-import { Box, Card, Flex, Section } from "@radix-ui/themes";
+import { Card, Flex, Section } from "@radix-ui/themes";
 import { ListBulletIcon, MixerHorizontalIcon, PersonIcon, PlayIcon, StopIcon } from '@radix-ui/react-icons';
 import style from '../../basicStyles.css';
 import Chart from "../chart";

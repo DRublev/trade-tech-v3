@@ -1,4 +1,4 @@
-import { app, BrowserWindow, utilityProcess, dialog, MessageBoxOptions } from 'electron';
+import { app, BrowserWindow, utilityProcess, dialog, MessageBoxOptions, ipcMain } from 'electron';
 import { getShares } from './node/ipcHandlers/instruments';
 import logger from './logger';
 import { autoUpdater, UpdateDownloadedEvent } from 'electron-updater';
@@ -29,10 +29,12 @@ const fetchSharesList = async () => {
   }
   catch (error) { logger.error('Fetching shares list error', error) }
 }
+
+let mainWindow: BrowserWindow;
 const createWindow = (): void => {
   // TODO: Подумать над тем, чтобы вынести общение с сервером (стриминговые запросы) в воркер или отдельное спрятанное окно
   // Create the browser window.
-  const mainWindow = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     height: 600,
     width: 800,
     webPreferences: {
@@ -50,7 +52,7 @@ const createWindow = (): void => {
   mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
 
   // Open the DevTools.
-  mainWindow.webContents.openDevTools();
+  // mainWindow.webContents.openDevTools();
 
   // mainWindow.webContents.on('will-navigate', (event, url) => {
   //   event.preventDefault();
@@ -63,6 +65,8 @@ const createWindow = (): void => {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.on('ready', () => {
+  autoUpdater.checkForUpdates();
+
   if (process.env.ENV === 'PROD') {
     const goLaunchProcess = utilityProcess.fork('src/launchGoServer.js', [app.isPackaged ? '--packaged' : '']);
     goLaunchProcess.once('spawn', () => {
@@ -92,6 +96,18 @@ app.on('activate', () => {
   }
 });
 
+ipcMain.handle('RESIZE', (e, req) => {
+  // eslint-disable-next-line prefer-const
+  let { width, height } = req;
+  console.log('83 index', req);
+  if (mainWindow.webContents.devToolsWebContents) {
+    width += 300;
+  }
+
+  mainWindow.setSize(width, height);
+  mainWindow.center();
+})
+
 autoUpdater.on('update-downloaded', (event: UpdateDownloadedEvent) => {
   const { releaseNotes, releaseName } = event;
   const dialogOpts: MessageBoxOptions = {
@@ -107,9 +123,6 @@ autoUpdater.on('update-downloaded', (event: UpdateDownloadedEvent) => {
   });
 });
 
-app.on('ready', function () {
-  autoUpdater.checkForUpdates();
-});
 
 
 
