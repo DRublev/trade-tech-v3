@@ -20,7 +20,7 @@ jobs:
           node-version: 14
 
       - name: Install dependencies
-        run: npm install
+        run: cd client && npm install
 
       - name: Build and publish Electron app
         env:
@@ -28,4 +28,4 @@ jobs:
           ELECTRON_FORGE_GITHUB_TOKEN: ${{ secrets.REPO_TOKEN }}
           SECRET: ${{ secrets.ENCRYPT_SECRET }}
           ENV: "PROD"
-        run: npm run publish
+        run: cd client && npm run publish
