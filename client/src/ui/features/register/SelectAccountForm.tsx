@@ -135,8 +135,9 @@ export const SelectAccountForm = () => {
                             <Form.Submit asChild>
                                 <Button className={s.submitBtn}>Дальше</Button>
                             </Form.Submit>
-                            <Button onClick={onLogout}>
-                                Выйти
+
+                            <Button onClick={onLogout} color="crimson">
+                              Выйти
                             </Button>
                         </Flex>
                     </Form.Root>

@@ -16,9 +16,9 @@ export const useTradeSessionStats = () => {
     const handleOrderStateChange = useCallback((orderState: OrderState) => {
         logger.trace('Got info about new order', { isPartiallyExecuted: orderState.lotsExecuted != orderState.lotsRequested });
         // Частично исполненная зхаявка, пока хз как их считать
-        if (orderState.lotsExecuted != orderState.lotsRequested) return;
+        // if (orderState.lotsExecuted != orderState.lotsRequested) return;
 
-        const price = orderState.price * orderState.lotsExecuted;
+        const price = orderState.price;
 
         let profit = 0;
         if (orderState.operationType == OrderOperations.Buy) {

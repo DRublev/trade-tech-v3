@@ -4,7 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"main/bot/strategies"
+	"main/db"
 )
+
+var dbInstance = db.DB{}
 
 // ConfigRepository Репозиторий для доступа к конфигам стратегии
 type ConfigRepository struct {
@@ -15,21 +18,25 @@ var instance *ConfigRepository
 
 func getDebugConfig() *strategies.Config {
 	/*
-		"BBG004730N88"; // SBER
-		"BBG004730RP0"; // GAZP
-		"BBG004730ZJ9"; // VTBR
-		"BBG004PYF2N3"; // POLY
-		"4c466956-d2ce-4a95-abb4-17947a65f18a"; // TGLD
-		"ba64a3c7-dd1d-4f19-8758-94aac17d971b"; // FIXP
+		"BBG004730N88" // SBER
+		"BBG004730RP0" // GAZP
+		"BBG004730ZJ9" // VTBR
+		"BBG004PYF2N3" // POLY
+		"b71bd174-c72c-41b0-a66f-5f9073e0d1f5" // VKCO
+		"4c466956-d2ce-4a95-abb4-17947a65f18a" // TGLD
+		"ba64a3c7-dd1d-4f19-8758-94aac17d971b" // FIXP
+		"4163e41d-55f4-4f93-82fc-6c44fe5d444e" // SPBE
+		"BBG00F9XX7H4" // RNFT
+		"9654c2dd-6993-427e-80fa-04e80a1cf4da" // TMOS
 	*/
 	var debugCfg strategies.Config = make(strategies.Config)
-	debugCfg["InstrumentID"] = "BBG004PYF2N3" // POLY
-	debugCfg["Balance"] = 450
-	debugCfg["MaxSharesToHold"] = 1
+	debugCfg["InstrumentID"] = "4c466956-d2ce-4a95-abb4-17947a65f18a" // TGLD
+	debugCfg["Balance"] = 1000
+	debugCfg["MaxSharesToHold"] = 100
 	debugCfg["NextOrderCooldownMs"] = 0
 	debugCfg["LotSize"] = 1
-	debugCfg["MinProfit"] = 0.34
-	debugCfg["StopLossAfter"] = 1
+	debugCfg["MinProfit"] = 0
+	debugCfg["StopLossAfter"] = 0.01
 	// VTBR
 	// lotSize: 10_000,
 	// minProfit: 0.00002,
@@ -57,6 +64,13 @@ func New() *ConfigRepository {
 			storage: make(map[string]strategies.Config),
 		}
 
+		config, _ := dbInstance.Get([]string{"strategyConf"})
+		if config != nil {
+			var storage map[string]strategies.Config
+			json.Unmarshal(config, &storage)
+			instance.storage = storage
+		}
+
 		debugConfig := getDebugConfig()
 		if debugConfig != nil {
 			instance.storage[fmt.Sprintf("spread_v0_%v", (*debugConfig)["InstrumentID"])] = *debugConfig
@@ -80,16 +94,13 @@ func (cr *ConfigRepository) Get(key string) (*strategies.Config, error) {
 
 	b, err := json.Marshal(stored)
 	if err != nil {
-		fmt.Printf("42 repository %v\n", err)
 		return nil, err
 	}
 
 	err = json.Unmarshal(b, &res)
 	if err != nil {
-		fmt.Printf("48 repository %v\n", err)
 		return nil, err
 	}
-	fmt.Printf("52 repository %v\n", res)
 
 	return &res, nil
 }
@@ -97,5 +108,10 @@ func (cr *ConfigRepository) Get(key string) (*strategies.Config, error) {
 // Set Сохранить конфиг
 func (cr *ConfigRepository) Set(key string, config strategies.Config) error {
 	cr.storage[key] = config
+
+	configJson, _ := json.Marshal(cr.storage)
+	dbInstance.Prune([]string{"strategyConf"})
+	dbInstance.Append([]string{"strategyConf"}, configJson)
+
 	return nil
 }

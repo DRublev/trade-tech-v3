@@ -178,7 +178,7 @@ const Chart: FC<ChartProps> = ({ containerRef }) => {
     const [removeLinesMap, setRemoveLinesMap] = useState<Record<string, () => void>>({});
 
     const filterOrdersForMarkers = useCallback((order: OrderState) => {
-        if (order.lotsExecuted !== order.lotsRequested) return;
+        // if (order.lotsExecuted !== order.lotsRequested) return;
         const marker = orderToMarkerMapper(order);
         api.updateMarkers(marker)
     }, []);

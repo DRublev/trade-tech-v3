@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useIpcInvoke } from "../../hooks";
+import { useIpcInvoke, useLogger } from "../../hooks";
 import { ConfigScheme } from "./types";
 
 type FieldTypes = ConfigScheme['fields'][number]['type'];
@@ -67,26 +67,35 @@ type UseConfigHook = (instrumentId: string, strategy: string) => {
     api: ReturnType<typeof useConfigIpc>;
     scheme: ReturnType<typeof useConfigScheme>;
     defaultValues: Record<string, any>;
+    changeConfig: (values: Record<string, string>) => Promise<void>
 }
 
 export const useConfig: UseConfigHook = (instrumentId: string, strategy: string) => {
     const api = useConfigIpc();
     const scheme = useConfigScheme(instrumentId, strategy);
     const [defaultValues, setDefaultValues] = useState({});
+    const logger = useLogger({ component: 'useConfig' })
 
     const fetchInitialValues = async () => {
         try {
             const cfg = await api.get({ instrumentId, strategy });
+            
             setDefaultValues(cfg);
         } catch (e) {
-            console.log('80 hooks', e);
-            // TODO: Тут отправка в сентри/логгер
+            logger.error("Error fetching default config", e);
         }
     }
 
-    useEffect(() => {
-        fetchInitialValues()
-    }, [])
+    const changeConfig = async (values: Record<string, string>) => {
+      await api.change({ instrumentId, strategy, values });
+      await fetchInitialValues();
+    }
 
-    return { api, scheme, defaultValues };
+    useEffect(() => {
+        console.log('90 hooks', instrumentId);
+        
+        fetchInitialValues();
+    }, [instrumentId]);
+
+    return { api, scheme, defaultValues, changeConfig };
 }

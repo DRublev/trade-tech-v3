@@ -21,6 +21,8 @@
 go.work
 
 client/storage
+client/logs
+
 storage
 
 node_modules

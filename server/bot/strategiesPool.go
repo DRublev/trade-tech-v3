@@ -122,7 +122,11 @@ func (sp *StrategyPool) Start(key strategies.StrategyKey, instrumentID string) (
 				orderID, err := broker.Broker.PlaceOrder(order)
 				if err != nil {
 					l.Errorf("Error placing order: %v", err)
-					ow.ErrNotify(*order)
+
+					// Если ошибка закрытия ордера, не надо уведомлять об этом стратегию, тк у нее неверно обновится стейт
+					if err.Error() != "error closing order" {
+						ow.ErrNotify(*order)
+					}
 					continue
 				}
 				l.Trace("Order place processed")
