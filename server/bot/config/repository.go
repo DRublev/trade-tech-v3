@@ -4,7 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"main/bot/strategies"
+	"main/db"
 )
+
+var dbInstance = db.DB{}
 
 // ConfigRepository Репозиторий для доступа к конфигам стратегии
 type ConfigRepository struct {
@@ -61,6 +64,13 @@ func New() *ConfigRepository {
 			storage: make(map[string]strategies.Config),
 		}
 
+		config, _ := dbInstance.Get([]string{"strategyConf"})
+		if config != nil {
+			var storage map[string]strategies.Config
+			json.Unmarshal(config, &storage)
+			instance.storage = storage
+		}
+
 		debugConfig := getDebugConfig()
 		if debugConfig != nil {
 			instance.storage[fmt.Sprintf("spread_v0_%v", (*debugConfig)["InstrumentID"])] = *debugConfig
@@ -98,5 +108,10 @@ func (cr *ConfigRepository) Get(key string) (*strategies.Config, error) {
 // Set Сохранить конфиг
 func (cr *ConfigRepository) Set(key string, config strategies.Config) error {
 	cr.storage[key] = config
+
+	configJson, _ := json.Marshal(cr.storage)
+	dbInstance.Prune([]string{"strategyConf"})
+	dbInstance.Append([]string{"strategyConf"}, configJson)
+
 	return nil
 }
