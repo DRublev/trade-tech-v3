@@ -1,0 +1,31 @@
+name: Publish Electron App
+
+on:
+  push:
+    branches:
+      - main
+      - 'releases/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v1
+        with:
+          node-version: 14
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build and publish Electron app
+        env:
+          GITHUB_TOKEN: ${{ secrets.REPO_TOKEN }}
+          ELECTRON_FORGE_GITHUB_TOKEN: ${{ secrets.REPO_TOKEN }}
+          SECRET: ${{ secrets.ENCRYPT_SECRET }}
+          ENV: "PROD"
+        run: |
+          run: npm run publish

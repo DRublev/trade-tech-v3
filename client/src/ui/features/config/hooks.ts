@@ -67,6 +67,7 @@ type UseConfigHook = (instrumentId: string, strategy: string) => {
     api: ReturnType<typeof useConfigIpc>;
     scheme: ReturnType<typeof useConfigScheme>;
     defaultValues: Record<string, any>;
+    changeConfig: (values: Record<string, string>) => Promise<void>
 }
 
 export const useConfig: UseConfigHook = (instrumentId: string, strategy: string) => {
@@ -85,11 +86,16 @@ export const useConfig: UseConfigHook = (instrumentId: string, strategy: string)
         }
     }
 
+    const changeConfig = async (values: Record<string, string>) => {
+      await api.change({ instrumentId, strategy, values });
+      await fetchInitialValues();
+    }
+
     useEffect(() => {
         console.log('90 hooks', instrumentId);
         
         fetchInitialValues();
     }, [instrumentId]);
 
-    return { api, scheme, defaultValues };
+    return { api, scheme, defaultValues, changeConfig };
 }

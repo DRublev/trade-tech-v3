@@ -17,7 +17,7 @@ export const ConfigChangeModal: FC<Props> = ({ trigger }: Props) => {
     // TODO: Брать ключ стратегии из какого-то провайдера
     const strategy = "spread_v0";
     const [instrumentId] = useCurrentInstrument();
-    const { api, scheme, defaultValues } = useConfig(instrumentId, strategy);
+    const { api, scheme, defaultValues, changeConfig } = useConfig(instrumentId, strategy);
     const [shouldClose, setShouldClose] = useState(undefined); // TODO: Костыль, надо подумать как сделать удобнее
     const logger = useLogger({ component: 'ConfigChangeModal' })
 
@@ -25,7 +25,7 @@ export const ConfigChangeModal: FC<Props> = ({ trigger }: Props) => {
         try {
             const [values] = mergeObjects(rawValues, defaultValues, scheme);
 
-            await api.change({ instrumentId, strategy, values });
+            await changeConfig(values);
             setShouldClose(true);
             setTimeout(() => setShouldClose(false))
         } catch (e) {
