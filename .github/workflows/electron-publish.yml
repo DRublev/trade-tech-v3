@@ -2,8 +2,9 @@ name: Publish Electron App
 
 on:
   push:
-    tags:
-      - 'v*.*.*'
+    branches:
+      - main
+      - 'releases/**'
 
 jobs:
   build:
