@@ -15,7 +15,8 @@ const config: ForgeConfig = {
     extraResource: [
       '../server/resources/app/go-binaries/app-binary-linux',
       '../server/resources/app/go-binaries/app-binary-macos',
-      '../server/resources/app/go-binaries/app-binary-windows.exe'
+      '../server/resources/app/go-binaries/app-binary-windows.exe',
+      './src/static/images/logo.svg'
     ]
   },
   publishers: [

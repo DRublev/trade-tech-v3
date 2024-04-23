@@ -29,17 +29,22 @@ func init() {
 	// Only log the warning severity or above.
 	log.SetLevel(log.TraceLevel)
 }
+var envFromBuild string
+var secretFromBuild string
 
 func main() {
 	flag.Parse()
 
 	env, ok := os.LookupEnv("ENV")
-	if !ok || env != "PROD" {
+	if !ok {
+		env = envFromBuild
+	}
+	if len(env) == 0 || env != "PROD" {
 		if err := godotenv.Load(); err != nil {
 			log.Fatal("Cannot load env!")
 		}
 	}
-	if ok && env == "PROD" {
+	if env == "PROD" {
 		uid := getId()
 		hook := loki.NewHook(
 			*logsAddress,
@@ -50,6 +55,10 @@ func main() {
 		)
 		defer hook.Close()
 		log.AddHook(hook)
+	}
+
+	if len(secretFromBuild) > 0 {
+		os.Setenv("SECRET", secretFromBuild)
 	}
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)

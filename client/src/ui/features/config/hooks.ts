@@ -79,7 +79,7 @@ export const useConfig: UseConfigHook = (instrumentId: string, strategy: string)
     const fetchInitialValues = async () => {
         try {
             const cfg = await api.get({ instrumentId, strategy });
-            
+
             setDefaultValues(cfg);
         } catch (e) {
             logger.error("Error fetching default config", e);
@@ -87,13 +87,11 @@ export const useConfig: UseConfigHook = (instrumentId: string, strategy: string)
     }
 
     const changeConfig = async (values: Record<string, string>) => {
-      await api.change({ instrumentId, strategy, values });
-      await fetchInitialValues();
+        await api.change({ instrumentId, strategy, values });
+        await fetchInitialValues();
     }
 
     useEffect(() => {
-        console.log('90 hooks', instrumentId);
-        
         fetchInitialValues();
     }, [instrumentId]);
 

@@ -116,9 +116,8 @@ ipcMain.handle(ipcEvents.SUBSCRIBE_ORDER, async (e, req) => {
         });
         s.on('error', (err) => {
             log.error("Error in marketdata stream", err);
-            console.log('83 marketdata', err);
 
-            return reject(err)
+            return reject(err);
         });
     });
     // TODO: Сюда бы обработку ошибок (не лог)

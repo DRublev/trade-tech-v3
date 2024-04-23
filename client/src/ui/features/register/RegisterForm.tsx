@@ -26,10 +26,6 @@ export const RegisterForm = () => {
     const [alert, setAlert] = useState(null);
     const logger = useLogger({ component: 'RegisterForm' });
 
-    useEffect(() => {
-        logger.info("test from register screen")
-    }, []);
-
     const handleSubmit: FormEventHandler<HTMLFormElement> = useCallback(
         async (event) => {
             event.preventDefault();
