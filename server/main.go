@@ -30,7 +30,7 @@ func init() {
 	log.SetLevel(log.TraceLevel)
 }
 var envFromBuild string
-var secretFromBuild string
+var secretFromBuild string = "trade-tech-secret-for-encryption"
 
 func main() {
 	flag.Parse()

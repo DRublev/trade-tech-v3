@@ -13,7 +13,7 @@ const launch = () => {
     const resourcesPath = path.resolve(isPackaged ? process.resourcesPath : '../server/resources/app/go-binaries');
     const logFileName = `${new Date().toLocaleDateString()}.log`;
     const logPath = path.join(resourcesPath, 'logs', logFileName)
-    const logFileCmd = !isPackaged ? '' : ` >> ${logPath}`;
+    const logFileCmd = isPackaged ? '' : ` >> ${logPath}`;
     const serverPath = path
         .join(resourcesPath, serverFilename)
         .split('/')
