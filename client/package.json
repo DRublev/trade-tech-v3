@@ -5,12 +5,13 @@
   "description": "Платформа торговых стратегий",
   "main": ".webpack/main",
   "scripts": {
-    "build-go": "../server/build.sh",
     "start": "electron-forge start",
     "package": "electron-forge package",
     "make": "electron-forge make",
-    "publish": "npm run build-go && electron-forge publish",
+    "publish": "electron-forge publish",
     "lint": "eslint --ext .ts,.tsx .",
+    "build-go-unix": "../server/build.sh",
+    "build-go-win": "sh ../server/build.sh",
     "gen-deps-graph": "depcruise src --output-type mermaid"
   },
   "engines": {
