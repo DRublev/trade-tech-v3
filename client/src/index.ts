@@ -99,7 +99,10 @@ const createWindow = (): void => {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.on('ready', async () => {
-  autoUpdater.checkForUpdates();
+  const onWindowsOnlyIfPacked = !(process.platform == 'win32' && app.isPackaged);
+  if (onWindowsOnlyIfPacked) {
+    autoUpdater.checkForUpdates();
+  }
 
   if (process.env.ENV === 'PROD' || app.isPackaged) {
     let scriptPath = 'src/launchGoServer.js';
@@ -156,7 +159,7 @@ ipcMain.handle('RESIZE', (e, req) => {
 autoUpdater.on('update-downloaded', (event, releaseNotes, releaseName, releaseDate, updateURL) => {
 
   console.log('188 index', updateURL);
-  
+
   const dialogOpts: MessageBoxOptions = {
     type: 'info',
     buttons: ['Перезапустить', 'Позже'],
