@@ -62,6 +62,7 @@ export const SelectAccountForm = () => {
     const [alertOpen, setAlertOpen] = useState(false);
     const [alert, setAlert] = useState(null);
     const logger = useLogger({ component: 'SelectAccountForm' });
+    const [selectedAccount, setSelectedAccount] = useState(null)
 
     const handleSubmit: FormEventHandler<HTMLFormElement> = useCallback(
         async (event) => {
@@ -72,8 +73,8 @@ export const SelectAccountForm = () => {
                 setAlertOpen(false);
                 setAlert(null);
 
-                const data = Object.fromEntries(new FormData(event.currentTarget));
-                await selectAccount(data.account);
+
+                await selectAccount(selectedAccount);
             } catch (e) {
                 setAlertOpen(true);
                 setAlert({
@@ -84,7 +85,7 @@ export const SelectAccountForm = () => {
                 // TODO: Сетить serverErrorMessage
             }
         },
-        []
+        [selectedAccount]
     );
 
 
@@ -99,6 +100,11 @@ export const SelectAccountForm = () => {
         navigate('/register');
     }, []);
 
+    const preventSubmit: React.MouseEventHandler<HTMLButtonElement> = (e) => {
+        e.preventDefault();
+        setSelectedAccount(e.currentTarget.value)
+    }
+
     if (isAuthorized && account) {
         return <Navigate to="/" />;
     }
@@ -108,9 +114,9 @@ export const SelectAccountForm = () => {
             <Container>
                 <img src="/static/images/logo.svg" className={s.logo} />
                 <Card size="3" variant="ghost" className={s.card}>
-                    <Form.Root onSubmit={handleSubmit}>
-                        <Flex direction="column" gap="3">
-                            <RadioGroup.Root>
+                    <RadioGroup.Root value={selectedAccount}>
+                        <Form.Root onSubmit={handleSubmit}>
+                            <Flex direction="column" gap="3">
                                 <Form.Field name="account">
                                     <Form.Label>
                                         <Heading className={s.heading}>
@@ -118,29 +124,34 @@ export const SelectAccountForm = () => {
                                         </Heading>
                                     </Form.Label>
 
+
                                     {accounts.map((account) => (
                                         <Flex align="center" gap="3" key={account.id}>
+
                                             <Form.Control
                                                 required
                                                 type="radio"
                                                 value={account.id}
+                                                asChild
                                             >
+                                                <RadioGroup.Item value={account.id} onClick={preventSubmit}>
+                                                    {account.name}
+                                                </RadioGroup.Item>
                                             </Form.Control>
-                                            <Form.Label>{account.name}</Form.Label>
                                         </Flex>
                                     ))}
                                 </Form.Field>
-                            </RadioGroup.Root>
 
-                            <Form.Submit asChild>
-                                <Button className={s.submitBtn}>Дальше</Button>
-                            </Form.Submit>
+                                <Form.Submit asChild>
+                                    <Button className={s.submitBtn}>Дальше</Button>
+                                </Form.Submit>
 
-                            <Button onClick={onLogout} color="crimson">
-                              Выйти
-                            </Button>
-                        </Flex>
-                    </Form.Root>
+                                <Button onClick={onLogout} color="crimson">
+                                    Выйти
+                                </Button>
+                            </Flex>
+                        </Form.Root>
+                    </RadioGroup.Root>
                 </Card>
 
                 <Toast.Root
