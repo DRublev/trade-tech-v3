@@ -122,7 +122,6 @@ app.on('ready', async () => {
     });
     
     goLaunchProcess.on('exit', (code) => {
-      dialog.showErrorBox('Launch server err', code + '')
       logger.info(`go server exited with code ${code}`)
     })
   } else {

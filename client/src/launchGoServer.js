@@ -22,7 +22,7 @@ const launch = () => {
         // .trim();
         process.parentPort.postMessage(serverPath);
 
-    console.log('Launching server by path: ', "serverPath " + serverPath);
+    // console.log('Launching server by path: ', "serverPath " + serverPath);
     try {
 
         const p = exec(`${serverPath}${logFileCmd}`, (err, stdout, stderr) => {
@@ -31,6 +31,7 @@ const launch = () => {
             console.log('26 launchGoServer', stderr);
         });
         p.stdout.on('data', data => {
+            process.parentPort.postMessage(data);
             if (`${data}`.includes('Server listening at')) {
                 process.parentPort.postMessage('OK');
             }
