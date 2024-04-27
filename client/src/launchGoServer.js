@@ -20,7 +20,6 @@ const launch = () => {
         // .split('/')
         // .reduce((p, part, i) => i !== 0 ? p.concat('/', part.includes(' ') ? `'${part}'` : part) : p, '')
         // .trim();
-        process.parentPort.postMessage(serverPath);
 
     // console.log('Launching server by path: ', "serverPath " + serverPath);
     try {
@@ -31,7 +30,6 @@ const launch = () => {
             console.log('26 launchGoServer', stderr);
         });
         p.stdout.on('data', data => {
-            process.parentPort.postMessage(data);
             if (`${data}`.includes('Server listening at')) {
                 process.parentPort.postMessage('OK');
             }
