@@ -27,6 +27,7 @@ var handleStartupEvent = function() {
   var squirrelCommand = process.argv[1];
   switch (squirrelCommand) {
     case '--squirrel-install':
+    case '--squirrel-firstrun':
     case '--squirrel-updated':
 
       // Optionally do things such as:
