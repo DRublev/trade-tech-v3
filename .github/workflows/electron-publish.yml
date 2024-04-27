@@ -5,7 +5,7 @@ on:
   push:
     branches:
       - main
-      - 'releases/**'
+      - "releases/**"
 
 jobs:
   build-mac:
@@ -14,10 +14,20 @@ jobs:
       - name: Check out Git repository
         uses: actions/checkout@v4
 
+      - name: Set up go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ">=1.17.0"
+          cache-dependency-path: |
+            server/go.sum
+          go-version-file: "server/go.mod"
+
       - name: Set up Node.js
         uses: actions/setup-node@v1
         with:
           node-version: 20
+          cache: "npm"
+          cache-dependency-path: client/package-lock.json
 
       - name: Install dependencies
         run: cd client && npm install
@@ -28,8 +38,9 @@ jobs:
           ELECTRON_FORGE_GITHUB_TOKEN: ${{ secrets.REPO_TOKEN }}
           SECRET: ${{ secrets.ENCRYPT_SECRET }}
           ENV: "PROD"
-        run: cd client && npm run publish
-  build-win: 
+        run: cd client && npm run build-go-unix && npm run publish
+
+  build-win:
     runs-on: windows-latest
     steps:
       - name: Check out Git repository
@@ -38,12 +49,25 @@ jobs:
       - name: Set up go
         uses: actions/setup-go@v5
         with:
-          go-version: '>=1.17.0'
+          go-version: ">=1.17.0"
+          cache-dependency-path: |
+            server/go.sum
+          go-version-file: "server/go.mod"
 
       - name: Set up Node.js
         uses: actions/setup-node@v1
         with:
           node-version: 20
-      
+          cache: "npm"
+          cache-dependency-path: client/package-lock.json
+
       - name: Install dependencies
         run: cd client && npm install
+
+      - name: Build and publish Electron app
+        env:
+          GITHUB_TOKEN: ${{ secrets.REPO_TOKEN }}
+          ELECTRON_FORGE_GITHUB_TOKEN: ${{ secrets.REPO_TOKEN }}
+          SECRET: ${{ secrets.ENCRYPT_SECRET }}
+          ENV: "PROD"
+        run: cd client && npm run build-go-win && npm run publish

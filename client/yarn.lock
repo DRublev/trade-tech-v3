@@ -440,10 +440,10 @@
     minimatch "^9.0.3"
     plist "^3.1.0"
 
-"@electron/windows-sign@^1.0.0":
-  version "1.1.1"
-  resolved "https://registry.npmjs.org/@electron/windows-sign/-/windows-sign-1.1.1.tgz"
-  integrity sha512-g8/atfOCKuuGedjVE6Xu/rlBtJvfDrmBH9UokBrjrvBVWdVz3SGV7DTjPTLvl7F+XUlmqj4genub62r3jKHIHw==
+"@electron/windows-sign@^1.0.0", "@electron/windows-sign@^1.1.2":
+  version "1.1.2"
+  resolved "https://registry.npmjs.org/@electron/windows-sign/-/windows-sign-1.1.2.tgz"
+  integrity sha512-eXEiZjDtxW3QORCWfRUarANPRTlH9B6At4jqBZJ0NzokSGutXQUVLPA6WmGpIhDW6w2yCMdHW1EJd1HrXtU5sg==
   dependencies:
     cross-dirname "^0.1.0"
     debug "^4.3.4"
@@ -3318,16 +3318,18 @@ electron-updater@^6.1.8:
     semver "^7.3.8"
     tiny-typed-emitter "^2.1.0"
 
-electron-winstaller@^5.0.0:
-  version "5.2.2"
-  resolved "https://registry.npmjs.org/electron-winstaller/-/electron-winstaller-5.2.2.tgz"
-  integrity sha512-nw+SbS0DA6SF8bEkcL4SqtPOoLKc5JkEXAz7kzdzz22rY12PZRtTn9zpztbwy+xrLqSBBFR1u0bdvNLpvlmrkw==
+electron-winstaller@^5.0.0, electron-winstaller@^5.3.1:
+  version "5.3.1"
+  resolved "https://registry.npmjs.org/electron-winstaller/-/electron-winstaller-5.3.1.tgz"
+  integrity sha512-oM8BW3a8NEqG0XW+Vx3xywhk0DyDV4T0jT0zZfWt0IczNT3jHAAvQWBorF8osQDplSsCyXXyxrsrQ8cY0Slb/A==
   dependencies:
     "@electron/asar" "^3.2.1"
     debug "^4.1.1"
     fs-extra "^7.0.1"
-    lodash.template "^4.2.2"
+    lodash "^4.17.21"
     temp "^0.9.0"
+  optionalDependencies:
+    "@electron/windows-sign" "^1.1.2"
 
 electron@^30.0.1:
   version "30.0.1"
@@ -5177,11 +5179,6 @@ locate-path@^6.0.0:
   dependencies:
     p-locate "^5.0.0"
 
-lodash._reinterpolate@^3.0.0:
-  version "3.0.0"
-  resolved "https://registry.npmjs.org/lodash._reinterpolate/-/lodash._reinterpolate-3.0.0.tgz"
-  integrity sha512-xYHt68QRoYGjeeM/XOE1uJtvXQAgvszfBhjV4yvsQH0u2i9I6cI6c6/eG4Hh3UAOVn0y/xAXwmTzEay49Q//HA==
-
 lodash.camelcase@^4.3.0:
   version "4.3.0"
   resolved "https://registry.npmjs.org/lodash.camelcase/-/lodash.camelcase-4.3.0.tgz"
@@ -5206,21 +5203,6 @@ lodash.merge@^4.6.2:
   version "4.6.2"
   resolved "https://registry.npmjs.org/lodash.merge/-/lodash.merge-4.6.2.tgz"
   integrity sha512-0KpjqXRVvrYyCsX1swR/XTK0va6VQkQM6MNo7PqW77ByjAhoARA8EfrP1N4+KlKj8YS0ZUCtRT/YUuhyYDujIQ==
-
-lodash.template@^4.2.2:
-  version "4.5.0"
-  resolved "https://registry.npmjs.org/lodash.template/-/lodash.template-4.5.0.tgz"
-  integrity sha512-84vYFxIkmidUiFxidA/KjjH9pAycqW+h980j7Fuz5qxRtO9pgB7MDFTdys1N7A5mcucRiDyEq4fusljItR1T/A==
-  dependencies:
-    lodash._reinterpolate "^3.0.0"
-    lodash.templatesettings "^4.0.0"
-
-lodash.templatesettings@^4.0.0:
-  version "4.2.0"
-  resolved "https://registry.npmjs.org/lodash.templatesettings/-/lodash.templatesettings-4.2.0.tgz"
-  integrity sha512-stgLz+i3Aa9mZgnjr/O+v9ruKZsPsndy7qPZOchbqk2cnTU1ZaldKK+v7m54WoKIyxiuMZTKT2H81F8BeAc3ZQ==
-  dependencies:
-    lodash._reinterpolate "^3.0.0"
 
 lodash@^4.17.20, lodash@^4.17.21, lodash@4.17.21:
   version "4.17.21"
