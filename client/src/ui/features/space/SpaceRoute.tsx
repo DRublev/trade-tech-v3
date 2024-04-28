@@ -24,7 +24,7 @@ const toolBarButtonProps = {
 
 export const ControlsPanel = () => {
     const startTrade = useIpcInvoke('START_TRADE');
-    const isStartedReq = useIpcInvoke<unknown, {Ok: boolean}>(ipcEvents.IS_STARTED);
+    const isStartedReq = useIpcInvoke<unknown, { Ok: boolean }>(ipcEvents.IS_STARTED);
     const stopTrade = useIpcInvoke('STOP_TRADE');
     const navigate = useNavigate();
     const dispatch = useDispatch();
@@ -54,7 +54,7 @@ export const ControlsPanel = () => {
             if (e.message.includes("no config found for")) {
                 alert("Сначала установите настройки стратегии")
             }
-            logger.error(e, "Error switching trade state");
+            logger.error("Error switching trade state " + e);
         } finally {
             setIsLoading(false);
             logger.trace("Trade switched", { isStarted });
@@ -63,13 +63,13 @@ export const ControlsPanel = () => {
 
     const onAccountClick = () => {
         logger.info("Going to accounts select screen");
-        dispatch(setCurrentAccount({account: undefined}));
+        dispatch(setCurrentAccount({ account: undefined }));
         navigate('/register/select-account');
     };
 
     React.useEffect(() => {
-      isStartedReq({instrumentId: instrument})
-        .then(res => setIsStarted(res.Ok));
+        isStartedReq({ instrumentId: instrument })
+            .then(res => setIsStarted(res.Ok));
     }, [])
 
     return (

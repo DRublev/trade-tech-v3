@@ -29,7 +29,7 @@ export const ConfigChangeModal: FC<Props> = ({ trigger }: Props) => {
             setShouldClose(true);
             setTimeout(() => setShouldClose(false))
         } catch (e) {
-            logger.error('Error changing config', e);
+            logger.error('Error changing config ' + e);
             // TODO: Алерт, а лучше месседж в форму с разбором ошибки
         }
     }, [scheme, api, defaultValues]);

@@ -94,7 +94,7 @@ export const useCandles = (onNewCandle: (d: OHLCData) => void, figiOrInstrumentI
             setInitialData(candles);
         } catch (e) {
             setError(e);
-            logger.error("Error getting candles", e);
+            logger.error("Error getting candles " + e);
         } finally {
             setIsLoading(false);
         }
