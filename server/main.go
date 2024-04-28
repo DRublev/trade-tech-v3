@@ -29,6 +29,7 @@ func init() {
 	// Only log the warning severity or above.
 	log.SetLevel(log.TraceLevel)
 }
+
 var envFromBuild string
 var secretFromBuild string = "trade-tech-secret-for-encryption"
 
@@ -52,6 +53,7 @@ func main() {
 			loki.WithLabel("app", "server"),
 			loki.WithLabel("uid", uid),
 			loki.WithLevel(log.InfoLevel),
+			loki.WithLabelsEnabled(loki.LevelLabel, loki.FieldsLabel, loki.MessageLabel),
 		)
 		defer hook.Close()
 		log.AddHook(hook)
@@ -69,4 +71,3 @@ func main() {
 
 	os.Exit(1)
 }
-

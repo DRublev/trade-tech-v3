@@ -34,7 +34,7 @@ const toLoki = async (log: Record<string, any> | string) => {
 
 
     const logEntry: LogEntry = {
-        labels: { app: "trade-tech", level: mappedLevels[level] || 'unknown', ...labels },
+        labels: { ...labels, app: "client", level: mappedLevels[level] || 'unknown', message: msg },
         log: [`${time}000000`, msg],
     };
     if (uid) {
