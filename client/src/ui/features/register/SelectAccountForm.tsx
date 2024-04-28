@@ -39,7 +39,7 @@ const useAccounts = () => {
             ));
         } catch (e) {
             setError(e);
-            logger.error('Failed to load accounts', e);
+            logger.error('Failed to load accounts ' + e);
             dispatch(setAccounts([]));
         } finally {
             setIsLoading(false);
@@ -81,7 +81,7 @@ export const SelectAccountForm = () => {
                     message: e.message || e,
                 });
 
-                logger.error('Failed to set account', e);
+                logger.error('Failed to set account ' + e);
                 // TODO: Сетить serverErrorMessage
             }
         },

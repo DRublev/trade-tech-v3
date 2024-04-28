@@ -28,13 +28,14 @@ let sendTimerId: any;
 let uid: string;
 
 // TODO: Избавиться в пользу destination в файл. А на стороне фронта и ноды сделать воркеры, которые будут отправлять логи в локи
-const toLoki = async (log: string) => {
-    const { level, time, msg, ...labels } = JSON.parse(log);
+const toLoki = async (log: Record<string, any> | string) => {
+    const logObj = typeof log === "string" ? JSON.parse(log) : log;
+    const { level, time, msg, ...labels } = logObj;
 
 
     const logEntry: LogEntry = {
-        labels: { app: "trade-tech", level: mappedLevels[level] || 'unknown' },
-        log: [`${time}000000`, Object.keys(labels).reduce((acc, l) => acc + `${l}=${labels[l]} `, '') + ' ' + msg],
+        labels: { app: "trade-tech", level: mappedLevels[level] || 'unknown', ...labels },
+        log: [`${time}000000`, msg],
     };
     if (uid) {
         logEntry.labels.uid = uid;
@@ -86,9 +87,9 @@ const send = () => {
 const logger = pino(
     {
         browser: {
-            serialize: true,
-            asObject: false,
-            write: (m) => toLoki(JSON.stringify(m)),
+            serialize: false,
+            asObject: true,
+            write: (m) => toLoki(m),
         },
 
     },

@@ -19,12 +19,12 @@ if (require('electron-squirrel-startup')) {
   app.quit();
 }
 
-var handleStartupEvent = function() {
+const handleStartupEvent = function () {
   if (process.platform !== 'win32') {
     return false;
   }
 
-  var squirrelCommand = process.argv[1];
+  const squirrelCommand = process.argv[1];
   switch (squirrelCommand) {
     case '--squirrel-install':
     case '--squirrel-firstrun':
@@ -59,183 +59,171 @@ var handleStartupEvent = function() {
 };
 
 if (!handleStartupEvent()) {
-  
-let yaml = '';
+  let yaml = '';
 
-yaml += "provider: generic\n"
-yaml += "url: https://github.com/DRublev/trade-tech-v3/releases\n"
-yaml += "useMultipleRangeRequest: false\n"
-yaml += "channel: latest\n"
-yaml += "updaterCacheDirName: " + app.getName()
+  yaml += "provider: generic\n"
+  yaml += "url: https://github.com/DRublev/trade-tech-v3/releases\n"
+  yaml += "useMultipleRangeRequest: false\n"
+  yaml += "channel: latest\n"
+  yaml += "updaterCacheDirName: " + app.getName()
 
-const update_file = [path.join(process.resourcesPath, 'app-update.yml'), yaml]
-const dev_update_file = [path.join(process.resourcesPath, 'dev-app-update.yml'), yaml]
-const chechFiles = [update_file, dev_update_file]
+  const update_file = [path.join(process.resourcesPath, 'app-update.yml'), yaml]
+  const dev_update_file = [path.join(process.resourcesPath, 'dev-app-update.yml'), yaml]
+  const chechFiles = [update_file, dev_update_file]
 
-for (const f of chechFiles) {
-  if (!fs.existsSync(f[0])) {
-    fs.writeFileSync(f[0], f[1])
+  for (const f of chechFiles) {
+    if (!fs.existsSync(f[0])) {
+      fs.writeFileSync(f[0], f[1])
+    }
   }
-}
 
+  const platform = os.platform() + '_' + os.arch();
+  const version = app.getVersion();
+  const server = 'http://79.174.80.98:6000';
+  const url = `${server}/update/${platform}/${version}`;
 
+  autoUpdater.setFeedURL({
+    url,
+    headers: {
+      Accept: 'application/vnd.github+json',
+      Authorization: 'Bearer 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',
+      'X-GitHub-Api-Version': '2022-11-28'
+    }
+  })
 
-
-
-const platform = os.platform() + '_' + os.arch();
-const version = app.getVersion();
-const server = 'http://localhost:6000';
-const url = `${server}/update/${platform}/${version}`;
-
-autoUpdater.setFeedURL({
-  url,
-  headers: {
-    Accept: 'application/vnd.github+json',
-    Authorization: 'Bearer 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',
-    'X-GitHub-Api-Version': '2022-11-28'
+  const instrumentBaseState = 1
+  const fetchSharesList = async () => {
+    try {
+      await getShares({ instrumentStatus: instrumentBaseState });
+    }
+    catch (error) { logger.error('Fetching shares list error ' + error) }
   }
-})
+
+  let mainWindow: BrowserWindow;
+  const createWindow = (): void => {
+    // TODO: Подумать над тем, чтобы вынести общение с сервером (стриминговые запросы) в воркер или отдельное спрятанное окно
+    // Create the browser window.
+    mainWindow = new BrowserWindow({
+      height: 600,
+      width: 800,
+      webPreferences: {
+        preload: MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY,
+
+        nodeIntegrationInWorker: true,
+        // Use pluginOptions.nodeIntegration, leave this alone
+        // See nklayman.github.io/vue-cli-plugin-electron-builder/guide/security.html#node-integration for more info
+        nodeIntegration: !!process.env.ELECTRON_NODE_INTEGRATION,
+        contextIsolation: !process.env.ELECTRON_NODE_INTEGRATION,
+      },
+    });
+
+    // and load the index.html of the app.
+    mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
+
+    // Open the DevTools.
+    if (!app.isPackaged) {
+      mainWindow.webContents.openDevTools();
+    }
+
+    mainWindow.accessibleTitle += mainWindow.accessibleTitle + ' ' + app.getVersion()
+
+    // mainWindow.webContents.on('will-navigate', (event, url) => {
+    //   event.preventDefault();
+    //   shell.openExternal(url);
+    // });
+  };
 
 
+  // This method will be called when Electron has finished
+  // initialization and is ready to create browser windows.
+  // Some APIs can only be used after this event occurs.
+  app.on('ready', async () => {
+    if (handleStartupEvent()) {
+      return;
+    }
+    const onWindowsOnlyIfPacked = !(process.platform == 'win32' && app.isPackaged);
+    if (onWindowsOnlyIfPacked) {
+      autoUpdater.checkForUpdates();
+    }
 
-const instrumentBaseState = 1
-const fetchSharesList = async () => {
-  try {
-    await getShares({ instrumentStatus: instrumentBaseState });
-  }
-  catch (error) { logger.error('Fetching shares list error', error) }
-}
+    if (process.env.ENV === 'PROD' || app.isPackaged) {
+      let scriptPath = 'src/launchGoServer.js';
+      if (app.isPackaged) {
+        scriptPath = process.resourcesPath + '/launchGoServer.js'
+      }
+      const goLaunchProcess = utilityProcess.fork(scriptPath, [app.isPackaged ? '--packaged' : '']);
+      goLaunchProcess.once('spawn', () => {
+        logger.info('go server starting');
+      });
+      goLaunchProcess.on('message', m => {
+        if (m === 'OK') {
+          createWindow();
 
-let mainWindow: BrowserWindow;
-const createWindow = (): void => {
-  // TODO: Подумать над тем, чтобы вынести общение с сервером (стриминговые запросы) в воркер или отдельное спрятанное окно
-  // Create the browser window.
-  mainWindow = new BrowserWindow({
-    height: 600,
-    width: 800,
-    webPreferences: {
-      preload: MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY,
+        }
+      });
 
-      nodeIntegrationInWorker: true,
-      // Use pluginOptions.nodeIntegration, leave this alone
-      // See nklayman.github.io/vue-cli-plugin-electron-builder/guide/security.html#node-integration for more info
-      nodeIntegration: !!process.env.ELECTRON_NODE_INTEGRATION,
-      contextIsolation: !process.env.ELECTRON_NODE_INTEGRATION,
-    },
+      goLaunchProcess.on('exit', (code) => {
+        logger.info(`go server exited with code ${code}`)
+      })
+    } else {
+      createWindow();
+    }
+    fetchSharesList();
   });
 
-  // and load the index.html of the app.
-  mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
-
-  // Open the DevTools.
-  if (!app.isPackaged) {
-    mainWindow.webContents.openDevTools();
-  }
-
-  mainWindow.accessibleTitle += mainWindow.accessibleTitle + ' ' + app.getVersion()
-
-  // mainWindow.webContents.on('will-navigate', (event, url) => {
-  //   event.preventDefault();
-  //   shell.openExternal(url);
-  // });
-};
-
-
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
-app.on('ready', async () => {
-  if (handleStartupEvent()) {
-    return;
-  }
-  const onWindowsOnlyIfPacked = !(process.platform == 'win32' && app.isPackaged);
-  if (onWindowsOnlyIfPacked) {
-    autoUpdater.checkForUpdates();
-  }
-
-  if (process.env.ENV === 'PROD' || app.isPackaged) {
-    let scriptPath = 'src/launchGoServer.js';
-    if (app.isPackaged) {
-      scriptPath = process.resourcesPath + '/launchGoServer.js'
+  // Quit when all windows are closed, except on macOS. There, it's common
+  // for applications and their menu bar to stay active until the user quits
+  // explicitly with Cmd + Q.
+  app.on('window-all-closed', () => {
+    if (process.platform !== 'darwin') {
+      app.quit();
     }
-    const goLaunchProcess = utilityProcess.fork(scriptPath, [app.isPackaged ? '--packaged' : '']);
-    goLaunchProcess.once('spawn', () => {
-      logger.info('go server starting');
-    });
-    goLaunchProcess.on('message', m => {
-      if (m === 'OK') {
-    createWindow();
+  });
 
+  app.on('activate', () => {
+    // On OS X it's common to re-create a window in the app when the
+    // dock icon is clicked and there are no other windows open.
+    if (BrowserWindow.getAllWindows().length === 0) {
+      createWindow();
+    }
+  });
+
+  ipcMain.handle('RESIZE', (e, req) => {
+    // eslint-disable-next-line prefer-const
+    let { width, height } = req;
+
+    if (mainWindow.webContents.devToolsWebContents) {
+      width += 300;
+    }
+
+    mainWindow.setSize(width, height);
+    mainWindow.center();
+  })
+
+  autoUpdater.on('update-downloaded', (event, releaseNotes, releaseName, releaseDate, updateURL) => {
+    const dialogOpts: MessageBoxOptions = {
+      type: 'info',
+      buttons: ['Перезапустить', 'Позже'],
+      title: 'Приложение обновлено',
+      message: Array.isArray(releaseNotes) ? [...releaseNotes].map(String).join('\n') : releaseNotes,
+      detail: 'Новая версия приложения была загружена. Перезапустить приложение для применения обновления?',
+    }
+
+    dialog.showMessageBox(dialogOpts).then((returnValue) => {
+
+      if (returnValue.response === 0) {
+
+        setTimeout(() => {
+          autoUpdater.quitAndInstall();
+        }, 1_000)
       }
     });
-    
-    goLaunchProcess.on('exit', (code) => {
-      logger.info(`go server exited with code ${code}`)
-    })
-  } else {
-    createWindow();
-  }
-  fetchSharesList();
-});
-
-// Quit when all windows are closed, except on macOS. There, it's common
-// for applications and their menu bar to stay active until the user quits
-// explicitly with Cmd + Q.
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
-});
-
-app.on('activate', () => {
-  // On OS X it's common to re-create a window in the app when the
-  // dock icon is clicked and there are no other windows open.
-  if (BrowserWindow.getAllWindows().length === 0) {
-    createWindow();
-  }
-});
-
-ipcMain.handle('RESIZE', (e, req) => {
-  // eslint-disable-next-line prefer-const
-  let { width, height } = req;
-
-  if (mainWindow.webContents.devToolsWebContents) {
-    width += 300;
-  }
-
-  mainWindow.setSize(width, height);
-  mainWindow.center();
-})
-
-autoUpdater.on('update-downloaded', (event, releaseNotes, releaseName, releaseDate, updateURL) => {
-
-  console.log('188 index', updateURL);
-
-  const dialogOpts: MessageBoxOptions = {
-    type: 'info',
-    buttons: ['Перезапустить', 'Позже'],
-    title: 'Приложение обновлено',
-    message: Array.isArray(releaseNotes) ? [...releaseNotes].map(String).join('\n') : releaseNotes,
-    detail: 'Новая версия приложения была загружена. Перезапустить приложение для применения обновления?',
-  }
-
-  dialog.showMessageBox(dialogOpts).then((returnValue) => {
-
-    if (returnValue.response === 0) {
-
-      setTimeout(() => {
-        autoUpdater.quitAndInstall();
-      }, 1_000)
-    }
   });
-});
 
-autoUpdater.on('error', (error) => {
-  dialog.showErrorBox('Ошибка обновления', error.message);
-})
+  autoUpdater.on('error', (error) => {
+    dialog.showErrorBox('Ошибка обновления', error.message);
+  })
 }
-
-
 
 
 // In this file you can include the rest of your app's specific main process

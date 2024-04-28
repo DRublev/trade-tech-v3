@@ -82,7 +82,7 @@ export const useConfig: UseConfigHook = (instrumentId: string, strategy: string)
 
             setDefaultValues(cfg);
         } catch (e) {
-            logger.error("Error fetching default config", e);
+            logger.error("Error fetching default config " + e);
         }
     }
 

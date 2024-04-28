@@ -44,7 +44,7 @@ export const RegisterForm = () => {
                 setAlert({
                     message: e.message || e
                 });
-                logger.error('Error while submitting form', e);
+                logger.error('Error while submitting form ' + e);
             }
         },
         []
