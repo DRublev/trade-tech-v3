@@ -111,7 +111,7 @@ func getLastLineWithSeek(fileHandle *os.File) string {
 		char := make([]byte, 1)
 		fileHandle.Read(char)
 
-		if cursor != -1 && (char[0] == 10 || char[0] == 13) { // stop if we find a line
+		if cursor != -1 && (char[0] == 10 || char[0] == 13) && (len(char) > 0) { // stop if we find not empty line
 			break
 		}
 

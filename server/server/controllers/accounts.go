@@ -52,6 +52,7 @@ func (s *Server) SetAccount(ctx context.Context, in *accounts.SetAccountRequest)
 	content := []byte(in.AccountId + "\n")
 
 	accL.Trace("Setting account id to storage")
+	dbInstance.Prune([]string{"accounts"})
 	err := dbInstance.Append([]string{"accounts"}, content)
 
 	accL.Info("SetAccount responding")
