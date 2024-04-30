@@ -112,7 +112,7 @@ export const SelectAccountForm = () => {
     return (
         <Toast.Provider>
             <Container>
-                <img src="/static/images/logo.svg" className={s.logo} />
+                <img src="trademedia://static/images/logo.svg" className={s.logo} />
                 <Card size="3" variant="ghost" className={s.card}>
                     <RadioGroup.Root value={selectedAccount}>
                         <Form.Root onSubmit={handleSubmit}>

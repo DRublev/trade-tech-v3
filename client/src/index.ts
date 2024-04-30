@@ -3,6 +3,7 @@ import os from 'os';
 import { getShares } from './node/ipcHandlers/instruments';
 import logger from './logger';
 import { createUpdateYml } from './createUpdateYml';
+import { registerMediaProtocol } from './mediaProtocol';
 
 import './node/ipcHandlers';
 
@@ -104,6 +105,7 @@ const fetchSharesList = async () => {
 };
 
 createUpdateYml();
+registerMediaProtocol();
 
 const platform = os.platform() + '_' + os.arch();
 const version = app.getVersion();
@@ -161,9 +163,10 @@ const createWindow = (): void => {
 // Some APIs can only be used after this event occurs.
 app.on('ready', async () => {
   if (handleStartupEvent()) return;
-
+  
   runGoServer().then(hasLaunched => {
     if (!hasLaunched) return;
+
     createWindow();
     fetchSharesList();
   });
