@@ -79,7 +79,7 @@ if (!handleStartupEvent()) {
 
   const platform = os.platform() + '_' + os.arch();
   const version = app.getVersion();
-  const server = 'http://79.174.80.98:6000';
+  const server = 'http://79.174.80.98:5000';
   const url = `${server}/update/${platform}/${version}`;
 
   autoUpdater.setFeedURL({

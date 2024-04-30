@@ -24,16 +24,16 @@ const candleToOhlc = (candle: OHLC): OHLCData => ({
     volume: candle.volume,
     time: candle.time.valueOf() / 1000 as UTCTimestamp,
 })
-const toOrderState = (candle: OrderState): Order => ({
-    id: candle.IdempodentID,
-    instrumentId: candle.InstrumentID,
-    price: candle.PricePerLot,
-    status: candle.ExecutionStatus,
-    lotsRequested: candle.LotsRequested,
-    lotsExecuted: candle.LotsExecuted,
-    operationType: candle.OperationType,
-    time: candle.time.valueOf() / 1000 as UTCTimestamp,
-    strategy: candle.Strategy,
+const toOrderState = (orderState: Omit<OrderState, 'time'> & { time: string | Date }): Order => ({
+    id: orderState.IdempodentID,
+    instrumentId: orderState.InstrumentID,
+    price: orderState.PricePerLot,
+    status: orderState.ExecutionStatus,
+    lotsRequested: orderState.LotsRequested,
+    lotsExecuted: orderState.LotsExecuted,
+    operationType: orderState.OperationType,
+    time: (typeof orderState.time === 'string' ? new Date(orderState.time) : orderState.time).valueOf() / 1000 as UTCTimestamp,
+    strategy: orderState.Strategy,
 })
 
 ipcMain.handle(ipcEvents.GET_CANDLES, async (e, req) => {
@@ -96,8 +96,8 @@ ipcMain.handle(ipcEvents.SUBSCRIBE_ORDER, async (e, req) => {
     if (!instrumentId) return Promise.reject('InstrumentId обязательный параметр');
 
 
+    const [win] = BrowserWindow.getAllWindows();
     const res = await new Promise((resolve, reject) => {
-        const [win] = BrowserWindow.getAllWindows()
 
         const s = marketdataService.subscribeOrders({})
         s.on('data', async (order: OrderState) => {

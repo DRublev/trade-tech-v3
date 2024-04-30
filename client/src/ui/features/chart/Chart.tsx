@@ -100,6 +100,7 @@ const useChart: UseChart = (containerRef, instrument) => {
             height: chartSize.height,
             ...chartTheme,
         });
+        chartApiRef.current.timeScale().applyOptions({ timeVisible: true, });
         chartApiRef.current.timeScale().fitContent();
         candlesApiRef.current = chartApiRef.current.addCandlestickSeries(candleSeriesTheme);
         candlesApiRef.current.priceScale().applyOptions({
@@ -162,15 +163,15 @@ function orderToMarkerMapper(order: OrderState): SeriesMarker<Time> {
     return {
         time: order.time,
         position: order.operationType === OrderOperations.Buy ? 'belowBar' : 'aboveBar',
-        shape: 'circle',
-        color: order.operationType === OrderOperations.Buy ? 'green' : 'red',
+        shape: order.operationType === OrderOperations.Buy ? 'arrowUp' : 'arrowDown',
+        color: order.operationType === OrderOperations.Buy ? '#2196F3' : '#e91e63',
         text: `${order.lotsExecuted} x ${order.price}`,
-        size: 2,
     }
 }
 
 
 
+const cacledOrders: Record<string, boolean> = {}
 const Chart: FC<ChartProps> = ({ containerRef }) => {
     const [instrument] = useCurrentInstrument();
     const [ref, api] = useChart(containerRef, instrument)
@@ -179,10 +180,15 @@ const Chart: FC<ChartProps> = ({ containerRef }) => {
 
     const filterOrdersForMarkers = useCallback((order: OrderState) => {
         // if (order.lotsExecuted !== order.lotsRequested) return;
+        if (cacledOrders[order.id]) return;
+        cacledOrders[order.id] = true;
+
         const marker = orderToMarkerMapper(order);
         api.updateMarkers(marker)
-    }, []);
+    }, [api]);
     const drawWaitingPositions = useCallback((order: OrderState) => {
+        if (cacledOrders[order.id]) return;
+        cacledOrders[order.id] = true;
         if (removeLinesMap[order.id]) {
             removeLinesMap[order.id]();
             setRemoveLinesMap({

@@ -37,11 +37,13 @@ export const useOrders = (callback: OnOrderCallback | OnOrderCallback[], figiOrI
         if (!order) return;
 
         if (Array.isArray(callback)) {
-            Promise.all(callback.map(cb => () => cb(order)))
+            for (const cb of callback) {                
+                cb(order);
+            }
         } else {
             callback(order);
         }
-    }, []);
+    }, [callback]);
 
     const unsubscribe = () => {
         unregisterOrderCb(handleNewOrder);

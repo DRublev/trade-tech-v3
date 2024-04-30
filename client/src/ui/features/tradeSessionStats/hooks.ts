@@ -4,7 +4,7 @@ import { useCurrentInstrument } from "../../utils/useCurrentInstrumentId";
 import { useOrders } from "../space/hooks";
 import { useLogger } from "../../hooks";
 
-
+const calcedTrades: Record<string, boolean> = {}
 export const useTradeSessionStats = () => {
     const [instrument] = useCurrentInstrument();
     const [turnover, setTurnover] = useState(0);
@@ -17,6 +17,9 @@ export const useTradeSessionStats = () => {
         logger.trace('Got info about new order', { isPartiallyExecuted: orderState.lotsExecuted != orderState.lotsRequested });
         // Частично исполненная зхаявка, пока хз как их считать
         // if (orderState.lotsExecuted != orderState.lotsRequested) return;
+
+        if (calcedTrades[orderState.id]) return;
+        calcedTrades[orderState.id] = true
 
         const price = orderState.price;
 
@@ -48,16 +51,16 @@ export const useTradeSessionStats = () => {
 };
 
 type OrderLog = OrderState;
+const calcedLogs: Record<string, boolean> = {};
 export const useTradeLogs = () => {
     const [instrument] = useCurrentInstrument();
     const [logs, setLogs] = useState<OrderLog[]>([]);
 
     const handleOrderStateChange = (orderState: OrderState) => {
-        if (orderState.lotsExecuted === orderState.lotsRequested) {
-            const newLogs = logs;
-            newLogs.push(orderState);
-            setLogs(newLogs);
-        }
+        if (calcedLogs[orderState.id]) return;
+        calcedLogs[orderState.id] = true;
+        
+        setLogs([...logs, orderState]);
     };
     useOrders(handleOrderStateChange, instrument);
 
