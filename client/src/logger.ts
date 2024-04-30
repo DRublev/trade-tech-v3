@@ -30,11 +30,10 @@ let uid: string;
 // TODO: Избавиться в пользу destination в файл. А на стороне фронта и ноды сделать воркеры, которые будут отправлять логи в локи
 const toLoki = async (log: Record<string, any> | string) => {
     const logObj = typeof log === "string" ? JSON.parse(log) : log;
-    const { level, time, msg, ...labels } = logObj;
-
+    const { level, time, msg, pid, ...labels } = logObj;
 
     const logEntry: LogEntry = {
-        labels: { ...labels, app: "client", level: mappedLevels[level] || 'unknown', message: msg },
+        labels: { ...labels, pid: `${pid}`, app: "client", level: mappedLevels[level] || 'unknown', message: msg },
         log: [`${time}000000`, `${msg}`],
     };
     if (uid) {
