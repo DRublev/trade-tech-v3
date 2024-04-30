@@ -129,9 +129,9 @@ const createWindow = (): void => {
   mainWindow = new BrowserWindow({
     height: 600,
     width: 800,
+    title: `Trade Tech ${app.getVersion()}`,
     webPreferences: {
       preload: MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY,
-
       nodeIntegrationInWorker: true,
       // Use pluginOptions.nodeIntegration, leave this alone
       // See nklayman.github.io/vue-cli-plugin-electron-builder/guide/security.html#node-integration for more info
@@ -148,8 +148,6 @@ const createWindow = (): void => {
     mainWindow.webContents.openDevTools();
   }
 
-  mainWindow.accessibleTitle += mainWindow.accessibleTitle + ' ' + app.getVersion()
-
   // mainWindow.webContents.on('will-navigate', (event, url) => {
   //   event.preventDefault();
   //   shell.openExternal(url);
@@ -163,7 +161,7 @@ const createWindow = (): void => {
 // Some APIs can only be used after this event occurs.
 app.on('ready', async () => {
   if (handleStartupEvent()) return;
-  
+
   runGoServer().then(hasLaunched => {
     if (!hasLaunched) return;
 
@@ -171,7 +169,7 @@ app.on('ready', async () => {
     fetchSharesList();
   });
 
-  const onWindowsOnlyIfPacked = !(process.platform == 'win32' && app.isPackaged);
+  const onWindowsOnlyIfPacked = process.platform == 'win32' && app.isPackaged;
   if (onWindowsOnlyIfPacked) {
     autoUpdater.checkForUpdates();
   }
