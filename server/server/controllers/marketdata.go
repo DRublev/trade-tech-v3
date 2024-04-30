@@ -113,13 +113,13 @@ func (s *Server) SubscribeOrders(in *marketdata.SubscribeOrderRequest, stream ma
 	mdL.Trace("Requesting broker for subscribing to orderState")
 	err = broker.Broker.SubscribeOrders(func(st types.OrderExecutionState) {
 		err = stream.Send(&marketdata.OrderState{
-			IdempodentID:    string(st.IdempodentID),
+			IdempodentID:    string(st.ID), // TODO: Поправить несоответствие
 			ExecutionStatus: int32(st.Status),
 			OperationType:   int32(st.Direction),
 			LotsRequested:   int32(st.LotsRequested),
 			LotsExecuted:    int32(st.LotsExecuted),
 			InstrumentID:    st.InstrumentID,
-			Strategy:        "",
+			Strategy:        "", // TODO: Брать стратегию из единого мета
 			PricePerLot:     st.ExecutedOrderPrice / float64(st.LotsExecuted),
 			Time:            timestamppb.New(time.Now()),
 		})
