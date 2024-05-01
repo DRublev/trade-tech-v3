@@ -1,4 +1,4 @@
-import { app, BrowserWindow, utilityProcess, dialog, MessageBoxOptions, ipcMain, autoUpdater } from 'electron';
+import { app, BrowserWindow, utilityProcess, dialog, MessageBoxOptions, ipcMain, autoUpdater, shell } from 'electron';
 import os from 'os';
 import { getShares } from './node/ipcHandlers/instruments';
 import logger from './logger';
@@ -148,10 +148,10 @@ const createWindow = (): void => {
     mainWindow.webContents.openDevTools();
   }
 
-  // mainWindow.webContents.on('will-navigate', (event, url) => {
-  //   event.preventDefault();
-  //   shell.openExternal(url);
-  // });
+  mainWindow.webContents.on('will-navigate', (event, url) => {
+    event.preventDefault();
+    shell.openExternal(url);
+  });
 };
 
 
@@ -173,7 +173,6 @@ app.on('ready', async () => {
   if (onWindowsOnlyIfPacked) {
     autoUpdater.checkForUpdates();
   }
-
 });
 
 // Quit when all windows are closed, except on macOS. There, it's common
