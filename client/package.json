@@ -1,7 +1,7 @@
 {
   "name": "trade-tech-v3",
   "productName": "TradeTech",
-  "version": "1.0.1",
+  "version": "1.0.0",
   "description": "Платформа торговых стратегий",
   "main": ".webpack/main",
   "scripts": {
@@ -21,7 +21,7 @@
   },
   "keywords": [],
   "author": {
-    "name": "DRublev",
+    "name": "Trade Tech",
     "email": "aringai09@gmail.com"
   },
   "repository": {
