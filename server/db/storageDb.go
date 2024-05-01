@@ -53,7 +53,7 @@ func (d *DB) Append(storageName []string, content []byte) error {
 		return err
 	}
 
-	if _, err := os.Stat(storageFile), err != nil {
+	if _, err := os.Stat(storageFile); err != nil {
 		dir, _ := d.getStoragePath(storageName[:len(storageName)-1])
 		os.MkdirAll(dir, 0700)
 	}
