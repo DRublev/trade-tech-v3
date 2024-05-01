@@ -33,7 +33,6 @@ func (s *Server) SetToken(ctx context.Context, in *auth.SetTokenRequest) (*auth.
 	}
 
 	authL.Trace("Saving token to storage")
-	dbInstance.Prune([]string{"auth"})
 	err = dbInstance.Append([]string{"auth"}, []byte(encrypted))
 
 	authL.Info("SetToken responding")
