@@ -60,7 +60,7 @@ export const SharesPop = ({ trigger }: { trigger?: React.ReactNode }) => {
             isContainsWithIgnoreCase(share.uid, term);
         return tradesBySupportedExchange && fitsSearch;
     }, [term, schedulesByExchangeMap])
-    const filteredShares = useMemo(() => shares.filter(shareFilter), [shares, shareFilter])
+    const filteredShares = useMemo(() => (shares || []).filter(shareFilter), [shares, shareFilter])
 
     const onSearchChange: React.ChangeEventHandler<HTMLInputElement> = useCallback(({ target }) => {
         const term = target.value;

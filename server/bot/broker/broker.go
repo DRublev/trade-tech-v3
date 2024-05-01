@@ -44,7 +44,6 @@ func Init(ctx context.Context, key types.BrokerKey) error {
 		}
 
 		accountID = string(accountIDBytes)
-		accountID = accountID[:len(accountID)-len("\n")]
 
 		log.Trace("Account ID has been found in store, creating Tinkoff SDK with it")
 		_, err = tinkoffBroker.NewSdk(&accountID)

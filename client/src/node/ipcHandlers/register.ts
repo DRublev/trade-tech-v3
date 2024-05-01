@@ -12,11 +12,6 @@ type Payload = {
     isSandbox?: boolean;
 };
 ipcMain.handle(ipcEvents.REGISTER, async (e, data: Payload) => {
-    if (!safeStorage.isEncryptionAvailable()) {
-        log.error("Шифрование не доступно")
-        return Promise.reject("Шифрование не доступно");
-    }
-
     const { token, isSandbox } = data;
     if (!token) return Promise.reject("token является обязательным параметром");
 
