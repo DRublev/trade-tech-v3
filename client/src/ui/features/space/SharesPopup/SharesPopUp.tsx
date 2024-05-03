@@ -68,7 +68,7 @@ export const SharesPop = ({ trigger }: { trigger?: React.ReactNode }) => {
     }, []);
 
     const isExchangeOpened = useCallback((share: Share) => {
-        const exchange = share.exchange === 'MOEX_EVENING_WEEKEND' ? 'MOEX_CLOSE' : share.exchange;
+        const exchange = share.exchange === 'MOEX_EVENING_WEEKEND' ? 'MOEX_CLOSE' : share.exchange.toUpperCase();
         const schedule = schedulesByExchangeMap[exchange];
         if (!schedule) return;
 
