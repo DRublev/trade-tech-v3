@@ -186,6 +186,11 @@ func (c *TinkoffBrokerPort) GetShares(instrumentStatus types.InstrumentStatus) (
 		return []types.Share{}, err
 	}
 
+	etfsRes, err := instrumentService.Etfs(investapi.InstrumentStatus(instrumentStatus))
+	if err != nil {
+		sdkL.Errorf("Failed getting etf: %v", err)
+	}
+
 	shares := []types.Share{}
 
 	for _, share := range sharesRes.Instruments {
@@ -206,6 +211,27 @@ func (c *TinkoffBrokerPort) GetShares(instrumentStatus types.InstrumentStatus) (
 				Uid:                 share.Uid,
 				First1minCandleDate: share.First_1MinCandleDate.AsTime(),
 				First1dayCandleDate: share.First_1DayCandleDate.AsTime(),
+			})
+		}
+	}
+
+	for _, etf := range etfsRes.Instruments {
+		if !etf.ForQualInvestorFlag &&
+			etf.ApiTradeAvailableFlag &&
+			etf.BuyAvailableFlag &&
+			etf.SellAvailableFlag {
+			shares = append(shares, types.Share{
+				Name:                etf.Name,
+				Figi:                etf.Figi,
+				Exchange:            etf.Exchange,
+				Ticker:              etf.Ticker,
+				Lot:                 etf.Lot,
+				IpoDate:             etf.ReleasedDate.AsTime(),
+				TradingStatus:       types.TradingStatus(etf.TradingStatus),
+				MinPriceIncrement:   toQuant(etf.MinPriceIncrement),
+				Uid:                 etf.Uid,
+				First1minCandleDate: etf.First_1MinCandleDate.AsTime(),
+				First1dayCandleDate: etf.First_1DayCandleDate.AsTime(),
 			})
 		}
 	}

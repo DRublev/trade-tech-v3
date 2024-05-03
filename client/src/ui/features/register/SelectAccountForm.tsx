@@ -9,12 +9,13 @@ import React, {
 } from "react";
 import { Navigate, useNavigate } from "react-router";
 import { useAuth } from "../auth/useAuth";
-import { useGetAccounts, usePruneTokens, useSetAccount } from "./hooks";
+import { useGetAccounts, usePruneTokens } from "./hooks";
 
 import { useAppDispatch, useAppSelector } from '../../../store';
 import { RawAccount, setAccounts } from '../accounts/accountsSlice';
 import { useLogger } from "../../hooks";
 import s from "./styles.css";
+import { useGetShares } from "../space/hooks";
 
 const useAccounts = () => {
     const dispatch = useAppDispatch();
@@ -59,6 +60,7 @@ export const SelectAccountForm = () => {
     const { selectAccount } = useAuth();
     const navigate = useNavigate();
     const pruneTokens = usePruneTokens();
+    const getShares = useGetShares();
     const [alertOpen, setAlertOpen] = useState(false);
     const [alert, setAlert] = useState(null);
     const logger = useLogger({ component: 'SelectAccountForm' });
@@ -93,6 +95,13 @@ export const SelectAccountForm = () => {
         setAlertOpen(!!error);
         setAlert({ message: error?.message || error });
     }, [error]);
+
+    useEffect(() => {
+        // Нужно, чтобы получать список инструментов при первом флоу
+        // При первом запуске мы не авторизованы и не сможем сфетчить список, поэтому сфетчим после того как засетили токен
+        // TODO: Вынести статусы инструментов в enum
+        getShares({ instrumentStatus: 1 }).catch(console.error);
+    }, []);
 
     const onLogout = useCallback(async () => {
         logger.info('Logout clicked')
