@@ -21,7 +21,7 @@ func (s *Server) GetAccounts(ctx context.Context, in *accounts.GetAccountsReques
 
 	err := broker.Init(ctx, types.Tinkoff)
 	if err != nil {
-		accL.Error("Cannot init broker: %v", err)
+		accL.Errorf("Cannot init broker: %v", err)
 		return &accounts.GetAccountsResponse{Accounts: []*accounts.Account{}}, nil
 	}
 
@@ -49,7 +49,7 @@ func (s *Server) SetAccount(ctx context.Context, in *accounts.SetAccountRequest)
 		return &accounts.SetAccountResponse{}, errors.New("accountId is empty")
 	}
 
-	content := []byte(in.AccountId + "\n")
+	content := []byte(in.AccountId)
 
 	accL.Trace("Setting account id to storage")
 	dbInstance.Prune([]string{"accounts"})
