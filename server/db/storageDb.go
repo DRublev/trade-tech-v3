@@ -7,7 +7,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"runtime"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -16,15 +15,19 @@ import (
 type DB struct{}
 
 func (d *DB) getStoragePath(storageName []string) (string, error) {
-	_, base, _, ok := runtime.Caller(0)
-	if !ok {
+	wd, err := os.Getwd()
+	if err != nil {
 		return "", errors.New("Not ok getting info about caller")
 	}
-	dir := path.Join(path.Dir(base), "..")
+	// _, base, _, ok := runtime.Caller(0)
+	// if !ok {
+	// 	return "", errors.New("Not ok getting info about caller")
+	// }
+	dir := path.Join(path.Dir(wd), "trade-tech")
 	rootDir := filepath.Dir(dir)
-
 	paths := append([]string{rootDir, "storage"}, storageName...)
 	p := path.Join(paths...)
+	p = path.Clean(p)
 	return p, nil
 }
 
@@ -53,7 +56,7 @@ func (d *DB) Append(storageName []string, content []byte) error {
 		return err
 	}
 
-	if _, err := os.Stat(storageFile); os.IsNotExist(err) {
+	if _, err := os.Stat(storageFile); err != nil {
 		dir, _ := d.getStoragePath(storageName[:len(storageName)-1])
 		os.MkdirAll(dir, 0700)
 	}

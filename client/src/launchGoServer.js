@@ -32,8 +32,8 @@ const launch = () => {
         });
         p.stdout.on('data', data => {
             console.log('38 launchGoServer', data);
+
             if (`${data}`.includes('Server listening at')) {
-                
                 process.parentPort.postMessage('OK');
             }
         });

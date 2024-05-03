@@ -52,7 +52,7 @@ func main() {
 			loki.WithName("trade-tech"),
 			loki.WithLabel("app", "server"),
 			loki.WithLabel("uid", uid),
-			loki.WithLevel(log.InfoLevel),
+			loki.WithLevel(log.TraceLevel),
 			loki.WithLabelsEnabled(loki.LevelLabel, loki.FieldsLabel, loki.MessageLabel),
 		)
 		defer hook.Close()
