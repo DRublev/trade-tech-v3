@@ -40,7 +40,7 @@ func Init(ctx context.Context, key types.BrokerKey) error {
 			}
 			log.Trace("No account ID stored, creating with empty")
 			_, err = tinkoffBroker.NewSdk(&accountID)
-			return nil
+			return err
 		}
 
 		accountID = string(accountIDBytes)

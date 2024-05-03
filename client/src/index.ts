@@ -224,7 +224,7 @@ autoUpdater.on('update-downloaded', (event, releaseNotes, releaseName, releaseDa
 
 autoUpdater.on('error', (error) => {
   logger.error('Ошибка обновления' + error);
-  dialog.showErrorBox('Ошибка обновления', error.message);
+  dialog.showErrorBox('Ошибка обновления', error.message.length > 200 ? 'Произошла ошибка при попытке обновления' : error.message);
 })
 
 // In this file you can include the rest of your app's specific main process

@@ -1,6 +1,8 @@
 import pino from "pino";
 import axios from 'axios';
 
+import { version } from '../package.json';
+
 const lokiOptions = {
     address: "http://79.174.80.98:3100",
 };
@@ -33,7 +35,7 @@ const toLoki = async (log: Record<string, any> | string) => {
     const { level, time, msg, pid, ...labels } = logObj;
 
     const logEntry: LogEntry = {
-        labels: { ...labels, pid: `${pid}`, app: "client", level: mappedLevels[level] || 'unknown', message: msg },
+        labels: { ...labels, pid: `${pid}`, app: "client", level: mappedLevels[level] || 'unknown', version, message: msg },
         log: [`${time}000000`, `${msg}`],
     };
     if (uid) {
@@ -73,7 +75,7 @@ const send = () => {
         if (pendingChunk.length >= maxChunkSize * 10) {
             const time = Date.now();
             chunk.push({
-                labels: { app: "trade-tech", level: mappedLevels[50] },
+                labels: { app: "client", level: mappedLevels[50], version },
                 log: [`${time}000000`, `Flushing logs of size ${pendingChunk.length}`],
             });
             pendingChunk = [];
