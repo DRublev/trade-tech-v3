@@ -100,9 +100,7 @@ export const SelectAccountForm = () => {
         // Нужно, чтобы получать список инструментов при первом флоу
         // При первом запуске мы не авторизованы и не сможем сфетчить список, поэтому сфетчим после того как засетили токен
         // TODO: Вынести статусы инструментов в enum
-        getShares({ instrumentStatus: 1 }).catch((e) => {
-            console.error(e);
-        });
+        getShares({ instrumentStatus: 1 }).catch(console.error);
     }, []);
 
     const onLogout = useCallback(async () => {
