@@ -5,13 +5,14 @@ import { OHLCData, OrderOperations, OrderState } from "../../../types";
 import { useCandles, useOrders } from '../space/hooks';
 import { useCurrentInstrument } from '../../utils/useCurrentInstrumentId';
 import { Link } from '@radix-ui/themes';
+import type { Share } from '../../../node/grpc/contracts/shares';
 
 type ChartProps = {
     containerRef: MutableRefObject<HTMLElement>;
 
 };
 
-type UseChart = (containerRef: MutableRefObject<HTMLElement>, instrument: string, initialData?: OHLCData[]) => [RefObject<HTMLDivElement>, ChartApi];
+type UseChart = (containerRef: MutableRefObject<HTMLElement>, instrument: Share, initialData?: OHLCData[]) => [RefObject<HTMLDivElement>, ChartApi];
 
 type DrawPriceLineParams = { price: number, title: string, direction: 1 | 2 };
 
@@ -59,7 +60,7 @@ const sellLineColor = '#ef6060';
 
 const legendStyle = `position: absolute; left: 12px; top: 40px; z-index: 1; font-size: 14px; font-family: sans-serif; line-height: 18px; font-weight: 300; z-index: 10;`
 
-const useChart: UseChart = (containerRef, instrument) => {
+const useChart: UseChart = (containerRef, instrument = {}) => {
     const chartSize = useChartDimensions(containerRef);
     const chartRef = useRef();
     const chartApiRef = useRef<IChartApi>();
@@ -91,7 +92,7 @@ const useChart: UseChart = (containerRef, instrument) => {
             priceFormatted = price.toFixed(2);
         }
 
-        legendRef.current.innerHTML = `${instrument} <strong>${priceFormatted}</strong>`;
+        legendRef.current.innerHTML = `${instrument.name} (${instrument.ticker}) <strong>${priceFormatted}</strong>`;
     }, [instrument, candlesApiRef.current]);
 
     useEffect(() => {
@@ -117,7 +118,7 @@ const useChart: UseChart = (containerRef, instrument) => {
     }, []);
 
     useEffect(() => {
-        legendRef.current.innerHTML = instrument;
+        legendRef.current.innerHTML = `${instrument?.name} (${instrument?.ticker})`;
 
         chartApiRef.current.subscribeCrosshairMove(updateLegend);
         return () => {
@@ -173,8 +174,8 @@ function orderToMarkerMapper(order: OrderState): SeriesMarker<Time> {
 
 const cacledOrders: Record<string, boolean> = {}
 const Chart: FC<ChartProps> = ({ containerRef }) => {
-    const [instrument] = useCurrentInstrument();
-    const [ref, api] = useChart(containerRef, instrument)
+    const [instrument, _, instrumentInfo] = useCurrentInstrument();
+    const [ref, api] = useChart(containerRef, instrumentInfo)
     const { initialData, isLoading } = useCandles(api.updatePriceSeries, instrument);
     const [removeLinesMap, setRemoveLinesMap] = useState<Record<string, () => void>>({});
 
