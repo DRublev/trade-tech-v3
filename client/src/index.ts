@@ -91,6 +91,8 @@ const runGoServer = () => {
         logger.info(`go server exited with code ${code}`);
       });
     }
+
+    return resolve(true);
   });
 };
 
