@@ -8,10 +8,10 @@ import { SelectAccountForm } from "./features/register/SelectAccountForm";
 import { useAuth } from "./features/auth/useAuth";
 
 export const Router = () => {
-    const {updateAuth} = useAuth();
+    const { updateAuth } = useAuth();
 
-    React.useEffect(() => {
-      updateAuth();
+    useEffect(() => {
+        updateAuth();
     }, []);
 
     return (
