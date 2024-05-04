@@ -481,9 +481,9 @@ func (s *SpreadStrategy) onOrderSateChange(state types.OrderExecutionState) {
 			"Lots executed (cancelled %v, erroPlacing: %v) %v of %v; Executed buy price %v",
 			isSellCancel,
 			isSellPlaceError,
-			state.ExecutedOrderPrice,
 			state.LotsExecuted,
 			state.LotsRequested,
+			state.ExecutedOrderPrice,
 		)
 	}
 	s.state.Set(newState)
