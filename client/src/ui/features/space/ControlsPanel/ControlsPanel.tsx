@@ -11,6 +11,7 @@ import { ConfigChangeModal } from '../../config';
 import { useDispatch } from 'react-redux';
 import { setCurrentAccount } from '../../auth/authSlice';
 import { Toast } from '../../../components/Toast/Toast';
+import s from './styles.css';
 
 const toolBarButtonProps = {
     className: style.button,
@@ -103,7 +104,7 @@ export const ControlsPanel = () => {
                         }
                     />
                     <Toolbar.Button value="start" asChild onClick={handleTradeToggle} {...toolBarButtonProps}>
-                        <StartIconComponent />
+                        <StartIconComponent className={isStarted ? s.stopIcon : s.startIcon} />
                     </Toolbar.Button>
                     <ConfigChangeModal
                         trigger={
