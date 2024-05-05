@@ -10,6 +10,7 @@ import { useNavigate } from 'react-router-dom';
 import { ConfigChangeModal } from '../../config';
 import { useDispatch } from 'react-redux';
 import { setCurrentAccount } from '../../auth/authSlice';
+import { Toast } from '../../../components/Toast/Toast';
 
 const toolBarButtonProps = {
     className: style.button,
@@ -68,6 +69,8 @@ export const ControlsPanel = () => {
 
     const [instrument] = useCurrentInstrument();
     const { isStarted, isLoading, error, toggle } = useTradeToggle(instrument, logger);
+    const [showErrorToast, setShowErrorToast] = useState(false);
+    const [showSuccessToast, setShowSuccessToast] = useState(false);
     const StartIconComponent = useMemo(() => {
         if (isLoading) return Spinner;
         if (!isStarted) return PlayIcon;
@@ -80,6 +83,14 @@ export const ControlsPanel = () => {
         navigate('/register/select-account');
     };
 
+    const handleTradeToggle = () => toggle().then(() => {
+        setShowSuccessToast(true);
+    })
+
+    useEffect(() => {
+        setShowErrorToast(!!error);
+    }, [error]);
+
     return (
         <Toolbar.Root>
             <Toolbar.ToggleGroup type="single">
@@ -91,7 +102,7 @@ export const ControlsPanel = () => {
                             </Toolbar.Button>
                         }
                     />
-                    <Toolbar.Button value="start" asChild onClick={toggle} {...toolBarButtonProps}>
+                    <Toolbar.Button value="start" asChild onClick={handleTradeToggle} {...toolBarButtonProps}>
                         <StartIconComponent />
                     </Toolbar.Button>
                     <ConfigChangeModal
@@ -106,6 +117,18 @@ export const ControlsPanel = () => {
                     </Toolbar.Button>
                 </Flex>
             </Toolbar.ToggleGroup>
+
+            <Toast
+                open={showErrorToast}
+                setOpen={setShowErrorToast}
+                description={error?.message || error}
+            />
+            <Toast
+                type="ok"
+                open={showSuccessToast}
+                setOpen={setShowSuccessToast}
+                title={isStarted ? 'Запустили стратегию' : 'Остановили стратегию'}
+            />
         </Toolbar.Root>
     )
 }

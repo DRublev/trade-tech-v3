@@ -37,6 +37,7 @@ func (s *Server) Start(ctx context.Context, in *trade.StartRequest) (*trade.Star
 	}, err
 }
 
+// TODO: Допилить, чтобы возвращал инфу о том  какие заявки закрыл и что вообще сделал для остановки, потом это отображать на фронте
 func (s *Server) Stop(ctx context.Context, in *trade.StopRequest) (*trade.StopResponse, error) {
 	tradeL.Info("Stop requested")
 	strategyPool := bot.NewPool()
