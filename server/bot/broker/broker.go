@@ -17,6 +17,7 @@ var Broker types.IBroker
 // Init Конструктор для брокера. Создает инстанс брокера, исходя из ключа
 func Init(ctx context.Context, key types.BrokerKey) error {
 	if Broker != nil {
+		log.Trace("Broker already inited", Broker)
 		return nil
 	}
 
@@ -25,8 +26,6 @@ func Init(ctx context.Context, key types.BrokerKey) error {
 		log.Info("Setting Tinkoff as a Broker")
 		dbInstance := &db.DB{}
 		tinkoffBroker := &tinkoff.TinkoffBrokerPort{}
-
-		Broker = tinkoffBroker
 
 		var accountID string
 		var err error
@@ -38,15 +37,18 @@ func Init(ctx context.Context, key types.BrokerKey) error {
 				log.Errorf("Failed getting accountID from database: %v", err)
 				return err
 			}
+			log.Trace(err)
 			log.Trace("No account ID stored, creating with empty")
-			_, err = tinkoffBroker.NewSdk(&accountID)
-			return err
+		} else {
+			log.Trace("Account ID has been found in store, creating Tinkoff SDK with it")
+			accountID = string(accountIDBytes)
 		}
 
-		accountID = string(accountIDBytes)
-
-		log.Trace("Account ID has been found in store, creating Tinkoff SDK with it")
 		_, err = tinkoffBroker.NewSdk(&accountID)
+
+		if err == nil {
+			Broker = tinkoffBroker
+		}
 
 		return err
 	default:

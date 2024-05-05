@@ -92,7 +92,7 @@ const useChart: UseChart = (containerRef, instrument) => {
             priceFormatted = price.toFixed(2);
         }
 
-        legendRef.current.innerHTML = `${instrument.name} (${instrument.ticker}) <strong>${priceFormatted}</strong>`;
+        legendRef.current.innerHTML = `${instrument?.name} (${instrument?.ticker}) <strong>${priceFormatted}</strong>`;
     }, [instrument, candlesApiRef.current]);
 
     useEffect(() => {
