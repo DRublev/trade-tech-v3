@@ -1,5 +1,4 @@
 import * as Form from "@radix-ui/react-form";
-import * as Toast from "@radix-ui/react-toast";
 import { Button, Card, Container, Flex, Heading, RadioGroup } from "@radix-ui/themes";
 import React, {
     FormEventHandler,
@@ -16,6 +15,7 @@ import { RawAccount, setAccounts } from '../accounts/accountsSlice';
 import { useLogger } from "../../hooks";
 import s from "./styles.css";
 import { useGetShares } from "../space/hooks";
+import { Toast } from "../../components/Toast/Toast";
 
 const useAccounts = () => {
     const dispatch = useAppDispatch();
@@ -119,69 +119,57 @@ export const SelectAccountForm = () => {
     }
 
     return (
-        <Toast.Provider>
-            <Container>
-                <img src="trademedia://static/images/logo.svg" className={s.logo} />
-                <Card size="3" variant="ghost" className={s.card}>
-                    <RadioGroup.Root value={selectedAccount}>
-                        <Form.Root onSubmit={handleSubmit}>
-                            <Flex direction="column" gap="3">
-                                <Form.Field name="account">
-                                    <Form.Label>
-                                        <Heading className={s.heading}>
-                                            Выберите аккаунт
-                                        </Heading>
-                                    </Form.Label>
+        <Container>
+            <img src="trademedia://static/images/logo.svg" className={s.logo} />
+            <Card size="3" variant="ghost" className={s.card}>
+                <RadioGroup.Root value={selectedAccount}>
+                    <Form.Root onSubmit={handleSubmit}>
+                        <Flex direction="column" gap="3">
+                            <Form.Field name="account">
+                                <Form.Label>
+                                    <Heading className={s.heading}>
+                                        Выберите аккаунт
+                                    </Heading>
+                                </Form.Label>
 
 
-                                    {accounts.map((account) => (
-                                        <Flex align="center" gap="3" key={account.id}>
+                                {accounts.map((account) => (
+                                    <Flex align="center" gap="3" key={account.id}>
 
-                                            <Form.Control
-                                                required
-                                                type="radio"
-                                                value={account.id}
-                                                asChild
-                                            >
-                                                <RadioGroup.Item value={account.id} onClick={preventSubmit}>
-                                                    {account.name}
-                                                </RadioGroup.Item>
-                                            </Form.Control>
-                                        </Flex>
-                                    ))}
-                                </Form.Field>
+                                        <Form.Control
+                                            required
+                                            type="radio"
+                                            value={account.id}
+                                            asChild
+                                        >
+                                            <RadioGroup.Item value={account.id} onClick={preventSubmit}>
+                                                {account.name}
+                                            </RadioGroup.Item>
+                                        </Form.Control>
+                                    </Flex>
+                                ))}
+                            </Form.Field>
 
-                                <Form.Submit asChild>
-                                    <Button className={s.submitBtn}>Дальше</Button>
-                                </Form.Submit>
+                            <Form.Submit asChild>
+                                <Button className={s.submitBtn}>Дальше</Button>
+                            </Form.Submit>
 
-                                <Button onClick={onLogout} color="crimson">
-                                    Выйти
-                                </Button>
-                            </Flex>
-                        </Form.Root>
-                    </RadioGroup.Root>
-                </Card>
+                            <Button onClick={onLogout} color="crimson">
+                                Выйти
+                            </Button>
+                        </Flex>
+                    </Form.Root>
+                </RadioGroup.Root>
+            </Card>
 
-                <Toast.Root
-                    open={alertOpen}
-                    onOpenChange={setAlertOpen}
-                    className={s.ToastRoot}
-                >
-                    <Toast.Title>Упс! Возникла ошибка</Toast.Title>
-                    <Toast.Description className={s.ToastDescription}>
-                        Мы получили о ней сведения и примем меры
-                        <br />
-                        {alert?.message}
-                    </Toast.Description>
-                    <Toast.Action className={s.ToastAction} altText="Ок" asChild>
-                        <Button variant="surface" color="amber">
-                            Не ок
-                        </Button>
-                    </Toast.Action>
-                </Toast.Root>
-                <Toast.Viewport className={s.ToastViewport} />
-            </Container>
-        </Toast.Provider>
+            <Toast
+                open={alertOpen}
+                setOpen={setAlertOpen}
+                description={<>
+                    Мы получили о ней сведения и примем меры
+                    <br />
+                    {alert?.message}</>}
+            />
+        </Container>
     );
 };

@@ -1,0 +1,11 @@
+.stopIcon {
+    color: var(--red-11);
+        width: 20px;
+    height: 20px;
+}
+
+.startIcon {
+    color: var(--green-11);
+        width: 20px;
+    height: 20px;
+}
