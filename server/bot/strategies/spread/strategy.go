@@ -369,7 +369,6 @@ func (s *SpreadStrategy) sell(wg *sync.WaitGroup, ob *types.Orderbook) {
 		}).Info("Stop loss broken")
 	}
 
-
 	order := &types.PlaceOrder{
 		InstrumentID: s.config.InstrumentID,
 		Quantity:     int64(state.holdingShares),
@@ -463,7 +462,7 @@ func (s *SpreadStrategy) onOrderSateChange(state types.OrderExecutionState) {
 		newState.pendingSellShares -= int32(state.LotsExecuted / int(s.config.LotSize))
 		newState.leftBalance += float32(state.ExecutedOrderPrice)
 		newState.holdingShares -= int32(state.LotsExecuted / int(s.config.LotSize))
-		l.Infof(
+		l.WithField("orderId", state.ID).Infof(
 			"Lots executed (cancelled %v, erroPlacing: %v) %v of %v; Executed sell price %v",
 			isBuyPlaceError,
 			isBuyCancel,
@@ -477,7 +476,7 @@ func (s *SpreadStrategy) onOrderSateChange(state types.OrderExecutionState) {
 		newState.pendingBuyShares -= int32(state.LotsExecuted / int(s.config.LotSize))
 		newState.notConfirmedBlockedMoney -= float32(state.ExecutedOrderPrice)
 		newState.leftBalance -= float32(state.ExecutedOrderPrice)
-		l.Infof(
+		l.WithField("orderId", state.ID).Infof(
 			"Lots executed (cancelled %v, erroPlacing: %v) %v of %v; Executed buy price %v",
 			isSellCancel,
 			isSellPlaceError,
