@@ -1,18 +1,24 @@
 const { exec } = require('child_process');
 const path = require('path');
+const killOnPort = require('./killGoServer');
 
 const UNIX_SERVER_FILENAME = "app-binary-macos";
 const WIN_SERVER_FILENAME = "app-binary-windows.exe";
 
 const serverFilename = process.platform == 'win32' ? WIN_SERVER_FILENAME : UNIX_SERVER_FILENAME;
+
+const PORT = 50051;
+
+const killPreviousServerInstance = () => new Promise((resolve, reject) => {
+    const killP = killOnPort(PORT);
+
+    killP.on('exit', resolve);
+    killP.on('error', reject);
+})
+
 const launch = () => {
     const isPackaged = process.argv[process.argv.length - 1] == '--packaged';
-
     const resourcesPath = path.resolve(isPackaged ? process.resourcesPath : '../server/resources/app/go-binaries');
-
-    const logFileName = `${new Date().toLocaleDateString()}.log`;
-    const logPath = path.join(resourcesPath, 'logs', logFileName)
-    const logFileCmd = isPackaged ? '' : ` >> ${logPath}`;
     let serverPath = path
         .join(resourcesPath, serverFilename);
     if (process.platform !== 'win32') {
@@ -22,26 +28,20 @@ const launch = () => {
             .trim();
     }
 
-    console.log('Launching server by path: ', "serverPath " + serverPath);
-
-    try {
-        const p = exec(`${serverPath}${logFileCmd}`, (err, stdout, stderr) => {
-            console.log('24 launchGoServer', err);
-            console.log('25 launchGoServer', stdout);
-            console.log('26 launchGoServer', stderr);
-        });
-        p.stdout.on('data', data => {
-            console.log('38 launchGoServer', data);
-
-            if (`${data}`.includes('Server listening at')) {
-                process.parentPort.postMessage('OK');
-            }
-        });
-    } catch (e) {
-        console.log('27 launchGoServer', e);
-        process.parentPort.postMessage(JSON.stringify(e));
-
-    }
+    killPreviousServerInstance().then(() => {
+        const cmd = `${serverPath} --port ${PORT}`
+        console.log('Launching server by path: ', cmd);
+        try {
+            const p = exec(cmd);
+            p.stdout.on('data', data => {
+                if (`${data}`.includes('Server listening at')) {
+                    process.parentPort.postMessage('OK');
+                }
+            });
+        } catch (e) {
+            process.parentPort.postMessage(JSON.stringify(e));
+        }
+    }).catch(process.parentPort.postMessage)
 };
 
 module.exports = launch();

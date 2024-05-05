@@ -17,7 +17,8 @@ const config: ForgeConfig = {
       '../server/resources/app/go-binaries/app-binary-macos',
       '../server/resources/app/go-binaries/app-binary-windows.exe',
       './src/static',
-      './src/launchGoServer.js'
+      './src/launchGoServer.js',
+      './src/killGoServer.js',
     ],
   },
   publishers: [
