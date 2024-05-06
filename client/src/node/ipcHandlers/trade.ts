@@ -1,6 +1,7 @@
 import { ipcMain } from 'electron';
 import { ipcEvents } from '../../ipcEvents';
 import { tradeService } from '../grpc/trade';
+import storage from '../Storage';
 
 ipcMain.handle(ipcEvents.START_TRADE, async (e, req) => {
     const { instrumentId } = req;
@@ -51,6 +52,15 @@ ipcMain.handle(ipcEvents.CHANGE_STRATEGY_CONFIG, async (e, req) => {
     if (!instrumentId) return Promise.reject("instrumentId является обязательным параметром");
     if (!strategy) return Promise.reject("strategy является обязательным параметром");
     if (!values) return Promise.reject("values является обязательным параметром");
+
+    try {
+        const shares = await storage.get('shares');
+        const instrument = shares.find((share: any) => share.uid === instrumentId);
+        values.LotSize = instrument.lot;
+    } catch (e) {
+        console.error(e);
+    }
+
 
     const response = await tradeService.changeConfig({
         InstrumentId: instrumentId,

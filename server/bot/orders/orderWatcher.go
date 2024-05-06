@@ -121,7 +121,7 @@ func (ow *OrderWatcher) notify(state types.OrderExecutionState) {
 
 	if state.Status == types.Fill {
 		l.Info("Order is fullfilled, unsubscribing")
-		delete(ow.idempodentsToOrdersMap, state.ID)
+		// defer delete(ow.idempodentsToOrdersMap, state.ID)
 	}
 
 	l.Info("Notifying about new order state")
