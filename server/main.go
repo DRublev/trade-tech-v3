@@ -15,7 +15,7 @@ import (
 
 var (
 	port        = flag.Int("port", 50051, "The server port")
-	logsAddress = flag.String("logsAddress", "http://79.174.80.98:3100", "The server port")
+	logsAddress = flag.String("logsAddress", "http://87.242.100.16:3100", "The server port")
 )
 
 func init() {

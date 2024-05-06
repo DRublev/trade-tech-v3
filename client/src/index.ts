@@ -109,7 +109,7 @@ registerMediaProtocol();
 
 const platform = os.platform() + '_' + os.arch();
 const version = app.getVersion();
-const server = 'http://79.174.80.98:5000';
+const server = 'http://87.242.100.16:5000';
 const url = `${server}/update/${platform}/${version}`;
 
 autoUpdater.setFeedURL({
