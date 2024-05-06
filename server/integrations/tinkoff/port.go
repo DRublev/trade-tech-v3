@@ -516,7 +516,14 @@ func (c *TinkoffBrokerPort) SubscribeOrders(cb func(types.OrderExecutionState)) 
 					// InitialComission   types.Money
 					// ExecutedComission  types.Money
 				}
-				sdkL.Tracef("Order state changed, notifying: %v", changeEvent)
+
+				state, err := c.GetOrderState(types.OrderID(tradeState.OrderId))
+				if err == nil {
+					changeEvent.Status = state.Status
+					changeEvent.LotsRequested = state.LotsRequested
+				}
+
+				sdkL.Infof("Order state changed, notifying: %v", changeEvent)
 				go cb(changeEvent)
 			}
 		}
@@ -588,11 +595,11 @@ func (c *TinkoffBrokerPort) GetOrderState(orderID types.OrderID) (types.OrderExe
 
 	orderState := types.OrderExecutionState{
 		ID:                 types.OrderID(state.OrderId),
-		IdempodentID: types.IdempodentID(state.OrderRequestId),
+		IdempodentID:       types.IdempodentID(state.OrderRequestId),
 		Direction:          types.OperationType(state.Direction),
 		InstrumentID:       state.InstrumentUid,
 		LotsExecuted:       int(state.LotsExecuted),
-		LotsRequested: int(state.LotsRequested),
+		LotsRequested:      int(state.LotsRequested),
 		Status:             status, // TODO: Научиться определять статус заявки
 		ExecutedOrderPrice: state.ExecutedOrderPrice.ToFloat(),
 	}
