@@ -582,14 +582,17 @@ func (c *TinkoffBrokerPort) GetOrderState(orderID types.OrderID) (types.OrderExe
 		return types.OrderExecutionState{}, err
 	}
 	var status types.ExecutionStatus = types.Unspecified
-	if state.LotsExecuted == state.LotsRequested {
+	if state.LotsExecuted == state.LotsRequested || (state.LotsRequested == 0 && state.LotsExecuted > 0) {
 		status = types.Fill
 	}
+
 	orderState := types.OrderExecutionState{
 		ID:                 types.OrderID(state.OrderId),
+		IdempodentID: types.IdempodentID(state.OrderRequestId),
 		Direction:          types.OperationType(state.Direction),
 		InstrumentID:       state.InstrumentUid,
 		LotsExecuted:       int(state.LotsExecuted),
+		LotsRequested: int(state.LotsRequested),
 		Status:             status, // TODO: Научиться определять статус заявки
 		ExecutedOrderPrice: state.ExecutedOrderPrice.ToFloat(),
 	}
