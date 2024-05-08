@@ -425,6 +425,7 @@ func (s *SpreadStrategy) onOrderSateChange(state types.OrderExecutionState) {
 	if state.Status == types.New {
 		newState.placedOrders = append(newState.placedOrders, state)
 		s.state.Set(newState)
+		l.Infof("Adding new order to placed list")
 		return
 	}
 	if state.Status == types.Fill {
@@ -437,8 +438,6 @@ func (s *SpreadStrategy) onOrderSateChange(state types.OrderExecutionState) {
 		}
 
 		newState.placedOrders = filteredOrders
-		s.state.Set(newState)
-		return
 	}
 
 	if state.Status != types.PartiallyFill &&
@@ -484,6 +483,8 @@ func (s *SpreadStrategy) onOrderSateChange(state types.OrderExecutionState) {
 			state.LotsRequested,
 			state.ExecutedOrderPrice,
 		)
+	} else {
+		l.Warnf("Order state change not handled: %v", state);
 	}
 	s.state.Set(newState)
 }

@@ -60,7 +60,7 @@ const sellLineColor = '#ef6060';
 
 const legendStyle = `position: absolute; left: 12px; top: 40px; z-index: 1; font-size: 14px; font-family: sans-serif; line-height: 18px; font-weight: 300; z-index: 10;`
 
-const useChart: UseChart = (containerRef, instrument = {}) => {
+const useChart: UseChart = (containerRef, instrument) => {
     const chartSize = useChartDimensions(containerRef);
     const chartRef = useRef();
     const chartApiRef = useRef<IChartApi>();
@@ -92,7 +92,7 @@ const useChart: UseChart = (containerRef, instrument = {}) => {
             priceFormatted = price.toFixed(2);
         }
 
-        legendRef.current.innerHTML = `${instrument.name} (${instrument.ticker}) <strong>${priceFormatted}</strong>`;
+        legendRef.current.innerHTML = `${instrument?.name} (${instrument?.ticker}) <strong>${priceFormatted}</strong>`;
     }, [instrument, candlesApiRef.current]);
 
     useEffect(() => {

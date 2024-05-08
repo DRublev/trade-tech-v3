@@ -4,7 +4,7 @@ import axios from 'axios';
 import { version } from '../package.json';
 
 const lokiOptions = {
-    address: "http://79.174.80.98:3100",
+    address: "http://87.242.100.16:3100",
 };
 
 const mappedLevels: Record<string, string> = {
