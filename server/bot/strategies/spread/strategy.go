@@ -302,8 +302,6 @@ func (s *SpreadStrategy) buy(wg *sync.WaitGroup, ob *types.Orderbook) {
 	}
 	l.Infof("Order to place: %v", order)
 
-	s.toPlaceOrders <- order
-
 	l.Trace("Updating state")
 	newState := *s.state.Get()
 	newState.pendingBuyShares += int32(canBuySharesAmount)
@@ -314,6 +312,8 @@ func (s *SpreadStrategy) buy(wg *sync.WaitGroup, ob *types.Orderbook) {
 
 	s.isBuying.value = false
 	l.Trace("Is buy released")
+
+	s.toPlaceOrders <- order
 }
 
 func (s *SpreadStrategy) sell(wg *sync.WaitGroup, ob *types.Orderbook) {
@@ -326,10 +326,7 @@ func (s *SpreadStrategy) sell(wg *sync.WaitGroup, ob *types.Orderbook) {
 	}
 
 	state := *s.state.Get()
-	if state.holdingShares-state.pendingSellShares == 0 {
-		l.WithField("state", state).Trace("Nothing to sell")
-		return
-	}
+
 	if state.holdingShares < 0 {
 		l.WithField("state", state).Warn("Holding less than 0 shares")
 		return
@@ -339,7 +336,13 @@ func (s *SpreadStrategy) sell(wg *sync.WaitGroup, ob *types.Orderbook) {
 	l.Tracef("Min ask price %v", minAskPrice)
 
 	isGoodPrice := minAskPrice-state.lastBuyPrice >= s.config.MinProfit
-	hasStopLossBroken := s.config.StopLossAfter != float32(0) && ob.Bids[0].Price <= state.lastBuyPrice-s.config.StopLossAfter
+	hasStopLossBroken := state.holdingShares-state.pendingSellShares > 0 && s.config.StopLossAfter != float32(0) && ob.Bids[0].Price <= state.lastBuyPrice-s.config.StopLossAfter
+
+	if state.holdingShares-state.pendingSellShares == 0 && !hasStopLossBroken {
+		l.WithField("state", state).Trace("Nothing to sell")
+		return
+	}
+
 	fmt.Printf("320 strategy %v <= %v - %v (%vis %v\n", ob.Bids[0].Price, state.lastBuyPrice, s.config.StopLossAfter, state.lastBuyPrice-s.config.StopLossAfter, hasStopLossBroken)
 	shouldMakeSell := isGoodPrice || hasStopLossBroken
 	if !shouldMakeSell {
@@ -378,7 +381,7 @@ func (s *SpreadStrategy) sell(wg *sync.WaitGroup, ob *types.Orderbook) {
 
 	if hasStopLossBroken {
 		for _, o := range state.placedOrders {
-			if o.Direction == types.Buy && o.Status != types.New {
+			if (o.Direction == types.Buy || o.Direction == types.Sell) && o.Status != types.New {
 				order.CancelOrder = o.ID
 				break
 			}
@@ -386,8 +389,6 @@ func (s *SpreadStrategy) sell(wg *sync.WaitGroup, ob *types.Orderbook) {
 	}
 
 	l.Infof("Order to place: %v", order)
-
-	s.toPlaceOrders <- order
 
 	l.Trace("Updating state")
 	state = *s.state.Get()
@@ -397,19 +398,20 @@ func (s *SpreadStrategy) sell(wg *sync.WaitGroup, ob *types.Orderbook) {
 
 	s.isSelling.value = false
 	l.Trace("Is sell released")
+
+	s.toPlaceOrders <- order
+
 }
 
 func (s *SpreadStrategy) checkForRottenBuys(wg *sync.WaitGroup, ob *types.Orderbook) {
 	defer wg.Done()
 	// TODO: Чекать неаткуальные выставленные ордера и отменять их
-
 	// TODO: Сбрасывать lastBuyPrice на предыдущий, если закрываем какой то бай ордер
 }
 
 func (s *SpreadStrategy) checkForRottenSells(wg *sync.WaitGroup, ob *types.Orderbook) {
 	defer wg.Done()
 	// TODO: Чекать неаткуальные выставленные ордера и отменять их
-
 }
 
 func (s *SpreadStrategy) onOrderSateChange(state types.OrderExecutionState) {
@@ -455,16 +457,24 @@ func (s *SpreadStrategy) onOrderSateChange(state types.OrderExecutionState) {
 	isSellOk := state.Direction == types.Sell && !isSellPlaceError && !isSellCancel
 	isBuyOk := state.Direction == types.Buy && !isBuyPlaceError && !isBuyCancel
 
-	if isSellOk || isBuyPlaceError || isBuyCancel {
-		l.Trace("Updating state after sell order executed")
+	if isBuyPlaceError {
+		l.Trace("Updating state after buy order place error")
+		newState.leftBalance += float32(state.ExecutedOrderPrice)
+		newState.pendingBuyShares -= int32(state.LotsExecuted / int(s.config.LotSize))
+		newState.notConfirmedBlockedMoney -= float32(state.ExecutedOrderPrice)
+	} else if isSellPlaceError {
+		newState.pendingSellShares -= int32(state.LotsExecuted / int(s.config.LotSize))
+	}
 
+	if isSellOk || isBuyCancel {
+		l.Trace("Updating state after sell order executed")
 		newState.pendingSellShares -= int32(state.LotsExecuted / int(s.config.LotSize))
 		newState.leftBalance += float32(state.ExecutedOrderPrice)
 		newState.holdingShares -= int32(state.LotsExecuted / int(s.config.LotSize))
 		l.WithField("orderId", state.ID).Infof(
 			"Lots executed (cancelled %v, erroPlacing: %v) %v of %v; Executed sell price %v",
-			isBuyPlaceError,
 			isBuyCancel,
+			isBuyPlaceError,
 			state.LotsExecuted,
 			state.LotsRequested,
 			state.ExecutedOrderPrice,
@@ -484,7 +494,7 @@ func (s *SpreadStrategy) onOrderSateChange(state types.OrderExecutionState) {
 			state.ExecutedOrderPrice,
 		)
 	} else {
-		l.Warnf("Order state change not handled: %v", state);
+		l.Warnf("Order state change not handled: %v", state)
 	}
 	s.state.Set(newState)
 }
