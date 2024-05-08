@@ -44,8 +44,11 @@ const config: ForgeConfig = {
     new AutoUnpackNativesPlugin({}),
     new WebpackPlugin({
       mainConfig,
+      devContentSecurityPolicy: 'default-src \'self\' \'unsafe-inline\' data:; script-src \'self\' \'unsafe-eval\' \'unsafe-inline\' data:',
       devServer: {
         open: false,
+        hot: true,
+        liveReload: false,
       },
       renderer: {
         config: rendererConfig,
