@@ -3,28 +3,9 @@ import { ipcEvents } from '../../ipcEvents';
 import storage from '../Storage';
 import { authService } from '../grpc/auth';
 import { createLogger } from '../logger';
+import { retry } from '../utils/retry';
 
 const log = createLogger({ controller: 'auth' });
-
-const retry = <T extends (...args: any) => any>(action: T, { attempts = 3, delay = 100 }) => (...args: Parameters<T>) => {
-    let attempt = 1;
-
-    const r: () => ReturnType<typeof action> = async () => {
-        try {
-            const res = await action(args);
-            return res;
-        } catch (e) {
-            if (attempt > attempts) {
-                throw e;
-            }
-            await new Promise((resolve) => setTimeout(resolve, delay));
-            attempt += 1;
-            return r();
-        }
-    }
-
-    return r();
-}
 
 
 // Сервак не успевает запускаться, но к этому моменту мы уже пытаемся дернуть этот метод, поэтому нужен ретрай
