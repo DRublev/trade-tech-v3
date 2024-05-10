@@ -10,6 +10,11 @@
     display: block;
 }
 
+.scrollContainer {
+    max-height: 500px;
+    height: auto;
+}
+
 .shareItem {
     padding: var(--space-1) var(--space-2);
 }

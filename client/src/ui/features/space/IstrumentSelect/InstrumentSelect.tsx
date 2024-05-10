@@ -126,11 +126,12 @@ export const InstrumentSelect = () => {
             </TextField.Root>
             <Card data-focused={searchInputFocused && "on"} className={s.container}>
                 <ScrollArea
-                    type="always"
+                    type="auto"
                     scrollbars="vertical"
-                    style={{ height: "500px" }}
+                    className={s.scrollContainer}
                 >
                     <Box p="2">
+                        {!instruments.length && <Text>Не нашлось инструментов по вашему запросу</Text>}
                         {instruments.map((share) => (
                             <ShareLine
                                 key={share.uid}
