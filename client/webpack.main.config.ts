@@ -17,4 +17,9 @@ export const mainConfig: Configuration = {
   resolve: {
     extensions: ['.js', '.ts', '.jsx', '.tsx', '.css', '.json'],
   },
+  devServer: {
+    open: false,
+    hot: false,
+    liveReload: false,
+  },
 };

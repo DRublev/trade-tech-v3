@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import * as Toolbar from '@radix-ui/react-toolbar';
 import { Flex, Spinner } from "@radix-ui/themes";
-import { ListBulletIcon, MixerHorizontalIcon, PersonIcon, PlayIcon, StopIcon } from '@radix-ui/react-icons';
+import { MixerHorizontalIcon, PersonIcon, PlayIcon, StopIcon } from '@radix-ui/react-icons';
 import style from '../../../basicStyles.css';
-import { SharesPop } from '../SharesPopup/SharesPopUp';
 import { useIpcInvoke, useLogger } from '../../../hooks';
 import { useCurrentInstrument } from '../../../utils/useCurrentInstrumentId';
 import { useNavigate } from 'react-router-dom';
@@ -96,13 +95,6 @@ export const ControlsPanel = () => {
         <Toolbar.Root>
             <Toolbar.ToggleGroup type="single">
                 <Flex align="center" justify="center" gap="2" p="3">
-                    <SharesPop
-                        trigger={
-                            <Toolbar.Button asChild {...toolBarButtonProps}>
-                                <ListBulletIcon color='white' />
-                            </Toolbar.Button>
-                        }
-                    />
                     <Toolbar.Button value="start" asChild onClick={handleTradeToggle} {...toolBarButtonProps}>
                         <StartIconComponent className={isStarted ? s.stopIcon : s.startIcon} />
                     </Toolbar.Button>

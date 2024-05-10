@@ -35,6 +35,7 @@ export const ConfigForm: FC<Props> = ({ scheme, defaultValues = {}, onSubmit }: 
                                     min={f.min}
                                     max={f.max}
                                     step={f.step}
+                                    radius="large"
                                     defaultValue={defaultValues[f.name]}
                                 />
                             </Form.Control>

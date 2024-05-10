@@ -140,7 +140,7 @@ export const useCandles = (onNewCandle: (d: OHLCData) => void, figiOrInstrumentI
 
 export const useSharesFromStore = () => {
     const dispatch = useAppDispatch();
-    const shares = useAppSelector(store => store.space.shares)
+    const shares = useAppSelector(store => store.space.shares);
     const [isLoading, setIsLoading] = useState(false);
 
     const load = useCallback(async () => {
@@ -161,7 +161,7 @@ export const useSharesFromStore = () => {
         load();
     }, [])
 
-    return { shares, isLoading }
+    return { shares, isLoading };
 };
 
 export const useTodaysSchedules = (): TradingSchedule[] => {
