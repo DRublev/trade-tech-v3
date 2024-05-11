@@ -111,7 +111,7 @@ func (ow *OrderWatcher) notify(state types.OrderExecutionState) {
 	l := log.WithFields(log.Fields{
 		"idempodentID": idempodentID,
 		"orderID":      state.ID,
-		"instrumentID": state.InstrumentID,
+		"instrument": state.InstrumentID,
 		"direction":    state.Direction,
 	})
 	if !ok {

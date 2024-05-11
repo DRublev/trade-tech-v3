@@ -58,7 +58,7 @@ func (sp *StrategyPool) IsStarted(key strategies.StrategyKey, instrumentID strin
 func (sp *StrategyPool) Start(key strategies.StrategyKey, instrumentID string) (bool, error) {
 	l := log.WithFields(log.Fields{
 		"method":       "Start",
-		"instrumentID": instrumentID,
+		"instrument": instrumentID,
 		"strategy":     key,
 	})
 
@@ -145,7 +145,7 @@ func (sp *StrategyPool) Start(key strategies.StrategyKey, instrumentID string) (
 func (sp *StrategyPool) Stop(key strategies.StrategyKey, instrumentID string) (bool, error) {
 	l := log.WithFields(log.Fields{
 		"method":       "Stop",
-		"instrumentID": instrumentID,
+		"instrument": instrumentID,
 		"strategy":     key,
 	})
 	l.Info("Stopping strategy")
@@ -178,7 +178,7 @@ func (sp *StrategyPool) Stop(key strategies.StrategyKey, instrumentID string) (b
 
 func (sp *StrategyPool) getConfig(key strategies.StrategyKey, instrumentID string) (*strategies.Config, error) {
 	l := log.WithFields(log.Fields{
-		"instrumentID": instrumentID,
+		"instrument": instrumentID,
 		"strategy":     key,
 	})
 

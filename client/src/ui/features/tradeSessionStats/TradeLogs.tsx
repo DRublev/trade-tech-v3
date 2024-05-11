@@ -24,7 +24,7 @@ export const TradeLogs: FC<Props> = () => {
     return (
         <Card>
             <Heading mb="1">Сделки</Heading>
-            <ScrollArea scrollbars="vertical" style={{ maxHeight: '15vh' }}>
+            <ScrollArea scrollbars="vertical" type="auto" style={{ maxHeight: '15vh' }}>
                 {logs.length === 0 && <Text>Пока нет совершенных сделок</Text>}
                 {logs.map((l) => (
                     <Flex gap="5" key={l.time} align="center" p="1">
