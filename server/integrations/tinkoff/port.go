@@ -242,7 +242,7 @@ func (c *TinkoffBrokerPort) GetShares(instrumentStatus types.InstrumentStatus) (
 
 func (c *TinkoffBrokerPort) SubscribeOrderbook(ctx context.Context, orderbookCh *chan *types.Orderbook, instrumentID string, depth int32) error {
 	sdkL.WithFields(log.Fields{
-		"instrumentID": instrumentID,
+		"instrument": instrumentID,
 		"depth":        depth,
 	}).Infof("Subscribe for orderbook")
 
@@ -257,6 +257,7 @@ func (c *TinkoffBrokerPort) SubscribeOrderbook(ctx context.Context, orderbookCh 
 	streamService := sdk.NewMarketDataStreamClient()
 
 	sdkL.Trace("Creating new marketdata stream")
+
 	orderbookStream, err := streamService.MarketDataStream()
 	if err != nil {
 		sdkL.Errorf("Failed creating marketdata stream: %v", err)
@@ -370,7 +371,7 @@ var cachedInstruments = make(map[string]*investapi.Instrument)
 
 func (c *TinkoffBrokerPort) PlaceOrder(order *types.PlaceOrder) (types.OrderID, error) {
 	sdkL.WithFields(log.Fields{
-		"instrumentID": order.InstrumentID,
+		"instrument": order.InstrumentID,
 		"direction":    order.Direction,
 	}).Infof("Placing order")
 
