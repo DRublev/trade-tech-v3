@@ -60,7 +60,7 @@ export const useTradeLogs = () => {
         if (calcedLogs[orderState.id]) return;
         calcedLogs[orderState.id] = true;
         
-        setLogs([...logs, orderState]);
+        setLogs((l) => [...l, orderState]);
     };
     useOrders(handleOrderStateChange, instrument);
 
