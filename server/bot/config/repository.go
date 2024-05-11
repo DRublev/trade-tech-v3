@@ -70,12 +70,6 @@ func New() *ConfigRepository {
 			json.Unmarshal(config, &storage)
 			instance.storage = storage
 		}
-
-		debugConfig := getDebugConfig()
-		if debugConfig != nil {
-			instance.storage[fmt.Sprintf("spread_v0_%v", (*debugConfig)["InstrumentID"])] = *debugConfig
-		}
-
 	}
 	return instance
 }

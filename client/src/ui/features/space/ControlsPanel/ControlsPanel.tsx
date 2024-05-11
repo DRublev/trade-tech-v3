@@ -55,6 +55,7 @@ const useTradeToggle = (instrumentId: string, logger: ReturnType<typeof useLogge
     };
 
     useEffect(() => {
+        if (!instrumentId) return;
         isStartedReq({ instrumentId })
             .then(res => setIsStarted(res.Ok));
     }, []);
