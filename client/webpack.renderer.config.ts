@@ -27,5 +27,10 @@ export const rendererConfig: Configuration = {
       fs: false,
       path: require.resolve("path-browserify")
     }
+  },
+  devServer: {
+    liveReload: false,
+    open: false,
+    hot: false,
   }
 };

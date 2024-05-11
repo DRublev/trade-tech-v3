@@ -9,6 +9,7 @@ const CopyPlugin = require("copy-webpack-plugin");
 export const plugins = [
   new ForkTsCheckerWebpackPlugin({
     logger: 'webpack-infrastructure',
+    devServer: false,
   }),
   new CopyPlugin({
     patterns: [

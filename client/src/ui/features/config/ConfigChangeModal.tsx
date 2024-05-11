@@ -8,6 +8,8 @@ import { useCurrentInstrument } from '../../utils/useCurrentInstrumentId';
 import s from './ConfigChangeModal.css';
 import { useLogger } from '../../../ui/hooks';
 import { mergeObjects } from './mergeObjects';
+import { InstrumentSelect } from '../space/IstrumentSelect/InstrumentSelect';
+import { Box, Text } from '@radix-ui/themes';
 
 type Props = {
     trigger: React.ReactNode;
@@ -38,6 +40,10 @@ export const ConfigChangeModal: FC<Props> = ({ trigger }: Props) => {
         <Modal title="Настройки стратегии" close={shouldClose} trigger={trigger} actions={[]}>
             <ScrollArea.Root className={s.scrollContainer}>
                 <ScrollArea.Viewport>
+                    <Box mb="4">
+                        <Text mb="2">Инструмент для торговли</Text>
+                        <InstrumentSelect />
+                    </Box>
                     <ConfigForm scheme={scheme} defaultValues={defaultValues} onSubmit={onSubmit} />
                 </ScrollArea.Viewport>
             </ScrollArea.Root>

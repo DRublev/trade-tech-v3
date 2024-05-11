@@ -1,0 +1,28 @@
+.container {
+    max-height: 500px;
+    width: 552px;
+    position: fixed;
+    height: 0;
+    display: none;
+}
+.container[data-focused="on"] {
+    height: auto;
+    display: block;
+}
+
+.scrollContainer {
+    max-height: 500px;
+    height: auto;
+}
+
+.shareItem {
+    padding: var(--space-1) var(--space-2);
+}
+.shareItem:hover {
+    cursor: pointer;
+    color: var(--accent-7);
+}
+.shareItem[data-state="on"] {
+    color: var(--accent-9);
+    background-color: var(--accent-2);
+}

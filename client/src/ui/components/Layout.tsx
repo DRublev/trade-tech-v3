@@ -14,7 +14,7 @@ export const Layout: FC<Props> = ({ children }) => {
     useResizeBasedOnContent();
 
     return <>
-        <Theme appearance='dark'>
+        <Theme appearance='dark' radius="large">
             <ToastRdx.Provider>
                 <OfflineBanner />
                 <Container flexShrink="1" flexGrow="1">
