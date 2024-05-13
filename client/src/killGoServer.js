@@ -11,7 +11,6 @@ module.exports = function (port, protocol = 'tcp') {
 
     if (process.platform === 'win32') {
         return exec('netstat -nao', (_, stdout) => {
-            console.log('14 killGoServer', stdout);
             if (!stdout) return null
 
             const lines = stdout.split('\n')

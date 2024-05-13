@@ -37,7 +37,7 @@ export const useOrders = (callback: OnOrderCallback | OnOrderCallback[], figiOrI
         if (!order) return;
 
         if (Array.isArray(callback)) {
-            for (const cb of callback) {                
+            for (const cb of callback) {
                 cb(order);
             }
         } else {
@@ -54,6 +54,8 @@ export const useOrders = (callback: OnOrderCallback | OnOrderCallback[], figiOrI
     }, [handleNewOrder]);
 
     useEffect(() => {
+        if (!figiOrInstrumentId) return;
+
         subscribeOrders();
 
         return unsubscribe;
@@ -84,6 +86,7 @@ export const useCandles = (onNewCandle: (d: OHLCData) => void, figiOrInstrumentI
         try {
             logger.info('Getting candles', { instrument: figiOrInstrumentId });
             setIsLoading(true);
+            setInitialData([]);
 
             const candles = await getCandles({
                 instrumentId: figiOrInstrumentId,
@@ -120,6 +123,8 @@ export const useCandles = (onNewCandle: (d: OHLCData) => void, figiOrInstrumentI
     }, [handleNewCandle]);
 
     useEffect(() => {
+        if (!figiOrInstrumentId) return;
+
         getInitialCandels();
         subscribeCandles();
 
@@ -129,7 +134,7 @@ export const useCandles = (onNewCandle: (d: OHLCData) => void, figiOrInstrumentI
     }, [figiOrInstrumentId]);
 
     useEffect(() => {
-        if (prevInstrument.current !== instrumentId) {
+        if (prevInstrument.current && prevInstrument.current !== instrumentId) {
             unsubscribe({ instrumentId: prevInstrument.current });
             prevInstrument.current = instrumentId;
         }

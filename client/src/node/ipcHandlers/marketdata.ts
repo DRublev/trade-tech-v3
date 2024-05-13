@@ -98,7 +98,6 @@ ipcMain.handle(ipcEvents.SUBSCRIBE_ORDER, async (e, req) => {
 
     const [win] = BrowserWindow.getAllWindows();
     const res = await new Promise((resolve, reject) => {
-
         const s = marketdataService.subscribeOrders({})
         s.on('data', async (order: OrderState) => {
             log.info("New order " + JSON.stringify(order))

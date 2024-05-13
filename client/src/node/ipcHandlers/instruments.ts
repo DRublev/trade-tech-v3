@@ -72,3 +72,21 @@ export async function getTradingSchedules(req: GetTradingSchedulesRequest): Prom
 
     return res;
 }
+
+ipcMain.handle(ipcEvents.SET_CURRENT_INSTRUMENT, async (e, req) => {
+    const { instrumentId } = req;
+
+    if (!instrumentId) return Promise.reject('instrumentId обязательный параметр');
+
+    await storage.save('currentInstrument', instrumentId);
+
+    return Promise.resolve();
+});
+
+ipcMain.handle(ipcEvents.GET_CURRENT_INSTRUMENT, async () => {
+    const stored = await storage.get('currentInstrument');
+
+    if (!stored) return Promise.reject('Нет сохраненного инструмента');
+
+    return Promise.resolve(stored);
+})
