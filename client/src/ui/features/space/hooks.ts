@@ -5,7 +5,6 @@ import { setShares } from './spaceSlice';
 import { GetTradingSchedulesRequest, GetTradingSchedulesResponse, TradingSchedule } from "../../../node/grpc/contracts/shares";
 import { useIpcInvoke, useIpcListen, useLogger } from "../../hooks";
 import { OHLCData, OrderState } from "../../../types";
-import { useCurrentInstrument } from '../../utils/useCurrentInstrumentId';
 
 type GetCandlesResponse = OHLCData[];
 
@@ -71,8 +70,7 @@ export const useCandles = (onNewCandle: (d: OHLCData) => void, figiOrInstrumentI
 
     const [registerCandleCb, unregisterCandleCb] = useListenCandles();
 
-    const [instrumentId] = useCurrentInstrument();
-    const prevInstrument = useRef(instrumentId);
+    const prevInstrument = useRef(figiOrInstrumentId);
     const [initialData, setInitialData] = useState<OHLCData[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -116,7 +114,7 @@ export const useCandles = (onNewCandle: (d: OHLCData) => void, figiOrInstrumentI
         if (!candle || !candle.time) return;
 
         onNewCandle(candle);
-    }, []);
+    }, [figiOrInstrumentId]);
 
     useEffect(() => {
         registerCandleCb(handleNewCandle);
@@ -128,17 +126,17 @@ export const useCandles = (onNewCandle: (d: OHLCData) => void, figiOrInstrumentI
         getInitialCandels();
         subscribeCandles();
 
-        return () => {
+        return () => {            
             unregisterCandleCb(handleNewCandle);
         }
     }, [figiOrInstrumentId]);
 
     useEffect(() => {
-        if (prevInstrument.current && prevInstrument.current !== instrumentId) {
-            unsubscribe({ instrumentId: prevInstrument.current });
-            prevInstrument.current = instrumentId;
+        if (prevInstrument.current !== figiOrInstrumentId) {
+            prevInstrument.current && unsubscribe({ instrumentId: prevInstrument.current });
+            prevInstrument.current = figiOrInstrumentId;
         }
-    }, [instrumentId]);
+    }, [figiOrInstrumentId]);
 
     return { initialData, isLoading, error };
 }
