@@ -10,12 +10,14 @@ type StrategyKey string
 // Коллекция доступных стратегий
 const (
 	Spread StrategyKey = "spread_v0"
+	Macd StrategyKey = "macd"
 )
 
 // IsValid Валидность идентификатора стратегии
 func (s StrategyKey) IsValid() bool {
 	switch s {
 	case Spread:
+	case Macd:
 		return true
 	}
 	return false

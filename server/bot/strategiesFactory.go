@@ -5,6 +5,7 @@ import (
 	"errors"
 	"main/bot/broker"
 	"main/bot/strategies"
+	"main/bot/strategies/macd"
 	"main/bot/strategies/spread"
 	"main/types"
 	"os"
@@ -23,8 +24,10 @@ func Assemble(key strategies.StrategyKey, config *strategies.Config) (strategies
 	switch key {
 	case strategies.Spread:
 		return spread.New(), nil
+	case strategies.Macd:
+		return macd.New(), nil
 	}
 
 	// TODO: Инициализировать стратегию в зависимости от ключа
-	return nil, errors.New("method not implemented")
+	return nil, errors.New("Strategy not implemented")
 }

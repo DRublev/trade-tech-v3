@@ -51,7 +51,7 @@ func (op *Provider) GetOrCreate(instrumentID string) (*chan *types.Orderbook, er
 	op.channels.RUnlock()
 
 	if !exists {
-		log.Tracef("No channel found for %v, creating a new one", instrumentID)
+		log.Tracef("No orderbook channel found for %v, creating a new one", instrumentID)
 		op.channels.Lock()
 		newCh := make(chan *types.Orderbook)
 		op.channels.value[instrumentID] = &newCh

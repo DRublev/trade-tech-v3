@@ -25,7 +25,7 @@ type Account struct {
 type IBroker interface {
 	GetAccounts() ([]Account, error)
 	SetAccount(string) error
-	GetCandles(string, Interval, time.Time, time.Time) ([]OHLC, error)
+	GetCandles(instrumentID string, interval Interval, start time.Time, end time.Time) ([]OHLC, error)
 	SubscribeCandles(context.Context, *chan OHLC, string, Interval) error
 	SubscribeOrderbook(context.Context, *chan *Orderbook, string, int32) error
 	GetShares(InstrumentStatus) ([]Share, error)
