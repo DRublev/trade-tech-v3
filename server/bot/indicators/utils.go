@@ -14,6 +14,10 @@ func roundFloat(val float64, precision uint) float64 {
 func detectPrecision(val float64) uint {
 	var precision uint = 2
 
+	if val == math.Trunc(val) {
+		return 0
+	}
+
 	strFloat := strconv.FormatFloat(val, 'f', -1, 64)
 	posDecimal := strings.Index(strFloat, ".")
 	if len(strFloat[posDecimal+1:]) > int(precision) {

@@ -17,7 +17,7 @@ type Props = {
 
 export const ConfigChangeModal: FC<Props> = ({ trigger }: Props) => {
     // TODO: Брать ключ стратегии из какого-то провайдера
-    const strategy = "macd"; // "spread_v0";
+    const strategy = "spread_v0";
     const [instrumentId] = useCurrentInstrument();
     const { api, scheme, defaultValues, changeConfig } = useConfig(instrumentId, strategy);
     const [shouldClose, setShouldClose] = useState(undefined); // TODO: Костыль, надо подумать как сделать удобнее

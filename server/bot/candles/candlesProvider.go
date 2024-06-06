@@ -39,7 +39,7 @@ func NewProvider() *Provider {
 }
 
 // GetOrCreate Создать провайдер или взять готовый
-func (p *Provider) GetOrCreate(instrumentID string, initialFrom time.Time) (*chan types.OHLC, error) {
+func (p *Provider) GetOrCreate(instrumentID string, initialFrom time.Time, initialTo time.Time) (*chan types.OHLC, error) {
 	log.Infof("Getting candles channel for %v", instrumentID)
 
 	ch, exists := p.channels[instrumentID]
@@ -52,15 +52,17 @@ func (p *Provider) GetOrCreate(instrumentID string, initialFrom time.Time) (*cha
 	}
 
 	backCtx, _ := signal.NotifyContext(context.Background(), os.Interrupt)
-	log.Tracef("Getting candles from %v to %v", initialFrom, time.Now())
-	initialCandles, err := broker.Broker.GetCandles(instrumentID, 1, initialFrom, time.Now())
+	log.Tracef("Getting candles from %v to %v", initialFrom, initialTo)
+	initialCandles, err := broker.Broker.GetCandles(instrumentID, 1, initialFrom, initialTo)
 	if err != nil {
 		log.Errorf("Error getting candles %v", err)
 	} else {
 		log.Tracef("Sending initial candles from %v for %v", initialFrom, instrumentID)
-		for _, candle := range initialCandles {
-			*ch <- candle
-		}
+		go func() {
+			for _, candle := range initialCandles {
+				*ch <- candle
+			}
+		}()
 	}
 
 	go broker.Broker.SubscribeCandles(backCtx, ch, instrumentID, 1)

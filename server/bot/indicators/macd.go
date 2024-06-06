@@ -47,8 +47,7 @@ func (i *MacdIndicator) Latest() (MacdResult, error) {
 
 // Get Получить все значения
 func (i *MacdIndicator) Get() []MacdResult {
-	// TODO: Допилить
-	return []MacdResult{}
+	return i.values
 }
 
 // Update Уточнить значение. Юзать при поступлени новых данных

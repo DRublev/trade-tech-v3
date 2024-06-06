@@ -146,7 +146,7 @@ func (s *MacdStrategy) Start(
 	candlesProvider := candles.NewProvider()
 	now := time.Now()
 
-	ch, err := candlesProvider.GetOrCreate(s.config.InstrumentID, now.Add(time.Duration(time.Minute) * 5 * 21))
+	ch, err := candlesProvider.GetOrCreate(s.config.InstrumentID, now.Add(-time.Duration(time.Minute)*5*21), now)
 	if err != nil {
 		l.Errorf("Failed to get candles channel: %v", err)
 		return false, err
@@ -206,19 +206,23 @@ func (s *MacdStrategy) onCandle(c types.OHLC) {
 
 	close := c.Close.Float()
 	s.macd.Update([]float64{close})
-	latestMacd, err := s.macd.Latest()
-	if err != nil {
-		l.Warnf("Cannot get latest MACD value: %v", err)
+	allMacd := s.macd.Get()
+
+	if len(allMacd) < 2 {
+		l.Infof("Not enough data for macd")
 		return
 	}
 
 	state := s.state.Get()
-	floatMacd, _ := latestMacd.Value.Float64()
-	floatSignal, _ := latestMacd.Signal.Float64()
-	l.Tracef("Updating signal with new values: signal %v; macd: %v", floatSignal, floatMacd)
 
-	state.latestMacd = []float64{state.latestMacd[len(state.latestMacd)-1], floatMacd}
-	state.latestSignals = []float64{state.latestSignals[len(state.latestSignals)-1], floatSignal}
+	latestMacd := allMacd[len(allMacd)-1]
+	prevLatestMacd := allMacd[len(allMacd)-2]
+
+	l.Tracef("Updating signal with new values: signal %v; macd: %v", latestMacd.Signal, latestMacd.Value)
+
+	state.latestMacd = []float64{prevLatestMacd.Value, latestMacd.Value}
+	state.latestSignals = []float64{prevLatestMacd.Signal, latestMacd.Signal}
+	s.state.Set(*state)
 
 	wg.Add(1)
 	go s.buy(wg)

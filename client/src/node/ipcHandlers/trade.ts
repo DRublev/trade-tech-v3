@@ -11,7 +11,7 @@ ipcMain.handle(ipcEvents.START_TRADE, async (e, req) => {
     const response = await tradeService.start({
         InstrumentId: instrumentId,
         // TODO: Сделать эндпоинт, который бы отдавал с бека список стратегий с некоторой инфой, а на фронте его показывать как опции
-        Strategy: 'macd' //'spread_v0'
+        Strategy: 'spread_v0'
     });
 
     return response
