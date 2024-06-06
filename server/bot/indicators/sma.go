@@ -2,7 +2,6 @@ package indicators
 
 import (
 	"errors"
-	"fmt"
 )
 
 // SmaIndicator Простая скользящая средняя
@@ -60,8 +59,9 @@ func (i *SmaIndicator) Update(p []float64) {
 			i.prevPrices = source
 			return
 		}
-		fmt.Printf("60 sma %v %v\n", startIdx, prices)
+
 		roundPrecision := detectPrecision(prices[0])
+
 		var value float64 = 0
 		for k := startIdx; k < len(prices); k++ {
 			value += prices[k]
@@ -71,6 +71,7 @@ func (i *SmaIndicator) Update(p []float64) {
 
 		i.values = append(i.values, value)
 		i.prevPrices = append(i.prevPrices, prices...)
+
 		return
 	}
 
@@ -85,7 +86,6 @@ func (i *SmaIndicator) Update(p []float64) {
 		source = append(i.prevPrices[i.period-len(prices)-1:len(prices)-1], prices...)
 		startIdx = 0
 	}
-	fmt.Printf("86 sma %v %v\n", startIdx, prices)
 
 	roundPrecision := detectPrecision(prices[0])
 	var value float64 = 0

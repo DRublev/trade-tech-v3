@@ -53,7 +53,6 @@ func (i *EmaIndicator) Get() []float64 {
 }
 
 // Update Уточнить значение. Юзать при поступлени новых данных
-// EMA = (price(t) * k) + (EMA(t - 1) * (1 – k))
 func (i *EmaIndicator) Update(prices []float64) {
 	i.prevPrices = append(i.prevPrices, prices...)
 
@@ -62,14 +61,11 @@ func (i *EmaIndicator) Update(prices []float64) {
 		i.latestCalcedPriceIdx = 0
 	}
 
-	// Недостаточно данных для подсчета за период
-	// if len(i.prevPrices) < i.latestCalcedPriceIdx+i.period {
-	// 	return
-	// }
-
 	j := i.latestCalcedPriceIdx + 1
 	for j < len(i.prevPrices) {
+		// EMA = (price(t) * k) + (EMA(t - 1) * (1 – k))
 		ema := i.prevPrices[j]*i.k + i.values[j-1]*(1-i.k)
+
 		i.values = append(i.values, ema)
 		j++
 	}

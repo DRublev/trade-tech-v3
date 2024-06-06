@@ -28,12 +28,10 @@ func NewProvider() *Provider {
 		return instance
 	}
 
-	// once.Do(func() {
 	log.Infof("Creating candles provider")
 
 	instance := &Provider{}
 	instance.channels = make(map[string]*chan types.OHLC)
-	// })
 
 	return instance
 }

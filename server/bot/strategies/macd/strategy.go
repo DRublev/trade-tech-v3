@@ -208,6 +208,7 @@ func (s *MacdStrategy) onCandle(c types.OHLC) {
 	s.macd.Update([]float64{close})
 	allMacd := s.macd.Get()
 
+
 	if len(allMacd) < 2 {
 		l.Infof("Not enough data for macd")
 		return
