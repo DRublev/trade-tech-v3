@@ -93,7 +93,7 @@ export const useConfig: UseConfigHook = (instrumentId: string, strategy: string)
 
     useEffect(() => {
         fetchInitialValues();
-    }, [instrumentId]);
+    }, [instrumentId, strategy]);
 
     return { api, scheme, defaultValues, changeConfig };
 }
