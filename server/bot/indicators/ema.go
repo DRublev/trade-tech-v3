@@ -2,61 +2,76 @@ package indicators
 
 import (
 	"errors"
-
-	"github.com/shopspring/decimal"
 )
 
 // EmaIndicator Экспоненциальная скользящая средняя
 type EmaIndicator struct {
-	Indicator[decimal.Decimal, []float64]
-	period     int
+	Indicator[float64, []float64]
+	// Период, за который будем считать среднюю. Условно диапазон массива с конца
+	period int
+
+	// Коэффицент усреднения
+	k float64
+
+	// Уже обработанные цены
 	prevPrices []float64
-	values     []decimal.Decimal
-	sma        SmaIndicator
+
+	// Индекс последней обработанной цены
+	// Нужен чтобы не вводить чанки
+	latestCalcedPriceIdx int
+
+	// Значния индикаторы
+	values []float64
+
+	sma SmaIndicator
 }
 
 // NewEma Конструктор
 func NewEma(period int) *EmaIndicator {
 	inst := &EmaIndicator{}
 	inst.period = period
+	inst.k = 2 / float64(1+period)
+	inst.latestCalcedPriceIdx = -1 // Невалидный индекс, чтобы сетить его в коде в нужный момент
 	inst.prevPrices = []float64{}
-	inst.values = []decimal.Decimal{}
+	inst.values = []float64{}
 	inst.sma = *NewSma(period)
 	return inst
 }
 
 // Latest Получить последнее значение
-func (i *EmaIndicator) Latest() (decimal.Decimal, error) {
+func (i *EmaIndicator) Latest() (float64, error) {
 	if len(i.values) == 0 {
-		return decimal.NewFromInt(0), errors.New("No latest value")
+		return 0, errors.New("No latest value")
 	}
 
 	return i.values[len(i.values)-1], nil
 }
 
 // Get Получить все значения
-func (i *EmaIndicator) Get() []decimal.Decimal {
+func (i *EmaIndicator) Get() []float64 {
 	return i.values
 }
 
 // Update Уточнить значение. Юзать при поступлени новых данных
+// EMA = (price(t) * k) + (EMA(t - 1) * (1 – k))
 func (i *EmaIndicator) Update(prices []float64) {
-	i.sma.Update(prices)
-	roundPrecision := detectPrecision(prices[0])
+	i.prevPrices = append(i.prevPrices, prices...)
 
-	prevEma, err := i.sma.Latest()
-	if err != nil {
-		return
+	if i.latestCalcedPriceIdx != 0 {
+		i.values = append(i.values, i.prevPrices[0])
+		i.latestCalcedPriceIdx = 0
 	}
 
-	i.values = append(i.values, prevEma)
+	// Недостаточно данных для подсчета за период
+	// if len(i.prevPrices) < i.latestCalcedPriceIdx+i.period {
+	// 	return
+	// }
 
-	k := 2 / float64(1+i.period)
-	for _, p := range prices[i.period:] {
-		prevEma = i.values[len(i.values)-1]
-		floatEma, _ := prevEma.Float64()
-		ema := (p * k) + (floatEma * (1 - k))
-		i.values = append(i.values, decimal.NewFromFloat(roundFloat(ema, roundPrecision)))
+	j := i.latestCalcedPriceIdx + 1
+	for j < len(i.prevPrices) {
+		ema := i.prevPrices[j]*i.k + i.values[j-1]*(1-i.k)
+		i.values = append(i.values, ema)
+		j++
 	}
-
+	i.latestCalcedPriceIdx = j
 }
