@@ -57,7 +57,7 @@ func (c *TinkoffBrokerPort) SetAccount(accountId string) error {
 }
 
 func (c *TinkoffBrokerPort) GetCandles(instrumentID string, interval types.Interval, start time.Time, end time.Time) ([]types.OHLC, error) {
-	sdkL.Infof("Getting candles for %v", instrumentID)
+	sdkL.Infof("Getting candles for %v %v %v", instrumentID, start, end)
 	sdk, err := c.GetSdk()
 	if err != nil {
 		sdkL.Errorf("Cannot init sdk: %v", err)

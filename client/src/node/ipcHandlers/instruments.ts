@@ -42,11 +42,10 @@ export async function getShares(req: GetInstrumentsRequest): Promise<GetSharesRe
                 log.error("Error getting shares", error);
                 return reject(error);
             }
-            storage.remove('shares');
-            resolve(response);
+            storage.remove('shares').then(() => resolve(response));
         });
     });
-    storage.save('shares', res.instruments);
+    await storage.save('shares', res.instruments);
     return res;
 }
 
