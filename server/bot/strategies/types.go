@@ -17,6 +17,7 @@ const (
 func (s StrategyKey) IsValid() bool {
 	switch s {
 	case Spread:
+		return true
 	case Macd:
 		return true
 	}
