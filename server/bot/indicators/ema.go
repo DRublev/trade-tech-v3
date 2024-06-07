@@ -6,7 +6,7 @@ import (
 
 // EmaIndicator Экспоненциальная скользящая средняя
 type EmaIndicator struct {
-	Indicator[float64, []float64]
+	Indicator[float64, float64]
 	// Период, за который будем считать среднюю. Условно диапазон массива с конца
 	period int
 
@@ -53,21 +53,33 @@ func (i *EmaIndicator) Get() []float64 {
 }
 
 // Update Уточнить значение. Юзать при поступлени новых данных
-func (i *EmaIndicator) Update(prices []float64) {
-	i.prevPrices = append(i.prevPrices, prices...)
-
-	if i.latestCalcedPriceIdx != 0 {
-		i.values = append(i.values, i.prevPrices[0])
-		i.latestCalcedPriceIdx = 0
+func (i *EmaIndicator) Update(price float64) {
+	i.prevPrices = append(i.prevPrices, price)
+	i.sma.Update(price)
+	// Количество данных должно быть минимум х2 от периода рассчета
+	if len(i.prevPrices) < 2*i.period {
+		return
 	}
 
-	j := i.latestCalcedPriceIdx + 1
-	for j < len(i.prevPrices) {
-		// EMA = (price(t) * k) + (EMA(t - 1) * (1 – k))
-		ema := i.prevPrices[j]*i.k + i.values[j-1]*(1-i.k)
+	var emas []float64
 
-		i.values = append(i.values, ema)
-		j++
+	roundPrecision := detectPrecision(price)
+
+	// first ema value = sma value
+	allSma := i.sma.Get()
+	if len(allSma) < i.period {
+		return
 	}
-	i.latestCalcedPriceIdx = j
+	sma := allSma[:i.period]
+	previousEma := sma[0]
+
+	emas = append(emas, roundFloat(previousEma, roundPrecision))
+
+	for _, p := range i.prevPrices[i.period:] {
+		previousEma = emas[len(emas)-1]
+		ema := (p * i.k) + (previousEma * (1 - i.k))
+		emas = append(emas, roundFloat(ema, roundPrecision))
+	}
+
+	i.values = emas
 }

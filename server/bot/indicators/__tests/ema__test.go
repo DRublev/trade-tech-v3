@@ -5,32 +5,22 @@ import (
 	"testing"
 )
 
-// Тестируем рассчет EMA сразу со всеми данными и имитируем поступление данных
+// Тестируем рассчет EMA сразу со всеми данными
 func TestEma(t *testing.T) {
-	testPrices := []float64{
-		100, 110, 105, 115, 120, 130, 140, 150, 145, 155,
+	// VKCO 1M 07 Jun 2024 19:12 - 19:34
+	testPrices := []float64{568, 567.6, 567.2, 567.6, 567.4, 566.6, 567.2, 566.4, 566.8, 566.6, 566.2, 566.2, 564.6, 565, 565.4, 565, 565.2, 564.8, 565.6, 566.2, 566.6}
+	expectedEma := 565.82
+	ind := indicators.NewEma(9)
+
+	for i := 0; i < len(testPrices); i++ {
+		ind.Update(testPrices[i])
 	}
-	expectedEma := float64(128.7459360425953)
-	emaOnce := indicators.NewEma(12)
-	emaTwice := indicators.NewEma(12)
 
-	emaOnce.Update(testPrices)
-
-	emaTwice.Update(testPrices[:7])
-	emaTwice.Update(testPrices[7:])
-
-	valueOnce, err := emaOnce.Latest()
-	valueTwice, err := emaOnce.Latest()
-
+	value, err := ind.Latest()
 	if err != nil {
 		t.Fatalf("Faced error %v", err)
 	}
-
-	if valueOnce != expectedEma {
-		t.Fatalf("Wrong value %v", valueOnce)
-	}
-
-	if valueOnce != valueTwice {
-		t.Fatalf("Vflues not equal %v != %v", valueOnce, valueTwice)
+	if value != expectedEma {
+		t.Fatalf("Wrong value %v", value)
 	}
 }

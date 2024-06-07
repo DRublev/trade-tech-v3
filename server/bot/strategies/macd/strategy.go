@@ -205,9 +205,8 @@ func (s *MacdStrategy) onCandle(c types.OHLC) {
 	wg := &sync.WaitGroup{}
 
 	close := c.Close.Float()
-	s.macd.Update([]float64{close})
-	allMacd := s.macd.Get()
-
+	s.macd.Update(close)
+	allMacd, allSignals := s.macd.Get()
 
 	if len(allMacd) < 2 {
 		l.Infof("Not enough data for macd")
@@ -219,10 +218,13 @@ func (s *MacdStrategy) onCandle(c types.OHLC) {
 	latestMacd := allMacd[len(allMacd)-1]
 	prevLatestMacd := allMacd[len(allMacd)-2]
 
-	l.Tracef("Updating signal with new values: signal %v; macd: %v", latestMacd.Signal, latestMacd.Value)
+	latestSignal := allSignals[len(allSignals)-1]
+	prevLatestSignal := allSignals[len(allSignals)-2]
 
-	state.latestMacd = []float64{prevLatestMacd.Value, latestMacd.Value}
-	state.latestSignals = []float64{prevLatestMacd.Signal, latestMacd.Signal}
+	l.Tracef("Updating signal with new values: signal %v; macd: %v", latestSignal, latestMacd)
+
+	state.latestMacd = []float64{prevLatestMacd, latestMacd}
+	state.latestSignals = []float64{prevLatestSignal, latestSignal}
 	s.state.Set(*state)
 
 	wg.Add(1)

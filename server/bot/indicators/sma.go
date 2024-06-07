@@ -8,7 +8,7 @@ import (
 // TODO: Допилить, не очень то и рабочая реализация
 // Обычное вычисление средней - сумма всех значений за период / количество значений
 type SmaIndicator struct {
-	Indicator[float64, []float64]
+	Indicator[float64, float64]
 	period     int
 	prevPrices []float64
 	values     []float64
@@ -37,66 +37,23 @@ func (i *SmaIndicator) Get() []float64 {
 }
 
 // Update Уточнить значение. Юзать при поступлени новых данных
-func (i *SmaIndicator) Update(p []float64) {
-	i.prevPrices = append(i.prevPrices, p...)
-	prices := i.prevPrices
-
+func (i *SmaIndicator) Update(price float64) {
+	i.prevPrices = append(i.prevPrices, price)
+	// Недостаточно данных для рассчета
 	if len(i.prevPrices) < i.period {
 		return
 	}
 
-	// Рассчитываем значение первый раз
-	if len(i.values) == 0 {
-		// Запоминаем цены, которые уже учитывали
-		// Для кейса, когда пытались инициализировать индикатор с недостатком данных, а потом пытаемся его обновить
-		source := prices
-		if len(source) < i.period {
-			source = append(i.prevPrices, source...)
-		}
-		startIdx := len(source) - i.period
-		// Данных недостаточно для рассчета, ниче не делаем
-		if startIdx < 0 {
-			i.prevPrices = source
-			return
+	roundPrecision := detectPrecision(price)
+
+	var sma []float64
+	for j := 0; j+i.period <= len(i.prevPrices); j++ {
+		var sum float64
+		for _, p := range i.prevPrices[j : j+i.period] {
+			sum += p
 		}
 
-		roundPrecision := detectPrecision(prices[0])
-
-		var value float64 = 0
-		for k := startIdx; k < len(prices); k++ {
-			value += prices[k]
-		}
-		value /= float64(i.period)
-		value = roundFloat(value/float64(i.period), roundPrecision)
-
-		i.values = append(i.values, value)
-		i.prevPrices = append(i.prevPrices, prices...)
-
-		return
+		sma = append(sma, roundFloat(sum/float64(i.period), roundPrecision))
 	}
-
-	// TODO: Так как мы знаем предыдущие цены и значения индикатора, можем применить алгоритм slidingWindow
-	// Но на маленьких периодах это не так страшно, поэтому пока не делаю
-
-	// Нужно обновить индикатор, с учетом новых значений
-	source := prices
-	startIdx := len(source) - i.period
-	if startIdx < 0 {
-		// Докидываем старые значения, чтобы было достаточно данных для рассчета
-		source = append(i.prevPrices[i.period-len(prices)-1:len(prices)-1], prices...)
-		startIdx = 0
-	}
-
-	roundPrecision := detectPrecision(prices[0])
-	var value float64 = 0
-	for k := len(source) - i.period; k < len(prices); k++ {
-		value += prices[k]
-	}
-
-	value /= float64(i.period)
-	value = roundFloat(value/float64(i.period), roundPrecision)
-
-	i.values = append(i.values, value)
-	i.prevPrices = append(i.prevPrices, prices...)
-	return
+	i.values = sma
 }
