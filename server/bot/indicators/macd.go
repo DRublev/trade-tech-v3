@@ -62,6 +62,11 @@ func (i *MacdIndicator) Update(price float64) {
 
 	roundPrecision := detectPrecision(ema12[0])
 
+	// Недостаточно данных
+	if len(ema12)-len(ema26) < 0 {
+		return
+	}
+
 	ema12 = ema12[len(ema12)-len(ema26):]
 
 	macd := make([]float64, 0)

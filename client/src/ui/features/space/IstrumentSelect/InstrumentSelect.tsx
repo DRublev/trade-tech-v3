@@ -104,15 +104,16 @@ export const InstrumentSelect = () => {
         setInstrumentSearch("");
     };
 
+
     return (
         <>
             <TextField.Root
                 placeholder="Выберите инструмент"
                 radius="large"
                 size="3"
-                onFocus={open}
+                onClick={open}
                 onChange={onSearchChange}
-                autoFocus={false}
+                autoFocus={true}
                 value={searchInputFocused ? search : currentInstrument?.ticker}
             >
                 <TextField.Slot>
