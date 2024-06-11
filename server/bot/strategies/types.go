@@ -9,8 +9,9 @@ type StrategyKey string
 
 // Коллекция доступных стратегий
 const (
-	Spread StrategyKey = "spread_v0"
-	Macd StrategyKey = "macd"
+	Spread   StrategyKey = "spread_v0"
+	Macd     StrategyKey = "macd"
+	RossHook StrategyKey = "ross_hook"
 )
 
 // IsValid Валидность идентификатора стратегии
@@ -20,13 +21,14 @@ func (s StrategyKey) IsValid() bool {
 		return true
 	case Macd:
 		return true
+	case RossHook:
+		return true
 	}
 	return false
 }
 
 // Config Общий конфиг для стратегии
-type Config map[string]any	
-
+type Config map[string]any
 
 // IStrategy Интерфейс стратегии
 type IStrategy interface {
