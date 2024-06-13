@@ -172,6 +172,23 @@ func (s *MacdStrategy) Start(
 		}
 	}(ch)
 
+	go func(source *chan *types.PlaceOrder, target *chan *types.PlaceOrder) {
+		l.Info("Start listening for new place order requests")
+		for {
+			select {
+			case <-s.stopCtx.Done():
+				l.Info("Strategy stopped")
+				return
+			case orderToPlace, ok := <-*source:
+				if !ok {
+					l.Warn("Place orders channel closed")
+					return
+				}
+				*target <- orderToPlace
+			}
+		}
+	}(&s.toPlaceOrders, ordersToPlaceCh)
+
 	l.Trace("Setting state to empty")
 	// Заполняем изначальное состояние
 	s.state = strategies.StrategyState[State]{}
@@ -206,27 +223,23 @@ func (s *MacdStrategy) onCandle(c types.OHLC) {
 	wg := &sync.WaitGroup{}
 
 	close := c.Close.Float()
+	// TODO: Добавить сюда время. Пересчитывать индикатор, если время в интервале не поменялось
 	s.macd.Update(close)
 	allMacd, allSignals := s.macd.Get()
-
-	if len(allMacd) < 2 {
+	minPeriod := 5
+	if len(allMacd) < minPeriod {
 		l.Infof("Not enough data for macd")
 		return
 	}
 
-	state := s.state.Get()
+	state := *s.state.Get()
 
-	latestMacd := allMacd[len(allMacd)-1]
-	prevLatestMacd := allMacd[len(allMacd)-2]
+	state.latestMacd = allMacd[len(allMacd)-minPeriod:]
+	state.latestSignals = allSignals[len(allSignals)-minPeriod:]
 
-	latestSignal := allSignals[len(allSignals)-1]
-	prevLatestSignal := allSignals[len(allSignals)-2]
+	l.Tracef("Updating signal with new values: signal %v; macd: %v", state.latestSignals, state.latestMacd)
 
-	l.Tracef("Updating signal with new values: signal %v; macd: %v", latestSignal, latestMacd)
-
-	state.latestMacd = []float64{prevLatestMacd, latestMacd}
-	state.latestSignals = []float64{prevLatestSignal, latestSignal}
-	s.state.Set(*state)
+	s.state.Set(state)
 
 	wg.Add(1)
 	go s.buy(wg, c)
@@ -246,19 +259,28 @@ func (s *MacdStrategy) buy(wg *sync.WaitGroup, c types.OHLC) {
 	}
 
 	state := *s.state.Get()
-	isNowOver := state.latestMacd[1] > state.latestSignals[1]
-	isPrevUnder := state.latestMacd[0] <= state.latestSignals[0]
+	lastIdx := len(state.latestMacd) - 1
+	isNowOver := state.latestMacd[lastIdx] >= state.latestSignals[lastIdx]
 
+	isPrevUnder := false
+	for i := len(state.latestMacd) - 1; i >= 0; i-- {
+		if state.latestMacd[i] < state.latestSignals[i] {
+			isPrevUnder = true
+			break
+		}
+	}
 	// Если дивергенция растет, то можно войти в позу
 	signalEntryPoint := isNowOver && isPrevUnder
 
 	if !signalEntryPoint {
 		l.Infof("Not a good entry: macd %v, signal %v", state.latestMacd, state.latestSignals)
+		return
 	}
-
+	l.Infof("Good entry for buy: %v macd, %v signal, %v close price", state.latestMacd, state.latestSignals, c.Close.Float())
 	leftBalance := state.leftBalance - state.notConfirmedBlockedMoney
 
 	canBuySharesAmount := int32(math.Abs(leftBalance / (c.Close.Float() * float64(s.config.LotSize))))
+	fmt.Printf("266 strategy lotSize %v; left balance %v; can buy %v \n", s.config.LotSize, leftBalance, canBuySharesAmount)
 	if canBuySharesAmount == 0 {
 		l.WithField("state", state).Trace("Can buy 0 shares")
 		return
@@ -280,8 +302,8 @@ func (s *MacdStrategy) buy(wg *sync.WaitGroup, c types.OHLC) {
 
 	order := &types.PlaceOrder{
 		InstrumentID: s.config.InstrumentID,
-		Quantity:     int64(state.holdingShares),
-		Direction:    types.Sell,
+		Quantity:     int64(canBuySharesAmount),
+		Direction:    types.Buy,
 		Price:        types.Price(c.Close.Float()),
 	}
 
@@ -315,10 +337,20 @@ func (s *MacdStrategy) sell(wg *sync.WaitGroup, c types.OHLC) {
 		return
 	}
 
-	isNowUnder := state.latestMacd[1] < state.latestSignals[1]
-	isPrevOver := state.latestMacd[0] >= state.latestSignals[0]
+	lastIdx := len(state.latestMacd) - 1
 
-	shouldSell := isNowUnder && isPrevOver
+	isNowUnder := state.latestMacd[lastIdx] <= state.latestSignals[lastIdx]
+	isPrevOver := false
+	for i := len(state.latestMacd); i >= 0; i-- {
+		if state.latestMacd[i] >= state.latestSignals[i] {
+			isPrevOver = true
+			break
+		}
+	}
+
+	hasStopLossBroken := state.lastBuyPrice-float64(s.config.StopLossAfter) >= c.Close.Float()
+
+	shouldSell := (isNowUnder && isPrevOver) || hasStopLossBroken
 
 	if !shouldSell {
 		l.Infof("Not a good exit: macd %v, signal %v", state.latestMacd, state.latestSignals)

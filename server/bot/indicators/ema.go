@@ -24,6 +24,8 @@ type EmaIndicator struct {
 	values []float64
 
 	sma SmaIndicator
+
+	precision uint
 }
 
 // NewEma Конструктор
@@ -60,11 +62,14 @@ func (i *EmaIndicator) Update(price float64) {
 	if len(i.prevPrices) < 2*i.period {
 		return
 	}
+	// i.prevPrices = i.prevPrices[len(i.prevPrices)-2*i.period:]
 
 	var emas []float64
 
 	roundPrecision := detectPrecision(price)
-
+	if roundPrecision > i.precision {
+		i.precision = roundPrecision
+	}
 	// first ema value = sma value
 	allSma := i.sma.Get()
 	if len(allSma) < i.period {
@@ -73,12 +78,12 @@ func (i *EmaIndicator) Update(price float64) {
 	sma := allSma[:i.period]
 	previousEma := sma[0]
 
-	emas = append(emas, roundFloat(previousEma, roundPrecision))
+	emas = append(emas, roundFloat(previousEma, i.precision))
 
 	for _, p := range i.prevPrices[i.period:] {
 		previousEma = emas[len(emas)-1]
 		ema := (p * i.k) + (previousEma * (1 - i.k))
-		emas = append(emas, roundFloat(ema, roundPrecision))
+		emas = append(emas, roundFloat(ema, i.precision))
 	}
 
 	i.values = emas

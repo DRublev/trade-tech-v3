@@ -12,6 +12,7 @@ type SmaIndicator struct {
 	period     int
 	prevPrices []float64
 	values     []float64
+	precision  uint
 }
 
 // NewSma Конструктор
@@ -45,6 +46,9 @@ func (i *SmaIndicator) Update(price float64) {
 	}
 
 	roundPrecision := detectPrecision(price)
+	if roundPrecision > i.precision {
+		i.precision = roundPrecision
+	}
 
 	var sma []float64
 	for j := 0; j+i.period <= len(i.prevPrices); j++ {
@@ -53,7 +57,7 @@ func (i *SmaIndicator) Update(price float64) {
 			sum += p
 		}
 
-		sma = append(sma, roundFloat(sum/float64(i.period), roundPrecision))
+		sma = append(sma, roundFloat(sum/float64(i.period), i.precision))
 	}
 	i.values = sma
 }
