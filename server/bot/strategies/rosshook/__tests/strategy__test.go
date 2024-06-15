@@ -20,7 +20,7 @@ func (p MockProvider) GetOrCreate(instrumentID string, initialFrom time.Time, in
 	return &candlesCh, nil
 }
 
-func TestTest(t *testing.T) {
+func TestBuyTakeProfit(t *testing.T) {
 	mockProvider := MockProvider{}
 
 	strategy := rosshook.New(mockProvider)
@@ -46,13 +46,16 @@ func TestTest(t *testing.T) {
 	select {
 	case placedOrder, ok := <-placedOrders:
 		if !ok {
-			t.Fatalf("NO placed order")
+			t.Fatalf("Не выставили заявку")
 		}
+		// TODO: Дописать проверку на корректность ордера
+		// TODO: Дописать проверку на наличие продажи
 		if placedOrder.Quantity != 1 {
-			t.Fatalf("Wrong placed order %v", placedOrder)
+			t.Fatalf("Ордер выставлен неверно %v", placedOrder)
 		}
 		break
-
 	}
-
 }
+
+// TODO: Написать тест на сценарий покупка-стоп лосс
+// TODO: Написать тест на сценарий, когда стратегия не должна отработать
