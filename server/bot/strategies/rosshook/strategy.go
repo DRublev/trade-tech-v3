@@ -70,7 +70,7 @@ type RossHookStrategy struct {
 	strategies.IStrategy
 	strategies.Strategy
 
-	provider *candles.Provider
+	provider candles.BaseCandlesProvider
 	config   Config
 	// Канал для стакана
 	obCh              *chan *types.Orderbook
@@ -88,7 +88,7 @@ type RossHookStrategy struct {
 
 var cancelSwitch context.CancelFunc
 
-func New(provider *candles.Provider) *RossHookStrategy {
+func New(provider candles.BaseCandlesProvider) *RossHookStrategy {
 	inst := &RossHookStrategy{}
 	inst.provider = provider
 	inst.toPlaceOrders = make(chan *types.PlaceOrder)
@@ -128,10 +128,9 @@ func (s *RossHookStrategy) Start(
 
 	// Создаем или получаем канал, в который будет постаупать инфа о стакане
 	l.Tracef("Getting candles channel")
-	candlesProvider := s.provider
 	now := time.Now()
 
-	ch, err := candlesProvider.GetOrCreate(s.config.InstrumentID, now, now)
+	ch, err := s.provider.GetOrCreate(s.config.InstrumentID, now, now)
 	if err != nil {
 		l.Errorf("Failed to get candles channel: %v", err)
 		return false, err
@@ -274,6 +273,9 @@ func (s *RossHookStrategy) watchSellSignal(c types.OHLC) {
 		}
 	}
 
+	if takeProfit == nil {
+		return
+	}
 	if takeProfit.High.Float() < c.High.Float() {
 		takeProfit = &c
 	} else if takeProfit.Close.Float()-float64(s.config.SaveProfit) >= c.Close.Float() {
@@ -288,10 +290,6 @@ func (s *RossHookStrategy) sell(c types.OHLC) {
 		l.Warnf("Not processed prev orderbook item for sell")
 		return
 	}
-
-	s.isSelling.value = true
-
-	// TODO: Выставить ордер на продажу
 
 	state := *s.state.Get()
 
@@ -338,8 +336,6 @@ func (s *RossHookStrategy) buy(c types.OHLC) {
 		l.Warnf("Not processed prev orderbook item for buy")
 		return
 	}
-
-	s.isBuying.value = true
 
 	// TODO: Выставить ордер на покупку
 
