@@ -3,10 +3,12 @@ package rosshook
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"main/bot/candles"
 	"main/bot/indicators"
 	"main/bot/strategies"
 	"main/types"
+	"math"
 	"sync"
 	"time"
 
@@ -16,45 +18,45 @@ import (
 type Config struct {
 	strategies.Config
 	// Доступный для торговли баланс
-	Balance float32
+	Balance float64
 
 	// Акция для торговли
 	InstrumentID string
 
-	MinProfit float32
+	MinProfit float64
 
 	// Каким количчеством акций торговать? Макс
-	MaxSharesToHold int32
+	MaxSharesToHold int64
 
 	// Лотность инструмента
-	LotSize int32
+	LotSize int64
 
 	// Если цена пошла ниже чем цена покупки - StopLossAfter, продать по лучшей цене
 	// Нужно чтобы  выходить из позиции, когда акция пошла вниз
-	StopLossAfter float32
+	StopLossAfter float64
 
-	SaveProfit float32
+	SaveProfit float64
 }
 
 type State struct {
 	// Оставшееся количество денег
-	leftBalance float32
+	leftBalance float64
 
 	// Сумма, которая должна списаться при выставлении ордера на покупку
 	// Инкрементим когда хотим выставить бай ордер
 	// Декрементим когда закрываем бай ордер
-	notConfirmedBlockedMoney float32
+	notConfirmedBlockedMoney float64
 
 	// Количество акций, купленных на данный момент
-	holdingShares int32
+	holdingShares int64
 
 	// Количество акций, на которое выставлены ордера на покупку
-	pendingBuyShares int32
+	pendingBuyShares int64
 
 	// Количество акций, на которое выставлены ордера на продажу
-	pendingSellShares int32
+	pendingSellShares int64
 
-	lastBuyPrice float32
+	lastBuyPrice float64
 
 	placedOrders []types.OrderExecutionState
 }
@@ -67,7 +69,9 @@ type isWorking struct {
 type RossHookStrategy struct {
 	strategies.IStrategy
 	strategies.Strategy
-	config Config
+
+	provider *candles.Provider
+	config   Config
 	// Канал для стакана
 	obCh              *chan *types.Orderbook
 	state             strategies.StrategyState[State]
@@ -84,8 +88,9 @@ type RossHookStrategy struct {
 
 var cancelSwitch context.CancelFunc
 
-func New() *RossHookStrategy {
+func New(provider *candles.Provider) *RossHookStrategy {
 	inst := &RossHookStrategy{}
+	inst.provider = provider
 	inst.toPlaceOrders = make(chan *types.PlaceOrder)
 	inst.stopCtx, cancelSwitch = context.WithCancel(context.Background())
 	return inst
@@ -123,7 +128,7 @@ func (s *RossHookStrategy) Start(
 
 	// Создаем или получаем канал, в который будет постаупать инфа о стакане
 	l.Tracef("Getting candles channel")
-	candlesProvider := candles.NewProvider()
+	candlesProvider := s.provider
 	now := time.Now()
 
 	ch, err := candlesProvider.GetOrCreate(s.config.InstrumentID, now, now)
@@ -146,7 +151,7 @@ func (s *RossHookStrategy) Start(
 					return
 				}
 
-				go s.onCandle(candle)
+				go s.OnCandle(candle)
 			}
 		}
 	}(ch)
@@ -168,6 +173,23 @@ func (s *RossHookStrategy) Start(
 
 		}
 	}(orderStateChangeCh)
+
+	go func(source *chan *types.PlaceOrder, target *chan *types.PlaceOrder) {
+		l.Info("Start listening for new place order requests")
+		for {
+			select {
+			case <-s.stopCtx.Done():
+				l.Info("Strategy stopped")
+				return
+			case orderToPlace, ok := <-*source:
+				if !ok {
+					l.Warn("Place orders channel closed")
+					return
+				}
+				*target <- orderToPlace
+			}
+		}
+	}(&s.toPlaceOrders, ordersToPlaceCh)
 
 	l.Trace("Setting state to empty")
 	// Заполняем изначальное состояние
@@ -208,7 +230,7 @@ var less *types.OHLC
 var buy float64
 var takeProfit *types.OHLC
 
-func (s *RossHookStrategy) onCandle(c types.OHLC) {
+func (s *RossHookStrategy) OnCandle(c types.OHLC) {
 	candlesHistory = append(candlesHistory, c)
 
 	if s.isBuying.value || s.isSelling.value {
@@ -254,9 +276,9 @@ func (s *RossHookStrategy) watchSellSignal(c types.OHLC) {
 
 	if takeProfit.High.Float() < c.High.Float() {
 		takeProfit = &c
-	} else if takeProfit.Close.Float() - float64(s.config.SaveProfit) >= c.Close.Float() {
+	} else if takeProfit.Close.Float()-float64(s.config.SaveProfit) >= c.Close.Float() {
 		go s.sell(c)
-	} 
+	}
 }
 
 func (s *RossHookStrategy) sell(c types.OHLC) {
@@ -271,6 +293,42 @@ func (s *RossHookStrategy) sell(c types.OHLC) {
 
 	// TODO: Выставить ордер на продажу
 
+	state := *s.state.Get()
+
+	if state.holdingShares-state.pendingSellShares == 0 {
+		l.WithField("state", state).Trace("Nothing to sell")
+		return
+	}
+
+	ok := s.isSelling.TryLock()
+	if !ok {
+		l.Warn("isSelling mutex cannot be locked")
+
+		return
+	}
+	defer s.isSelling.Unlock()
+
+	l.Trace("Set is selling")
+	s.isSelling.value = true
+
+	price := c.Close.Float()
+	order := &types.PlaceOrder{
+		InstrumentID: s.config.InstrumentID,
+		Quantity:     int64(state.holdingShares),
+		Direction:    types.Sell,
+		Price:        types.Price(price),
+	}
+	l.Infof("Order to place: %v", order)
+
+	l.Trace("Updating state")
+	state.pendingSellShares += state.holdingShares
+	s.state.Set(state)
+	l.WithField("state", s.state.Get()).Trace("State updated after place sell order")
+
+	s.isSelling.value = false
+	l.Trace("Is sell released")
+
+	s.toPlaceOrders <- order
 }
 
 func (s *RossHookStrategy) buy(c types.OHLC) {
@@ -284,6 +342,50 @@ func (s *RossHookStrategy) buy(c types.OHLC) {
 	s.isBuying.value = true
 
 	// TODO: Выставить ордер на покупку
+
+	state := s.state.Get()
+	leftBalance := state.leftBalance - state.notConfirmedBlockedMoney
+
+	canBuySharesAmount := math.Abs(leftBalance / (c.Close.Float() * float64(s.config.LotSize)))
+	fmt.Printf("266 strategy lotSize %v; left balance %v; can buy %v \n", s.config.LotSize, leftBalance, canBuySharesAmount)
+	if canBuySharesAmount == 0 {
+		l.WithField("state", state).Trace("Can buy 0 shares")
+		return
+	}
+
+	ok := s.isBuying.TryLock()
+	if !ok {
+		l.Warn("IsBuiyng mutex cannot be locked")
+		return
+	}
+	defer s.isBuying.Unlock()
+
+	l.Trace("Set is buiyng")
+	s.isBuying.value = true
+	if canBuySharesAmount > float64(s.config.MaxSharesToHold) {
+		l.Tracef("Can buy more shares, than config allows")
+		canBuySharesAmount = float64(s.config.MaxSharesToHold)
+	}
+
+	order := &types.PlaceOrder{
+		InstrumentID: s.config.InstrumentID,
+		Quantity:     int64(canBuySharesAmount),
+		Direction:    types.Buy,
+		Price:        types.Price(c.Close.Float()),
+	}
+
+	l.Infof("Order to place: %v", order)
+
+	state.pendingBuyShares += int64(canBuySharesAmount)
+	state.notConfirmedBlockedMoney += canBuySharesAmount * c.Close.Float()
+	state.lastBuyPrice = c.Close.Float()
+	s.state.Set(*state)
+	l.WithField("state", s.state.Get()).Trace("State updated after place buy order")
+
+	s.isBuying.value = false
+	l.Trace("Is buy released")
+
+	s.toPlaceOrders <- order
 }
 
 func (s *RossHookStrategy) onOrderSateChange(state types.OrderExecutionState) {
@@ -331,18 +433,18 @@ func (s *RossHookStrategy) onOrderSateChange(state types.OrderExecutionState) {
 
 	if isBuyPlaceError {
 		l.Trace("Updating state after buy order place error")
-		newState.leftBalance += float32(state.ExecutedOrderPrice)
-		newState.pendingBuyShares -= int32(state.LotsExecuted / int(s.config.LotSize))
-		newState.notConfirmedBlockedMoney -= float32(state.ExecutedOrderPrice)
+		newState.leftBalance += state.ExecutedOrderPrice
+		newState.pendingBuyShares -= int64(state.LotsExecuted / int(s.config.LotSize))
+		newState.notConfirmedBlockedMoney -= state.ExecutedOrderPrice
 	} else if isSellPlaceError {
-		newState.pendingSellShares -= int32(state.LotsExecuted / int(s.config.LotSize))
+		newState.pendingSellShares -= int64(state.LotsExecuted / int(s.config.LotSize))
 	}
 
 	if isSellOk || isBuyCancel {
 		l.Trace("Updating state after sell order executed")
-		newState.pendingSellShares -= int32(state.LotsExecuted / int(s.config.LotSize))
-		newState.leftBalance += float32(state.ExecutedOrderPrice)
-		newState.holdingShares -= int32(state.LotsExecuted / int(s.config.LotSize))
+		newState.pendingSellShares -= int64(state.LotsExecuted / int(s.config.LotSize))
+		newState.leftBalance += state.ExecutedOrderPrice
+		newState.holdingShares -= int64(state.LotsExecuted / int(s.config.LotSize))
 		l.WithField("orderId", state.ID).Infof(
 			"Lots executed (cancelled %v, erroPlacing: %v) %v of %v; Executed sell price %v",
 			isBuyCancel,
@@ -353,11 +455,11 @@ func (s *RossHookStrategy) onOrderSateChange(state types.OrderExecutionState) {
 		)
 	} else if isBuyOk || isSellPlaceError || isSellCancel {
 		l.Trace("Updating state after buy order executed")
-		newState.holdingShares += int32(state.LotsExecuted / int(s.config.LotSize))
-		newState.pendingBuyShares -= int32(state.LotsExecuted / int(s.config.LotSize))
-		newState.notConfirmedBlockedMoney -= float32(state.ExecutedOrderPrice)
-		newState.leftBalance -= float32(state.ExecutedOrderPrice)
-		newState.lastBuyPrice = float32(state.ExecutedOrderPrice) / float32(state.LotsExecuted)
+		newState.holdingShares += int64(state.LotsExecuted / int(s.config.LotSize))
+		newState.pendingBuyShares -= int64(state.LotsExecuted / int(s.config.LotSize))
+		newState.notConfirmedBlockedMoney -= state.ExecutedOrderPrice
+		newState.leftBalance -= state.ExecutedOrderPrice
+		newState.lastBuyPrice = state.ExecutedOrderPrice / float64(state.LotsExecuted)
 		l.WithField("orderId", state.ID).Infof(
 			"Lots executed (cancelled %v, erroPlacing: %v) %v of %v; Executed buy price %v",
 			isSellCancel,
