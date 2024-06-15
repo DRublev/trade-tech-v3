@@ -84,7 +84,7 @@ func (c *TinkoffBrokerPort) GetCandles(instrumentID string, interval types.Inter
 	return candles, nil
 }
 
-func (c *TinkoffBrokerPort) SubscribeCandles(ctx context.Context, ohlcCh *chan types.OHLC, instrumentID string, interval types.Interval) error {
+func (c *TinkoffBrokerPort) SubscribeCandles(ctx context.Context, ohlcCh *chan types.OHLC, instrumentID string, interval types.Interval, waitForCandleClose bool) error {
 	sdkL.Infof("Subscribe candles for %v", instrumentID)
 
 	sdk, err := c.GetSdk()
@@ -110,7 +110,7 @@ func (c *TinkoffBrokerPort) SubscribeCandles(ctx context.Context, ohlcCh *chan t
 	sdkL.Tracef("Subscribing for candles, instrument: %v", instrumentID)
 
 	// Стрим не работает по выходным, см https://t.me/c/1436923108/53910/59213
-	candlesCh, err := candlesStream.SubscribeCandle([]string{instrumentID}, investapi.SubscriptionInterval_SUBSCRIPTION_INTERVAL_ONE_MINUTE, false)
+	candlesCh, err := candlesStream.SubscribeCandle([]string{instrumentID}, investapi.SubscriptionInterval_SUBSCRIPTION_INTERVAL_ONE_MINUTE, waitForCandleClose)
 	if err != nil {
 		sdkL.Errorf("Failed to subscribe for candles for %v: %v", instrumentID, err)
 		return err
@@ -120,7 +120,7 @@ func (c *TinkoffBrokerPort) SubscribeCandles(ctx context.Context, ohlcCh *chan t
 		<-backCtx.Done()
 
 		sdkL.Infof("Unsubscribing from candles for %v", instrumentID)
-		err := candlesStream.UnSubscribeCandle([]string{instrumentID}, investapi.SubscriptionInterval(interval), false)
+		err := candlesStream.UnSubscribeCandle([]string{instrumentID}, investapi.SubscriptionInterval(interval), waitForCandleClose)
 		if err != nil {
 			sdkL.Errorf("Failed to unsubscribe from candles: %v", err)
 		}
@@ -134,7 +134,7 @@ func (c *TinkoffBrokerPort) SubscribeCandles(ctx context.Context, ohlcCh *chan t
 			select {
 			case <-ctx.Done():
 				sdkL.Infof("Unsubscribing from candles for %v", instrumentID)
-				err := candlesStream.UnSubscribeCandle([]string{instrumentID}, investapi.SubscriptionInterval(interval), false)
+				err := candlesStream.UnSubscribeCandle([]string{instrumentID}, investapi.SubscriptionInterval(interval), waitForCandleClose)
 				if err != nil {
 					sdkL.Warnf("Failed unsubscribing: %v", err)
 				}

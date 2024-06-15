@@ -60,10 +60,9 @@ func (p *Provider) GetOrCreate(instrumentID string, initialFrom time.Time, initi
 			for _, candle := range initialCandles {
 				*ch <- candle
 			}
+			go broker.Broker.SubscribeCandles(backCtx, ch, instrumentID, 1, true)
 		}()
 	}
-
-	go broker.Broker.SubscribeCandles(backCtx, ch, instrumentID, 1)
 
 	return ch, nil
 }

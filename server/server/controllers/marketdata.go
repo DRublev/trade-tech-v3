@@ -183,7 +183,7 @@ func (s *Server) SubscribeCandles(in *marketdata.SubscribeCandlesRequest, stream
 	}(bCtx, &candlesCh)
 
 	mdL.Trace("Requesting broker for subscribing to candles")
-	err = broker.Broker.SubscribeCandles(ctx, &candlesCh, in.InstrumentId, types.Interval(in.Interval))
+	err = broker.Broker.SubscribeCandles(ctx, &candlesCh, in.InstrumentId, types.Interval(in.Interval), false)
 	if err != nil {
 		mdL.Errorf("Failed subscribing candles: %v", err)
 		return err

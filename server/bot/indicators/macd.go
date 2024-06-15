@@ -2,6 +2,7 @@ package indicators
 
 import (
 	"errors"
+	"fmt"
 )
 
 // MacdIndicator Дивергенция скользящих средних
@@ -13,6 +14,8 @@ type MacdIndicator struct {
 	emaSlow      EmaIndicator
 	emaFast      EmaIndicator
 	emaSignal    EmaIndicator
+
+	precision uint
 }
 
 // NewMacd Конструктор
@@ -56,12 +59,15 @@ func (i *MacdIndicator) Update(price float64) {
 	if len(i.prevPrices) < 2*i.emaSlow.period {
 		return
 	}
+	// i.prevPrices = i.prevPrices[len(i.prevPrices)-2*i.emaSlow.period:]
 
 	ema26 := i.emaSlow.Get()
 	ema12 := i.emaFast.Get()
 
 	roundPrecision := detectPrecision(ema12[0])
-
+	if roundPrecision > i.precision {
+		i.precision = roundPrecision
+	}
 	// Недостаточно данных
 	if len(ema12)-len(ema26) < 0 {
 		return
@@ -71,11 +77,15 @@ func (i *MacdIndicator) Update(price float64) {
 
 	macd := make([]float64, 0)
 	for j := 0; j < len(ema26); j++ {
-		macdCurrent := roundFloat(ema12[j]-ema26[j], roundPrecision)
+		macdCurrent := roundFloat(ema12[j]-ema26[j], i.precision)
 		macd = append(macd, macdCurrent)
 		i.emaSignal.Update(macdCurrent)
 	}
 
 	i.values = macd
 	i.signals = i.emaSignal.Get()
+	if len(i.values) > 5 {
+		fmt.Printf("81 macd values %v %v\n", price, i.values[len(i.values)-5:])
+		fmt.Printf("82 macd signals %v %v\n", price, i.signals[len(i.signals)-5:])
+	}
 }
