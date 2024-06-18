@@ -23,7 +23,7 @@ export const ConfigChangeModal: FC<Props> = ({ trigger }: Props) => {
     const [shouldClose, setShouldClose] = useState(undefined); // TODO: Костыль, надо подумать как сделать удобнее
     const logger = useLogger({ component: 'ConfigChangeModal' })
 
-    const onSubmit = useCallback(async (rawValues: Record<string, any>) => {
+    const onSubmit = async (rawValues: Record<string, any>) => {
         try {
             const [values] = mergeObjects(rawValues, defaultValues, scheme);
 
@@ -34,7 +34,7 @@ export const ConfigChangeModal: FC<Props> = ({ trigger }: Props) => {
             logger.error('Error changing config ' + e);
             // TODO: Алерт, а лучше месседж в форму с разбором ошибки
         }
-    }, [scheme, api, defaultValues]);
+    };
 
     return (
         <Modal title="Настройки стратегии" close={shouldClose} trigger={trigger} actions={[]}>
