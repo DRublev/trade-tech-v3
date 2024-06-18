@@ -14,8 +14,14 @@ import (
 
 type candlesChannels map[string]*chan types.OHLC
 
+type BaseCandlesProvider interface {
+	GetOrCreate(instrumentID string, initialFrom time.Time, initialTo time.Time) (*chan types.OHLC, error)
+}
+
 // Provider Провайдер свечей
 type Provider struct {
+	BaseCandlesProvider
+
 	channels candlesChannels
 }
 

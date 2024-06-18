@@ -6,6 +6,7 @@ import (
 	"main/bot/broker"
 	"main/bot/strategies"
 	"main/bot/strategies/macd"
+	"main/bot/strategies/rosshook"
 	"main/bot/strategies/spread"
 	"main/types"
 	"os"
@@ -26,6 +27,8 @@ func Assemble(key strategies.StrategyKey, config *strategies.Config) (strategies
 		return spread.New(), nil
 	case strategies.Macd:
 		return macd.New(), nil
+	case strategies.RossHook:
+		return rosshook.New(), nil
 	}
 
 	// TODO: Инициализировать стратегию в зависимости от ключа
