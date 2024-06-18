@@ -9,8 +9,10 @@ import (
 )
 
 func GetMock() []types.OHLC {
+	fixturePath := "./fixture.json" // VKCO 11.06.2024 1min 15:51-16:35
+
 	var result []types.OHLC
-	file, err := ioutil.ReadFile("./fixture.json")
+	file, err := ioutil.ReadFile(fixturePath)
 	if err != nil {
 		return result
 	}

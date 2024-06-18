@@ -11,7 +11,7 @@ type StrategyKey string
 const (
 	Spread   StrategyKey = "spread_v0"
 	Macd     StrategyKey = "macd"
-	RossHook StrategyKey = "ross_hook"
+	RossHook StrategyKey = "rosshook"
 )
 
 // IsValid Валидность идентификатора стратегии

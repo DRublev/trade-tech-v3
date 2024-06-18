@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"main/bot/broker"
+	"main/bot/candles"
 	"main/bot/strategies"
 	"main/bot/strategies/macd"
 	"main/bot/strategies/rosshook"
@@ -28,7 +29,7 @@ func Assemble(key strategies.StrategyKey, config *strategies.Config) (strategies
 	case strategies.Macd:
 		return macd.New(), nil
 	case strategies.RossHook:
-		return rosshook.New(), nil
+		return rosshook.New(candles.NewProvider()), nil
 	}
 
 	// TODO: Инициализировать стратегию в зависимости от ключа

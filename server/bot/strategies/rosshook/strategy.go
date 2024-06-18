@@ -104,7 +104,7 @@ func (s *RossHookStrategy) Start(
 	orderStateChangeCh *chan types.OrderExecutionState,
 ) (bool, error) {
 	l = log.WithFields(log.Fields{
-		"strategy":   "ross_hook",
+		"strategy":   "rosshook",
 		"instrument": (*config)["InstrumentID"],
 	})
 
