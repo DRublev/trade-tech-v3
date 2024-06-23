@@ -23,11 +23,6 @@ type Config struct {
 	// Акция для торговли
 	InstrumentID string
 
-	MinProfit float32
-
-	// Сколько мс ждать после исполнения итерации покупка-продажа перед следующей
-	NextOrderCooldownMs int32
-
 	// Каким количчеством акций торговать? Макс
 	MaxSharesToHold int32
 
@@ -36,7 +31,7 @@ type Config struct {
 
 	// Если цена пошла ниже чем цена покупки - StopLossAfter, продать по лучшей цене
 	// Нужно чтобы  выходить из позиции, когда акция пошла вниз
-	StopLossAfter float32
+	StopLossAfter float64
 }
 
 type State struct {
@@ -348,7 +343,7 @@ func (s *MacdStrategy) sell(wg *sync.WaitGroup, c types.OHLC) {
 		}
 	}
 
-	hasStopLossBroken := state.lastBuyPrice-float64(s.config.StopLossAfter) >= c.Close.Float()
+	hasStopLossBroken := state.lastBuyPrice-s.config.StopLossAfter >= c.Close.Float()
 
 	shouldSell := (isNowUnder && isPrevOver) || hasStopLossBroken
 

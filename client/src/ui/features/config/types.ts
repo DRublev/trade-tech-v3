@@ -28,6 +28,12 @@ type BaseFieldProps = {
 
 type ConfigSchemeField = BaseFieldProps & (NumericField | MoneyFiled);
 
+type FieldTypes = ConfigScheme['fields'][number]['type'];
+export const ConfigFieldTypes: Record<FieldTypes, FieldTypes> = {
+    number: 'number',
+    money: 'money',
+}
+
 export type ConfigScheme = {
     fields: ConfigSchemeField[];
 }

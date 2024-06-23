@@ -1,60 +1,14 @@
 import { useEffect, useState } from "react";
 import { useIpcInvoke, useLogger } from "../../hooks";
 import { ConfigScheme } from "./types";
+import { DEFAULT_SCHEME, schemes } from "./schemes";
+import type { StrategyKey } from "../strategy/types";
 
-type FieldTypes = ConfigScheme['fields'][number]['type'];
-export const ConfigFieldTypes: Record<FieldTypes, FieldTypes> = {
-    number: 'number',
-    money: 'money',
-}
 
-type UseConfigSchemeHook = (insrumentId: string, strategy?: string) => ConfigScheme;
+type UseConfigSchemeHook = (insrumentId: string, strategy?: StrategyKey) => ConfigScheme;
 
 const useConfigScheme: UseConfigSchemeHook = (instrumentId, strategy) => {
-    // TODO: Брать схему с бека, как будет надо вообще
-    const scheme: ConfigScheme = {
-        fields: [
-            {
-                name: 'Balance',
-                required: true,
-                label: 'Доступный для торговли баланс',
-                placeholder: 'рублей',
-                type: ConfigFieldTypes.number,
-                min: 0,
-                htmlType: 'number',
-            },
-            {
-                name: 'MaxSharesToHold',
-                required: true,
-                label: 'Максимально лотов',
-                placeholder: 'штук',
-                type: ConfigFieldTypes.number,
-                min: 1,
-                step: 1,
-                htmlType: 'number',
-            },
-            {
-                name: 'MinProfit',
-                required: true,
-                label: 'Минимальный профит со сделки',
-                placeholder: '',
-                type: ConfigFieldTypes.number,
-                min: 0,
-                step: 0.01,
-                htmlType: 'number',
-            },
-            {
-                name: 'StopLossAfter',
-                label: 'Стоп-лосс',
-                placeholder: 'цена покупки - стоп-лосс = цена продажи',
-                type: ConfigFieldTypes.number,
-                min: 0,
-                step: 0.01,
-                htmlType: 'number',
-            },
-        ]
-    };
-    return scheme;
+    return (strategy && schemes[strategy]) || DEFAULT_SCHEME;
 };
 
 
@@ -69,7 +23,7 @@ type UseConfigHook = (instrumentId: string, strategy: string) => {
     changeConfig: (values: Record<string, string>) => Promise<void>
 }
 
-export const useConfig: UseConfigHook = (instrumentId: string, strategy: string) => {
+export const useConfig: UseConfigHook = (instrumentId: string, strategy: StrategyKey) => {
     const api = useConfigIpc();
     const scheme = useConfigScheme(instrumentId, strategy);
     const [defaultValues, setDefaultValues] = useState({});

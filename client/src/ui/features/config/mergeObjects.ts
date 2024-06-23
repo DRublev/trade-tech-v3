@@ -1,5 +1,4 @@
-import { ConfigFieldTypes } from "./hooks";
-import type { ConfigScheme } from "./types";
+import { ConfigFieldTypes, type ConfigScheme } from "./types";
 
 export const mergeObjects = (a: Record<string, any>, b: Record<string, any>, scheme: ConfigScheme): [Record<string, any>, number] => {
     let changedFields = 0;

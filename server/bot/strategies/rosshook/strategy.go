@@ -23,18 +23,17 @@ type Config struct {
 	// Акция для торговли
 	InstrumentID string
 
-	MinProfit float64
-
 	// Каким количчеством акций торговать? Макс
 	MaxSharesToHold int64
 
 	// Лотность инструмента
 	LotSize int64
 
-	// Если цена пошла ниже чем цена покупки - StopLossAfter, продать по лучшей цене
-	// Нужно чтобы  выходить из позиции, когда акция пошла вниз
-	StopLossAfter float64
+	// При падении ниже 2 точки минус этот парамер выставим продажу
+	StopLoss float64
 
+	// Нужен для Trailing take profit
+	// При какой просадке от максимума выставить продажу
 	SaveProfit float64
 }
 
@@ -225,7 +224,7 @@ func (s *RossHookStrategy) watchBuySignal(c types.OHLC) {
 func (s *RossHookStrategy) watchSellSignal(c types.OHLC) {
 	// Stop-loss
 	if high != nil && low != nil && targetGrow != nil && less != nil {
-		if less.Close.Float() >= c.Close.Float() {
+		if less.Close.Float()-s.config.StopLoss >= c.Close.Float() {
 			go s.sell(c)
 			return
 		}
