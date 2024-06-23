@@ -18,6 +18,8 @@ var tradeL = log.WithFields(log.Fields{
 	"controller": "trade",
 })
 
+var configRepository = config.New()
+
 func (s *Server) Start(ctx context.Context, in *trade.StartRequest) (*trade.StartResponse, error) {
 	tradeL.Info("Start requested")
 	strategyPool := bot.NewPool()
@@ -73,7 +75,6 @@ func (s *Server) ChangeConfig(ctx context.Context, in *trade.ChangeConfigRequest
 	tradeL.Info("ChangeConfig requested")
 
 	configKey := in.Strategy + "_" + in.InstrumentId
-	configRepository := config.New()
 	config := make(strategies.Config)
 
 	for key, value := range in.Config.AsMap() {
@@ -99,7 +100,6 @@ func (s *Server) GetConfig(ctx context.Context, in *trade.GetConfigRequest) (*tr
 	tradeL.Info("GetConfig requested")
 
 	configKey := in.Strategy + "_" + in.InstrumentId
-	configRepository := config.New()
 
 	c, err := configRepository.Get(configKey)
 	if err != nil {

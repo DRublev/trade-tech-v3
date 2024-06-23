@@ -19,7 +19,7 @@ type Props = {
 export const ConfigChangeModal: FC<Props> = ({ trigger }: Props) => {
     const [strategy] = useStrategy();
     const [instrumentId] = useCurrentInstrument();
-    const { api, scheme, defaultValues, changeConfig } = useConfig(instrumentId, strategy);
+    const { scheme, defaultValues, changeConfig } = useConfig(instrumentId, strategy);
     const [shouldClose, setShouldClose] = useState(undefined); // TODO: Костыль, надо подумать как сделать удобнее
     const logger = useLogger({ component: 'ConfigChangeModal' })
 
