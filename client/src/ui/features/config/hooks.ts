@@ -64,7 +64,6 @@ const useConfigIpc = () => ({
 
 
 type UseConfigHook = (instrumentId: string, strategy: string) => {
-    api: ReturnType<typeof useConfigIpc>;
     scheme: ReturnType<typeof useConfigScheme>;
     defaultValues: Record<string, any>;
     changeConfig: (values: Record<string, string>) => Promise<void>
@@ -95,5 +94,5 @@ export const useConfig: UseConfigHook = (instrumentId: string, strategy: string)
         fetchInitialValues();
     }, [instrumentId, strategy]);
 
-    return { api, scheme, defaultValues, changeConfig };
+    return { scheme, defaultValues, changeConfig };
 }
