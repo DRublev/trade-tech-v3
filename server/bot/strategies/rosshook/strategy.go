@@ -194,34 +194,40 @@ func (s *RossHookStrategy) OnCandle(c types.OHLC) {
 }
 
 func (s *RossHookStrategy) watchBuySignal(c types.OHLC) {
-	if high == nil || high.High.Float() < c.High.Float() {
+	if high == nil || high.High.Float() <= c.High.Float() {
 		high = &c
 		low = nil
 		targetGrow = nil
 		less = nil
-	} else if low == nil || low.Low.Float() > c.Low.Float() {
+		l.Infof("Set point 1. high: %v;", high.High.Float())
+	} else if low == nil || low.Low.Float() >= c.Low.Float() {
 		low = &c
 		targetGrow = nil
 		less = nil
-	} else if targetGrow == nil || targetGrow.High.Float() < c.High.Float() {
+		l.Infof("Set point 2. high: %v; low: %v;", high.High.Float(), low.Low.Float())
+	} else if targetGrow == nil || targetGrow.High.Float() <= c.High.Float() {
 		targetGrow = &c
 		less = nil
 		takeProfit = &c
-	} else if less == nil || less.Low.Float() > c.Low.Float() {
+		l.Infof("Set point 3. high: %v; low: %v; targetGrow: %v;", high.High.Float(), low.Low.Float(), targetGrow.High.Float())
+	} else if less == nil || less.Low.Float() >= c.Low.Float() {
 		less = &c
+		l.Infof("Set point 4. high: %v; low: %v; targetGrow: %v; less: %v;", high.High.Float(), low.Low.Float(), targetGrow.High.Float(), less.Low.Float())
 	}
 
 	if high != nil && low != nil && targetGrow != nil && less != nil {
 		if targetGrow.High.Float() <= c.High.Float() {
-			go s.buy(c)
+			go s.buy(*targetGrow)
 		}
 	}
 }
 
 func (s *RossHookStrategy) watchSellSignal(c types.OHLC) {
+	// Stop-loss
 	if high != nil && low != nil && targetGrow != nil && less != nil {
 		if less.Close.Float() >= c.Close.Float() {
 			go s.sell(c)
+			return
 		}
 	}
 
@@ -231,7 +237,7 @@ func (s *RossHookStrategy) watchSellSignal(c types.OHLC) {
 	if takeProfit.High.Float() < c.High.Float() {
 		takeProfit = &c
 	} else if takeProfit.Close.Float()-float64(s.config.SaveProfit) >= c.Close.Float() {
-		go s.sell(c)
+		go s.sell(*takeProfit)
 	}
 }
 
@@ -275,6 +281,10 @@ func (s *RossHookStrategy) sell(c types.OHLC) {
 	s.isSelling.value = false
 	l.Trace("Is sell released")
 
+	high = nil
+	low = nil
+	targetGrow = nil
+	less = nil
 	s.toPlaceOrders <- order
 }
 
@@ -290,7 +300,7 @@ func (s *RossHookStrategy) buy(c types.OHLC) {
 
 	canBuySharesAmount := math.Abs(leftBalance / (c.Close.Float() * float64(s.config.LotSize)))
 	fmt.Printf("266 strategy lotSize %v; left balance %v; can buy %v \n", s.config.LotSize, leftBalance, canBuySharesAmount)
-	if canBuySharesAmount == 0 {
+	if canBuySharesAmount <= 0 {
 		l.WithField("state", s.vault).Trace("Can buy 0 shares")
 		return
 	}
