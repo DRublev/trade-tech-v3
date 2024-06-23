@@ -42,6 +42,8 @@ func NewVault(lotSize int64, balance float64) *Vault {
 		PendingSellShares:        0,
 		NotConfirmedBlockedMoney: 0,
 		LastBuyPrice:             0,
+		lotSize: 0,
+		LeftBalance: 0,
 	}
 	inst.lotSize = lotSize
 	inst.LeftBalance = balance
