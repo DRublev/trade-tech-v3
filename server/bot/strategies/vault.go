@@ -31,7 +31,8 @@ type Vault struct {
 
 	LastBuyPrice float64
 
-	PlacedOrders []types.OrderExecutionState
+	PlacedBuyOrders  []types.OrderExecutionState
+	PlacedSellOrders []types.OrderExecutionState
 
 	lotSize int64
 }
@@ -48,6 +49,8 @@ func NewVault(lotSize int64, balance float64) *Vault {
 	}
 	inst.lotSize = lotSize
 	inst.LeftBalance = balance
+	inst.PlacedBuyOrders = []types.OrderExecutionState{}
+	inst.PlacedSellOrders = []types.OrderExecutionState{}
 
 	return inst
 }
@@ -64,6 +67,49 @@ func (s *Vault) String() string {
 	)
 }
 
+func (this *Vault) updateBuyOrders(state types.OrderExecutionState) {
+	if state.Direction != types.Buy {
+		return
+	}
+	if state.Status == types.New {
+		this.PlacedBuyOrders = append(this.PlacedBuyOrders, state)
+		l.Infof("Adding new buy order to placed list")
+		return
+	}
+	if state.Status == types.Fill || state.Status == types.ErrorPlacing {
+		filteredOrders := []types.OrderExecutionState{}
+
+		for _, order := range this.PlacedBuyOrders {
+			if order.ID != state.ID {
+				filteredOrders = append(filteredOrders, order)
+			}
+		}
+
+		this.PlacedBuyOrders = filteredOrders
+	}
+}
+func (this *Vault) updateSellOrders(state types.OrderExecutionState) {
+	if state.Direction != types.Sell {
+		return
+	}
+	if state.Status == types.New {
+		this.PlacedSellOrders = append(this.PlacedSellOrders, state)
+		l.Infof("Adding new sell order to placed list")
+		return
+	}
+	if state.Status == types.Fill || state.Status == types.ErrorPlacing {
+		filteredOrders := []types.OrderExecutionState{}
+
+		for _, order := range this.PlacedSellOrders {
+			if order.ID != state.ID {
+				filteredOrders = append(filteredOrders, order)
+			}
+		}
+
+		this.PlacedSellOrders = filteredOrders
+	}
+}
+
 func (this *Vault) OnOrderSateChange(state types.OrderExecutionState) {
 	l.Infof("Order state changed %v", state)
 
@@ -73,27 +119,14 @@ func (this *Vault) OnOrderSateChange(state types.OrderExecutionState) {
 
 	defer l.WithField("state", this).Info("State updated")
 
-	if state.Status == types.New {
-		this.PlacedOrders = append(this.PlacedOrders, state)
-		l.Infof("Adding new order to placed list")
-		return
-	}
-	if state.Status == types.Fill {
-		filteredOrders := []types.OrderExecutionState{}
-
-		for _, order := range this.PlacedOrders {
-			if order.ID != state.ID {
-				filteredOrders = append(filteredOrders, order)
-			}
-		}
-
-		this.PlacedOrders = filteredOrders
-	}
+	this.updateBuyOrders(state)
+	this.updateSellOrders(state)
 
 	if state.Status != types.PartiallyFill &&
 		state.Status != types.Fill &&
 		state.Status != types.ErrorPlacing &&
-		state.Status != types.Cancelled {
+		state.Status != types.Cancelled &&
+		state.Status != types.New {
 		l.Warnf("Not processed order state change: %v", state)
 		return
 	}
@@ -105,18 +138,20 @@ func (this *Vault) OnOrderSateChange(state types.OrderExecutionState) {
 	isSellOk := state.Direction == types.Sell && !isSellPlaceError && !isSellCancel
 	isBuyOk := state.Direction == types.Buy && !isBuyPlaceError && !isBuyCancel
 
-	if isBuyPlaceError {
+	if isBuyPlaceError || isBuyCancel {
 		l.Info("Updating state after buy order place error")
 		this.LeftBalance += state.ExecutedOrderPrice
 		this.PendingBuyShares -= int64(state.LotsExecuted / int(this.lotSize))
 		this.NotConfirmedBlockedMoney -= state.ExecutedOrderPrice
 		return
-	} else if isSellPlaceError {
+	} else if isSellPlaceError || isSellCancel {
 		l.Info("Updating state after sell order place error")
 		this.PendingSellShares -= int64(state.LotsExecuted / int(this.lotSize))
+		this.HoldingShares += int64(state.LotsExecuted / int(this.lotSize))
+		return
 	}
 
-	if isSellOk || isBuyCancel {
+	if isSellOk {
 		l.Trace("Updating state after sell order executed")
 		this.PendingSellShares -= int64(state.LotsExecuted / int(this.lotSize))
 		this.LeftBalance += state.ExecutedOrderPrice
@@ -129,7 +164,7 @@ func (this *Vault) OnOrderSateChange(state types.OrderExecutionState) {
 			state.LotsRequested,
 			state.ExecutedOrderPrice,
 		)
-	} else if isBuyOk || isSellPlaceError || isSellCancel {
+	} else if isBuyOk {
 		l.Trace("Updating state after buy order executed")
 		this.HoldingShares += int64(state.LotsExecuted / int(this.lotSize))
 		this.PendingBuyShares -= int64(state.LotsExecuted / int(this.lotSize))
