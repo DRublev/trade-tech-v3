@@ -8,9 +8,7 @@ import (
 	"io/ioutil"
 )
 
-func GetMock() []types.OHLC {
-	fixturePath := "./fixture.json" // VKCO 11.06.2024 1min 15:51-16:35
-
+func readJSON(fixturePath string) []types.OHLC {
 	var result []types.OHLC
 	file, err := ioutil.ReadFile(fixturePath)
 	if err != nil {
@@ -21,6 +19,22 @@ func GetMock() []types.OHLC {
 	if err != nil {
 		fmt.Println("error:", err)
 	}
-
 	return result
+}
+
+func getShouldBuyMock() []types.OHLC {
+	fixturePath := "./vkco_2024-06-11_1min_13-04_13-34.json"
+
+	return readJSON(fixturePath)
+}
+
+func getShouldNotBuyMock() []types.OHLC {
+	fixturePath := "./vkco_2024-06-24_1min_12-05_12-25.json"
+	return readJSON(fixturePath)
+}
+
+func getShouldCloseBuyWhenNotExecutedMock() []types.OHLC {
+	fixturePath := "./vkco_2024-06-24_1min_10-38_11-20.json"
+	return readJSON(fixturePath)
+
 }
