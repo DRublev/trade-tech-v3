@@ -124,8 +124,9 @@ type OrderExecutionState struct {
 
 func (s OrderExecutionState) String() string {
 	return fmt.Sprintf(
-		"OrderExecutionState. %v ID: %v; IdempodentID: %v; Status: %v;\nLots requested %v, executed %v\n;Price initial %v; executed %v;\nComission initial %v; executed %v",
+		"OrderExecutionState. Dir: %v; Status: %v; ID: %v; IdempodentID: %v; Status: %v;\nLots requested %v, executed %v\n;Price initial %v; executed %v;\nComission initial %v; executed %v",
 		s.Direction,
+		s.Status,
 		s.ID,
 		s.IdempodentID,
 		s.Status,

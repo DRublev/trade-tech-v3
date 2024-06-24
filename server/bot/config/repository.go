@@ -67,8 +67,10 @@ func New() *ConfigRepository {
 		config, _ := dbInstance.Get([]string{"strategyConf"})
 		if config != nil {
 			var storage map[string]strategies.Config
-			json.Unmarshal(config, &storage)
-			instance.storage = storage
+			err := json.Unmarshal(config, &storage)
+			if err == nil {
+				instance.storage = storage
+			}
 		}
 	}
 	return instance
