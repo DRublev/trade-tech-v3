@@ -297,7 +297,7 @@ func (s *RossHookStrategy) buy(c types.OHLC) {
 
 	leftBalance := s.vault.LeftBalance - s.vault.NotConfirmedBlockedMoney
 
-	canBuySharesAmount := math.Round(math.Abs(leftBalance / (c.Close.Float() * float64(s.config.LotSize))))
+	canBuySharesAmount := int64(math.Abs(leftBalance / (c.Close.Float() * float64(s.config.LotSize))))
 	fmt.Printf("266 strategy lotSize %v; left balance %v; can buy %v \n", s.config.LotSize, leftBalance, canBuySharesAmount)
 	if canBuySharesAmount <= 0 {
 		l.WithField("state", s.vault).Trace("Can buy 0 shares")
@@ -313,9 +313,9 @@ func (s *RossHookStrategy) buy(c types.OHLC) {
 
 	l.Trace("Set is buiyng")
 	s.isBuying.value = true
-	if canBuySharesAmount > float64(s.config.MaxSharesToHold) {
+	if canBuySharesAmount > s.config.MaxSharesToHold {
 		l.Tracef("Can buy more shares, than config allows")
-		canBuySharesAmount = float64(s.config.MaxSharesToHold)
+		canBuySharesAmount = s.config.MaxSharesToHold
 	}
 
 	order := &types.PlaceOrder{
@@ -328,7 +328,7 @@ func (s *RossHookStrategy) buy(c types.OHLC) {
 	l.Infof("Order to place: %v", order)
 
 	s.vault.PendingBuyShares += int64(canBuySharesAmount)
-	s.vault.NotConfirmedBlockedMoney += canBuySharesAmount * c.Close.Float()
+	s.vault.NotConfirmedBlockedMoney += float64(canBuySharesAmount) * c.Close.Float()
 	s.vault.LastBuyPrice = c.Close.Float()
 	l.WithField("state", s.vault).Trace("State updated after place buy order")
 
