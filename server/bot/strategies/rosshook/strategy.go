@@ -204,7 +204,7 @@ func (s *RossHookStrategy) watchBuySignal(c types.OHLC) {
 		targetGrow = nil
 		less = nil
 		l.Infof("Set point 2. high: %v; low: %v;", high.High.Float(), low.Low.Float())
-	} else if targetGrow == nil || targetGrow.High.Float() <= c.High.Float() {
+	} else if targetGrow == nil || (targetGrow.High.Float() < c.High.Float() && less == nil) {
 		targetGrow = &c
 		less = nil
 		takeProfit = &c
@@ -297,7 +297,7 @@ func (s *RossHookStrategy) buy(c types.OHLC) {
 
 	leftBalance := s.vault.LeftBalance - s.vault.NotConfirmedBlockedMoney
 
-	canBuySharesAmount := math.Abs(leftBalance / (c.Close.Float() * float64(s.config.LotSize)))
+	canBuySharesAmount := math.Round(math.Abs(leftBalance / (c.Close.Float() * float64(s.config.LotSize))))
 	fmt.Printf("266 strategy lotSize %v; left balance %v; can buy %v \n", s.config.LotSize, leftBalance, canBuySharesAmount)
 	if canBuySharesAmount <= 0 {
 		l.WithField("state", s.vault).Trace("Can buy 0 shares")

@@ -1,6 +1,7 @@
 package strategies
 
 import (
+	"fmt"
 	"main/types"
 
 	log "github.com/sirupsen/logrus"
@@ -42,13 +43,25 @@ func NewVault(lotSize int64, balance float64) *Vault {
 		PendingSellShares:        0,
 		NotConfirmedBlockedMoney: 0,
 		LastBuyPrice:             0,
-		lotSize: 0,
-		LeftBalance: 0,
+		lotSize:                  0,
+		LeftBalance:              0,
 	}
 	inst.lotSize = lotSize
 	inst.LeftBalance = balance
 
 	return inst
+}
+
+func (s *Vault) String() string {
+	return fmt.Sprintf(
+		"Holding %v\nLeft balance %v; Blocked money %v\nPending buy %v, sell %v\nLast buy price %v",
+		s.HoldingShares,
+		s.LeftBalance,
+		s.NotConfirmedBlockedMoney,
+		s.PendingBuyShares,
+		s.PendingSellShares,
+		s.LastBuyPrice,
+	)
 }
 
 func (this *Vault) OnOrderSateChange(state types.OrderExecutionState) {
@@ -93,11 +106,13 @@ func (this *Vault) OnOrderSateChange(state types.OrderExecutionState) {
 	isBuyOk := state.Direction == types.Buy && !isBuyPlaceError && !isBuyCancel
 
 	if isBuyPlaceError {
-		l.Trace("Updating state after buy order place error")
+		l.Info("Updating state after buy order place error")
 		this.LeftBalance += state.ExecutedOrderPrice
 		this.PendingBuyShares -= int64(state.LotsExecuted / int(this.lotSize))
 		this.NotConfirmedBlockedMoney -= state.ExecutedOrderPrice
+		return
 	} else if isSellPlaceError {
+		l.Info("Updating state after sell order place error")
 		this.PendingSellShares -= int64(state.LotsExecuted / int(this.lotSize))
 	}
 
