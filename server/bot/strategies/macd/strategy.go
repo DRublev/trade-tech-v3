@@ -142,7 +142,7 @@ func (s *MacdStrategy) Start(
 	candlesProvider := candles.NewProvider()
 	now := time.Now()
 
-	ch, err := candlesProvider.GetOrCreate(s.config.InstrumentID, now.Add(-time.Duration(time.Minute)*5*21), now)
+	ch, err := candlesProvider.GetOrCreate(s.config.InstrumentID, now.Add(-time.Duration(time.Minute)*5*21), now, true)
 	if err != nil {
 		l.Errorf("Failed to get candles channel: %v", err)
 		return false, err
