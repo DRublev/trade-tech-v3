@@ -1,6 +1,7 @@
 package strategies
 
 import (
+	"encoding/json"
 	"main/types"
 )
 
@@ -37,7 +38,22 @@ type IStrategy interface {
 }
 
 // Strategy Контракт для стратегии
-type Strategy struct {
+type Strategy[T any] struct {
 	IStrategy
-	Key StrategyKey
+	Key    StrategyKey
+	Config T
+}
+
+func (s *Strategy[T]) SetConfig(config Config) error {
+	bts, err := json.Marshal(config)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(bts, s.Config)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
