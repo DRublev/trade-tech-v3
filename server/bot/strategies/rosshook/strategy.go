@@ -124,24 +124,7 @@ func (s *RossHookStrategy) Start(
 		}
 	}()
 
-	go func() {
-		l.Info("Start listening for orders")
-		for {
-			select {
-			case <-s.stopCtx.Done():
-				l.Info("Strategy stopped")
-				return
-			case state, ok := <-*orderStateChangeCh:
-				if !ok {
-					l.Warn("Orders state channel closed")
-					return
-				}
-				s.vault.OnOrderSateChange(state)
-			}
-		}
-	}()
-
-	s.nextOrderCooldown = time.NewTimer(time.Duration(0) * time.Millisecond)
+	go s.OnOrderSateChangeSubscribe(s.stopCtx, orderStateChangeCh, s.vault.OnOrderSateChange)
 
 	return true, nil
 }

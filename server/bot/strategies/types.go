@@ -1,6 +1,7 @@
 package strategies
 
 import (
+	"context"
 	"encoding/json"
 	"main/types"
 )
@@ -56,4 +57,21 @@ func (s *Strategy[T]) SetConfig(config Config) error {
 	}
 
 	return nil
+}
+
+func (s *Strategy[T]) OnOrderSateChangeSubscribe(stopCtx context.Context, orderStateChangeCh *chan types.OrderExecutionState, onOrderSateChange func(state types.OrderExecutionState)) {
+	l.Info("Start listening for orders")
+	for {
+		select {
+		case <-stopCtx.Done():
+			l.Info("Strategy stopped")
+			return
+		case state, ok := <-*orderStateChangeCh:
+			if !ok {
+				l.Warn("Orders state channel closed")
+				return
+			}
+			onOrderSateChange(state)
+		}
+	}
 }
