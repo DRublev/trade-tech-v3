@@ -7,6 +7,7 @@ import (
 	"main/bot/orderbook"
 	"main/bot/strategies"
 	"main/types"
+	"math"
 	"sync"
 	"time"
 
@@ -273,9 +274,9 @@ func (s *SpreadStrategy) buy(wg *sync.WaitGroup, ob *types.Orderbook) {
 		return
 	}
 
-	canBuySharesAmount := leftBalance / (minBuyPrice * float32(s.config.LotSize))
+	canBuySharesAmount := int32(math.Abs(float64(leftBalance / (minBuyPrice * float32(s.config.LotSize)))))
 	l.Tracef("First bid price: %v; Left money: %v; Can buy %v shares\n", minBuyPrice, leftBalance, canBuySharesAmount)
-	if canBuySharesAmount == 0 {
+	if canBuySharesAmount <= 0 {
 		l.WithField("state", s.state.Get()).Trace("Can buy 0 shares")
 		return
 	}
@@ -289,9 +290,9 @@ func (s *SpreadStrategy) buy(wg *sync.WaitGroup, ob *types.Orderbook) {
 
 	l.Trace("Set is buiyng")
 	s.isBuying.value = true
-	if canBuySharesAmount > float32(s.config.MaxSharesToHold) {
+	if canBuySharesAmount > s.config.MaxSharesToHold {
 		l.Tracef("Can buy more shares, than config allows")
-		canBuySharesAmount = float32(s.config.MaxSharesToHold)
+		canBuySharesAmount = s.config.MaxSharesToHold
 	}
 
 	order := &types.PlaceOrder{
@@ -304,8 +305,8 @@ func (s *SpreadStrategy) buy(wg *sync.WaitGroup, ob *types.Orderbook) {
 
 	l.Trace("Updating state")
 	newState := *s.state.Get()
-	newState.pendingBuyShares += int32(canBuySharesAmount)
-	newState.notConfirmedBlockedMoney += canBuySharesAmount * minBuyPrice
+	newState.pendingBuyShares += canBuySharesAmount
+	newState.notConfirmedBlockedMoney += float32(canBuySharesAmount) * minBuyPrice
 	newState.lastBuyPrice = minBuyPrice
 	s.state.Set(newState)
 	l.WithField("state", s.state.Get()).Trace("State updated after place buy order")

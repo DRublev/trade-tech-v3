@@ -276,7 +276,7 @@ func (s *MacdStrategy) buy(wg *sync.WaitGroup, c types.OHLC) {
 
 	canBuySharesAmount := int32(math.Abs(leftBalance / (c.Close.Float() * float64(s.config.LotSize))))
 	fmt.Printf("266 strategy lotSize %v; left balance %v; can buy %v \n", s.config.LotSize, leftBalance, canBuySharesAmount)
-	if canBuySharesAmount == 0 {
+	if canBuySharesAmount <= 0 {
 		l.WithField("state", state).Trace("Can buy 0 shares")
 		return
 	}

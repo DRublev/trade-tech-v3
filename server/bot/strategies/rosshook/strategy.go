@@ -115,6 +115,7 @@ func (s *RossHookStrategy) Start(
 		return false, err
 	}
 
+	s.toPlaceOrders = *ordersToPlaceCh
 	go func() {
 		l.Info("Start listening latest candles")
 		for {
@@ -146,13 +147,7 @@ func (s *RossHookStrategy) Start(
 					l.Warn("Orders state channel closed")
 					return
 				}
-				go s.vault.OnOrderSateChange(state)
-			case orderToPlace, ok := <-s.toPlaceOrders:
-				if !ok {
-					l.Warn("Place orders channel closed")
-					return
-				}
-				*ordersToPlaceCh <- orderToPlace
+				s.vault.OnOrderSateChange(state)
 			}
 		}
 	}()
@@ -192,7 +187,15 @@ func (s *RossHookStrategy) OnCandle(c types.OHLC) {
 	s.watchSellSignal(c)
 }
 
+var lastBuyPendingPrice float64 = 0
+
 func (s *RossHookStrategy) watchBuySignal(c types.OHLC) {
+	// Закрываем висящие на заявку покупки при поступлении новой свечи - мы проебали момент
+	// Однако, если текущая цена равна цене, по которой выставляли заявку, есть шанс что еще исполнится
+	if lastBuyPendingPrice != 0 && c.Close.Float() > lastBuyPendingPrice {
+		s.closePendingBuys()
+	}
+
 	if high == nil || high.High.Float() <= c.High.Float() {
 		high = &c
 		low = nil
@@ -284,6 +287,8 @@ func (s *RossHookStrategy) sell(c types.OHLC) {
 	low = nil
 	targetGrow = nil
 	less = nil
+	lastBuyPendingPrice = 0
+
 	s.toPlaceOrders <- order
 }
 
@@ -297,7 +302,7 @@ func (s *RossHookStrategy) buy(c types.OHLC) {
 
 	leftBalance := s.vault.LeftBalance - s.vault.NotConfirmedBlockedMoney
 
-	canBuySharesAmount := math.Round(math.Abs(leftBalance / (c.Close.Float() * float64(s.config.LotSize))))
+	canBuySharesAmount := int64(math.Abs(leftBalance / (c.Close.Float() * float64(s.config.LotSize))))
 	fmt.Printf("266 strategy lotSize %v; left balance %v; can buy %v \n", s.config.LotSize, leftBalance, canBuySharesAmount)
 	if canBuySharesAmount <= 0 {
 		l.WithField("state", s.vault).Trace("Can buy 0 shares")
@@ -313,9 +318,9 @@ func (s *RossHookStrategy) buy(c types.OHLC) {
 
 	l.Trace("Set is buiyng")
 	s.isBuying.value = true
-	if canBuySharesAmount > float64(s.config.MaxSharesToHold) {
+	if canBuySharesAmount > s.config.MaxSharesToHold {
 		l.Tracef("Can buy more shares, than config allows")
-		canBuySharesAmount = float64(s.config.MaxSharesToHold)
+		canBuySharesAmount = s.config.MaxSharesToHold
 	}
 
 	order := &types.PlaceOrder{
@@ -328,12 +333,24 @@ func (s *RossHookStrategy) buy(c types.OHLC) {
 	l.Infof("Order to place: %v", order)
 
 	s.vault.PendingBuyShares += int64(canBuySharesAmount)
-	s.vault.NotConfirmedBlockedMoney += canBuySharesAmount * c.Close.Float()
+	s.vault.NotConfirmedBlockedMoney += float64(canBuySharesAmount) * c.Close.Float()
 	s.vault.LastBuyPrice = c.Close.Float()
+	lastBuyPendingPrice = float64(order.Price)
 	l.WithField("state", s.vault).Trace("State updated after place buy order")
 
 	s.isBuying.value = false
 	l.Trace("Is buy released")
 
 	s.toPlaceOrders <- order
+}
+
+func (s *RossHookStrategy) closePendingBuys() {
+	l.Infof("Pending buys: %v", len(s.vault.PlacedBuyOrders))
+	for _, order := range s.vault.PlacedBuyOrders {
+		o := &types.PlaceOrder{
+			InstrumentID: s.config.InstrumentID,
+			CancelOrder:  order.ID,
+		}
+		s.toPlaceOrders <- o
+	}
 }

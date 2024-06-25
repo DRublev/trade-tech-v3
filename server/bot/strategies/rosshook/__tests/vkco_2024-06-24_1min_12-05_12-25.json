@@ -1,0 +1,402 @@
+[
+    {
+        "Open": {
+            "Units": 507,
+            "Nano": 400000000
+        },
+        "High": {
+            "Units": 507,
+            "Nano": 400000000
+        },
+        "Low": {
+            "Units": 506,
+            "Nano": 800000000
+        },
+        "Close": {
+            "Units": 507,
+            "Nano": 200000000
+        },
+        "Volume": 84,
+        "Time": "2024-06-24T12:05:00Z"
+    },
+    {
+        "Open": {
+            "Units": 507,
+            "Nano": 200000000
+        },
+        "High": {
+            "Units": 507,
+            "Nano": 200000000
+        },
+        "Low": {
+            "Units": 506,
+            "Nano": 200000000
+        },
+        "Close": {
+            "Units": 506,
+            "Nano": 600000000
+        },
+        "Volume": 2663,
+        "Time": "2024-06-24T12:06:00Z"
+    },
+    {
+        "Open": {
+            "Units": 506,
+            "Nano": 600000000
+        },
+        "High": {
+            "Units": 507,
+            "Nano": 200000000
+        },
+        "Low": {
+            "Units": 506,
+            "Nano": 600000000
+        },
+        "Close": {
+            "Units": 507,
+            "Nano": 0
+        },
+        "Volume": 80,
+        "Time": "2024-06-24T12:07:00Z"
+    },
+    {
+        "Open": {
+            "Units": 506,
+            "Nano": 600000000
+        },
+        "High": {
+            "Units": 507,
+            "Nano": 0
+        },
+        "Low": {
+            "Units": 506,
+            "Nano": 200000000
+        },
+        "Close": {
+            "Units": 506,
+            "Nano": 400000000
+        },
+        "Volume": 1031,
+        "Time": "2024-06-24T12:08:00Z"
+    },
+    {
+        "Open": {
+            "Units": 506,
+            "Nano": 400000000
+        },
+        "High": {
+            "Units": 506,
+            "Nano": 800000000
+        },
+        "Low": {
+            "Units": 506,
+            "Nano": 400000000
+        },
+        "Close": {
+            "Units": 506,
+            "Nano": 400000000
+        },
+        "Volume": 226,
+        "Time": "2024-06-24T12:09:00Z"
+    },
+    {
+        "Open": {
+            "Units": 506,
+            "Nano": 800000000
+        },
+        "High": {
+            "Units": 507,
+            "Nano": 0
+        },
+        "Low": {
+            "Units": 506,
+            "Nano": 400000000
+        },
+        "Close": {
+            "Units": 506,
+            "Nano": 800000000
+        },
+        "Volume": 2148,
+        "Time": "2024-06-24T12:10:00Z"
+    },
+    {
+        "Open": {
+            "Units": 506,
+            "Nano": 800000000
+        },
+        "High": {
+            "Units": 506,
+            "Nano": 800000000
+        },
+        "Low": {
+            "Units": 506,
+            "Nano": 200000000
+        },
+        "Close": {
+            "Units": 506,
+            "Nano": 200000000
+        },
+        "Volume": 192,
+        "Time": "2024-06-24T12:11:00Z"
+    },
+    {
+        "Open": {
+            "Units": 506,
+            "Nano": 400000000
+        },
+        "High": {
+            "Units": 506,
+            "Nano": 600000000
+        },
+        "Low": {
+            "Units": 506,
+            "Nano": 200000000
+        },
+        "Close": {
+            "Units": 506,
+            "Nano": 400000000
+        },
+        "Volume": 1482,
+        "Time": "2024-06-24T12:12:00Z"
+    },
+    {
+        "Open": {
+            "Units": 506,
+            "Nano": 800000000
+        },
+        "High": {
+            "Units": 507,
+            "Nano": 0
+        },
+        "Low": {
+            "Units": 506,
+            "Nano": 600000000
+        },
+        "Close": {
+            "Units": 506,
+            "Nano": 600000000
+        },
+        "Volume": 1333,
+        "Time": "2024-06-24T12:13:00Z"
+    },
+    {
+        "Open": {
+            "Units": 506,
+            "Nano": 400000000
+        },
+        "High": {
+            "Units": 506,
+            "Nano": 600000000
+        },
+        "Low": {
+            "Units": 506,
+            "Nano": 0
+        },
+        "Close": {
+            "Units": 506,
+            "Nano": 400000000
+        },
+        "Volume": 6400,
+        "Time": "2024-06-24T12:14:00Z"
+    },
+    {
+        "Open": {
+            "Units": 506,
+            "Nano": 400000000
+        },
+        "High": {
+            "Units": 506,
+            "Nano": 400000000
+        },
+        "Low": {
+            "Units": 506,
+            "Nano": 0
+        },
+        "Close": {
+            "Units": 506,
+            "Nano": 0
+        },
+        "Volume": 7167,
+        "Time": "2024-06-24T12:15:00Z"
+    },
+    {
+        "Open": {
+            "Units": 506,
+            "Nano": 0
+        },
+        "High": {
+            "Units": 506,
+            "Nano": 200000000
+        },
+        "Low": {
+            "Units": 506,
+            "Nano": 0
+        },
+        "Close": {
+            "Units": 506,
+            "Nano": 0
+        },
+        "Volume": 1833,
+        "Time": "2024-06-24T12:16:00Z"
+    },
+    {
+        "Open": {
+            "Units": 506,
+            "Nano": 0
+        },
+        "High": {
+            "Units": 506,
+            "Nano": 200000000
+        },
+        "Low": {
+            "Units": 506,
+            "Nano": 0
+        },
+        "Close": {
+            "Units": 506,
+            "Nano": 0
+        },
+        "Volume": 1917,
+        "Time": "2024-06-24T12:17:00Z"
+    },
+    {
+        "Open": {
+            "Units": 506,
+            "Nano": 0
+        },
+        "High": {
+            "Units": 506,
+            "Nano": 400000000
+        },
+        "Low": {
+            "Units": 506,
+            "Nano": 0
+        },
+        "Close": {
+            "Units": 506,
+            "Nano": 400000000
+        },
+        "Volume": 524,
+        "Time": "2024-06-24T12:18:00Z"
+    },
+    {
+        "Open": {
+            "Units": 506,
+            "Nano": 400000000
+        },
+        "High": {
+            "Units": 506,
+            "Nano": 600000000
+        },
+        "Low": {
+            "Units": 506,
+            "Nano": 400000000
+        },
+        "Close": {
+            "Units": 506,
+            "Nano": 400000000
+        },
+        "Volume": 69,
+        "Time": "2024-06-24T12:19:00Z"
+    },
+    {
+        "Open": {
+            "Units": 506,
+            "Nano": 600000000
+        },
+        "High": {
+            "Units": 506,
+            "Nano": 600000000
+        },
+        "Low": {
+            "Units": 506,
+            "Nano": 400000000
+        },
+        "Close": {
+            "Units": 506,
+            "Nano": 600000000
+        },
+        "Volume": 84,
+        "Time": "2024-06-24T12:20:00Z"
+    },
+    {
+        "Open": {
+            "Units": 506,
+            "Nano": 400000000
+        },
+        "High": {
+            "Units": 506,
+            "Nano": 600000000
+        },
+        "Low": {
+            "Units": 506,
+            "Nano": 400000000
+        },
+        "Close": {
+            "Units": 506,
+            "Nano": 400000000
+        },
+        "Volume": 1239,
+        "Time": "2024-06-24T12:21:00Z"
+    },
+    {
+        "Open": {
+            "Units": 506,
+            "Nano": 400000000
+        },
+        "High": {
+            "Units": 506,
+            "Nano": 400000000
+        },
+        "Low": {
+            "Units": 506,
+            "Nano": 200000000
+        },
+        "Close": {
+            "Units": 506,
+            "Nano": 400000000
+        },
+        "Volume": 1155,
+        "Time": "2024-06-24T12:22:00Z"
+    },
+    {
+        "Open": {
+            "Units": 506,
+            "Nano": 400000000
+        },
+        "High": {
+            "Units": 506,
+            "Nano": 400000000
+        },
+        "Low": {
+            "Units": 506,
+            "Nano": 200000000
+        },
+        "Close": {
+            "Units": 506,
+            "Nano": 200000000
+        },
+        "Volume": 66,
+        "Time": "2024-06-24T12:23:00Z"
+    },
+    {
+        "Open": {
+            "Units": 506,
+            "Nano": 400000000
+        },
+        "High": {
+            "Units": 506,
+            "Nano": 400000000
+        },
+        "Low": {
+            "Units": 506,
+            "Nano": 200000000
+        },
+        "Close": {
+            "Units": 506,
+            "Nano": 200000000
+        },
+        "Volume": 211,
+        "Time": "2024-06-24T12:24:00Z"
+    }
+]

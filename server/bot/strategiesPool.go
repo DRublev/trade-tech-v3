@@ -94,18 +94,18 @@ func (sp *StrategyPool) Start(key strategies.StrategyKey, instrumentID string) (
 	ordersStateCh := make(chan types.OrderExecutionState)
 
 	okCh := make(chan bool, 1)
-	go func(s strategies.IStrategy, ordersToPlaceCh chan *types.PlaceOrder, ordersStateCh *chan types.OrderExecutionState) {
+	go func() {
 		l.Trace("Starting strategy")
-		ok, err := s.Start(config, &ordersToPlaceCh, ordersStateCh)
+		ok, err := strategy.Start(config, &ordersToPlaceCh, &ordersStateCh)
 		if err != nil {
 			l.Errorf("Error starting strategy in pool %v", err)
 		}
 		okCh <- ok
-	}(strategy, ordersToPlaceCh, &ordersStateCh)
+	}()
 
-	go func(source chan *types.PlaceOrder, ordersStateCh *chan types.OrderExecutionState) {
+	go func() {
 		l.Trace("Registering channel for orders to place")
-		ow := orders.NewOrderWatcher(ordersStateCh)
+		ow := orders.NewOrderWatcher(&ordersStateCh)
 
 		for {
 			select {
@@ -135,7 +135,7 @@ func (sp *StrategyPool) Start(key strategies.StrategyKey, instrumentID string) (
 				ow.PairWithOrderID(order.IdempodentID, orderID)
 			}
 		}
-	}(ordersToPlaceCh, &ordersStateCh)
+	}()
 
 	l.Info("Strategy started")
 	return <-okCh, nil
