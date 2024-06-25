@@ -110,7 +110,7 @@ const macdScheme: ConfigScheme = {
             htmlType: 'number',
         },
         {
-            name: 'StopLossAfter',
+            name: 'StopLoss',
             label: 'Стоп-лосс',
             placeholder: 'цена покупки - этот параметр = цена выставления стоп-лосс',
             type: ConfigFieldTypes.number,
