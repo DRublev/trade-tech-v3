@@ -16,7 +16,7 @@ type MockProvider struct {
 
 var candlesCh = make(chan types.OHLC)
 
-func (p MockProvider) GetOrCreate(instrumentID string, initialFrom time.Time, initialTo time.Time) (*chan types.OHLC, error) {
+func (p MockProvider) GetOrCreate(instrumentID string, initialFrom time.Time, initialTo time.Time, onlyCompletedCandles bool) (*chan types.OHLC, error) {
 	return &candlesCh, nil
 }
 
@@ -145,8 +145,6 @@ func TestShouldCloseBuyIfNotExecuted(t *testing.T) {
 		}
 	}
 
-	// Падаем, если через 5 секунд мы не закрыли заявку
-	<-time.After(5 * 1000 * 1000 * 1000)
 	// Без этого, тест будет висеть дефолтный таймаут (30 секунд), пока не упадет сам
 	if len(closedOrderID) <= 0 {
 		t.Fatalf("Не закрыли заявку")

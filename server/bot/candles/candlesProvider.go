@@ -15,7 +15,7 @@ import (
 type candlesChannels map[string]*chan types.OHLC
 
 type BaseCandlesProvider interface {
-	GetOrCreate(instrumentID string, initialFrom time.Time, initialTo time.Time) (*chan types.OHLC, error)
+	GetOrCreate(instrumentID string, initialFrom time.Time, initialTo time.Time, onlyCompletedCandles bool) (*chan types.OHLC, error)
 }
 
 // Provider Провайдер свечей
@@ -43,7 +43,7 @@ func NewProvider() *Provider {
 }
 
 // GetOrCreate Создать провайдер или взять готовый
-func (p *Provider) GetOrCreate(instrumentID string, initialFrom time.Time, initialTo time.Time) (*chan types.OHLC, error) {
+func (p *Provider) GetOrCreate(instrumentID string, initialFrom time.Time, initialTo time.Time, onlyCompletedCandles bool) (*chan types.OHLC, error) {
 	log.Infof("Getting candles channel for %v", instrumentID)
 
 	ch, exists := p.channels[instrumentID]
@@ -66,7 +66,7 @@ func (p *Provider) GetOrCreate(instrumentID string, initialFrom time.Time, initi
 			for _, candle := range initialCandles {
 				*ch <- candle
 			}
-			go broker.Broker.SubscribeCandles(backCtx, ch, instrumentID, 1, true)
+			go broker.Broker.SubscribeCandles(backCtx, ch, instrumentID, 1, onlyCompletedCandles)
 		}()
 	}
 
