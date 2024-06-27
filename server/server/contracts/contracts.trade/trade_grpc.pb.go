@@ -19,11 +19,12 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	Trade_Start_FullMethodName        = "/trade.Trade/Start"
-	Trade_Stop_FullMethodName         = "/trade.Trade/Stop"
-	Trade_IsStarted_FullMethodName    = "/trade.Trade/IsStarted"
-	Trade_ChangeConfig_FullMethodName = "/trade.Trade/ChangeConfig"
-	Trade_GetConfig_FullMethodName    = "/trade.Trade/GetConfig"
+	Trade_Start_FullMethodName                     = "/trade.Trade/Start"
+	Trade_Stop_FullMethodName                      = "/trade.Trade/Stop"
+	Trade_IsStarted_FullMethodName                 = "/trade.Trade/IsStarted"
+	Trade_ChangeConfig_FullMethodName              = "/trade.Trade/ChangeConfig"
+	Trade_GetConfig_FullMethodName                 = "/trade.Trade/GetConfig"
+	Trade_SubscribeStrategiesEvents_FullMethodName = "/trade.Trade/SubscribeStrategiesEvents"
 )
 
 // TradeClient is the client API for Trade service.
@@ -35,6 +36,7 @@ type TradeClient interface {
 	IsStarted(ctx context.Context, in *StartRequest, opts ...grpc.CallOption) (*StartResponse, error)
 	ChangeConfig(ctx context.Context, in *ChangeConfigRequest, opts ...grpc.CallOption) (*ChangeConfigResponse, error)
 	GetConfig(ctx context.Context, in *GetConfigRequest, opts ...grpc.CallOption) (*GetConfigResponse, error)
+	SubscribeStrategiesEvents(ctx context.Context, in *SubscribeStrategiesEventsRequest, opts ...grpc.CallOption) (Trade_SubscribeStrategiesEventsClient, error)
 }
 
 type tradeClient struct {
@@ -90,6 +92,38 @@ func (c *tradeClient) GetConfig(ctx context.Context, in *GetConfigRequest, opts 
 	return out, nil
 }
 
+func (c *tradeClient) SubscribeStrategiesEvents(ctx context.Context, in *SubscribeStrategiesEventsRequest, opts ...grpc.CallOption) (Trade_SubscribeStrategiesEventsClient, error) {
+	stream, err := c.cc.NewStream(ctx, &Trade_ServiceDesc.Streams[0], Trade_SubscribeStrategiesEvents_FullMethodName, opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &tradeSubscribeStrategiesEventsClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type Trade_SubscribeStrategiesEventsClient interface {
+	Recv() (*StrategyEvent, error)
+	grpc.ClientStream
+}
+
+type tradeSubscribeStrategiesEventsClient struct {
+	grpc.ClientStream
+}
+
+func (x *tradeSubscribeStrategiesEventsClient) Recv() (*StrategyEvent, error) {
+	m := new(StrategyEvent)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // TradeServer is the server API for Trade service.
 // All implementations must embed UnimplementedTradeServer
 // for forward compatibility
@@ -99,6 +133,7 @@ type TradeServer interface {
 	IsStarted(context.Context, *StartRequest) (*StartResponse, error)
 	ChangeConfig(context.Context, *ChangeConfigRequest) (*ChangeConfigResponse, error)
 	GetConfig(context.Context, *GetConfigRequest) (*GetConfigResponse, error)
+	SubscribeStrategiesEvents(*SubscribeStrategiesEventsRequest, Trade_SubscribeStrategiesEventsServer) error
 	mustEmbedUnimplementedTradeServer()
 }
 
@@ -120,6 +155,9 @@ func (UnimplementedTradeServer) ChangeConfig(context.Context, *ChangeConfigReque
 }
 func (UnimplementedTradeServer) GetConfig(context.Context, *GetConfigRequest) (*GetConfigResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetConfig not implemented")
+}
+func (UnimplementedTradeServer) SubscribeStrategiesEvents(*SubscribeStrategiesEventsRequest, Trade_SubscribeStrategiesEventsServer) error {
+	return status.Errorf(codes.Unimplemented, "method SubscribeStrategiesEvents not implemented")
 }
 func (UnimplementedTradeServer) mustEmbedUnimplementedTradeServer() {}
 
@@ -224,6 +262,27 @@ func _Trade_GetConfig_Handler(srv interface{}, ctx context.Context, dec func(int
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Trade_SubscribeStrategiesEvents_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(SubscribeStrategiesEventsRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(TradeServer).SubscribeStrategiesEvents(m, &tradeSubscribeStrategiesEventsServer{stream})
+}
+
+type Trade_SubscribeStrategiesEventsServer interface {
+	Send(*StrategyEvent) error
+	grpc.ServerStream
+}
+
+type tradeSubscribeStrategiesEventsServer struct {
+	grpc.ServerStream
+}
+
+func (x *tradeSubscribeStrategiesEventsServer) Send(m *StrategyEvent) error {
+	return x.ServerStream.SendMsg(m)
+}
+
 // Trade_ServiceDesc is the grpc.ServiceDesc for Trade service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -252,6 +311,12 @@ var Trade_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Trade_GetConfig_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "SubscribeStrategiesEvents",
+			Handler:       _Trade_SubscribeStrategiesEvents_Handler,
+			ServerStreams: true,
+		},
+	},
 	Metadata: "trade.proto",
 }

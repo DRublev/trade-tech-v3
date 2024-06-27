@@ -1,5 +1,12 @@
 /* eslint-disable */
-import { ChannelCredentials, Client, makeGenericClientConstructor, Metadata } from "@grpc/grpc-js";
+import {
+  ChannelCredentials,
+  Client,
+  ClientReadableStream,
+  handleServerStreamingCall,
+  makeGenericClientConstructor,
+  Metadata,
+} from "@grpc/grpc-js";
 import type {
   CallOptions,
   ClientOptions,
@@ -12,6 +19,14 @@ import _m0 from "protobufjs/minimal";
 import { Struct } from "./google/protobuf/struct";
 
 export const protobufPackage = "trade";
+
+export interface SubscribeStrategiesEventsRequest {
+}
+
+export interface StrategyEvent {
+  Type: string;
+  Value: { [key: string]: any }[];
+}
 
 export interface StartRequest {
   Strategy: string;
@@ -62,6 +77,127 @@ export interface GetConfigRequest {
 export interface GetConfigResponse {
   Config: { [key: string]: any } | undefined;
 }
+
+function createBaseSubscribeStrategiesEventsRequest(): SubscribeStrategiesEventsRequest {
+  return {};
+}
+
+export const SubscribeStrategiesEventsRequest = {
+  encode(_: SubscribeStrategiesEventsRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): SubscribeStrategiesEventsRequest {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseSubscribeStrategiesEventsRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(_: any): SubscribeStrategiesEventsRequest {
+    return {};
+  },
+
+  toJSON(_: SubscribeStrategiesEventsRequest): unknown {
+    const obj: any = {};
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<SubscribeStrategiesEventsRequest>, I>>(
+    base?: I,
+  ): SubscribeStrategiesEventsRequest {
+    return SubscribeStrategiesEventsRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<SubscribeStrategiesEventsRequest>, I>>(
+    _: I,
+  ): SubscribeStrategiesEventsRequest {
+    const message = createBaseSubscribeStrategiesEventsRequest();
+    return message;
+  },
+};
+
+function createBaseStrategyEvent(): StrategyEvent {
+  return { Type: "", Value: [] };
+}
+
+export const StrategyEvent = {
+  encode(message: StrategyEvent, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.Type !== "") {
+      writer.uint32(10).string(message.Type);
+    }
+    for (const v of message.Value) {
+      Struct.encode(Struct.wrap(v!), writer.uint32(18).fork()).ldelim();
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): StrategyEvent {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseStrategyEvent();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.Type = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.Value.push(Struct.unwrap(Struct.decode(reader, reader.uint32())));
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): StrategyEvent {
+    return {
+      Type: isSet(object.Type) ? globalThis.String(object.Type) : "",
+      Value: globalThis.Array.isArray(object?.Value) ? [...object.Value] : [],
+    };
+  },
+
+  toJSON(message: StrategyEvent): unknown {
+    const obj: any = {};
+    if (message.Type !== "") {
+      obj.Type = message.Type;
+    }
+    if (message.Value?.length) {
+      obj.Value = message.Value;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<StrategyEvent>, I>>(base?: I): StrategyEvent {
+    return StrategyEvent.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<StrategyEvent>, I>>(object: I): StrategyEvent {
+    const message = createBaseStrategyEvent();
+    message.Type = object.Type ?? "";
+    message.Value = object.Value?.map((e) => e) || [];
+    return message;
+  },
+};
 
 function createBaseStartRequest(): StartRequest {
   return { Strategy: "", InstrumentId: "" };
@@ -848,6 +984,16 @@ export const TradeService = {
     responseSerialize: (value: GetConfigResponse) => Buffer.from(GetConfigResponse.encode(value).finish()),
     responseDeserialize: (value: Buffer) => GetConfigResponse.decode(value),
   },
+  subscribeStrategiesEvents: {
+    path: "/trade.Trade/SubscribeStrategiesEvents",
+    requestStream: false,
+    responseStream: true,
+    requestSerialize: (value: SubscribeStrategiesEventsRequest) =>
+      Buffer.from(SubscribeStrategiesEventsRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer) => SubscribeStrategiesEventsRequest.decode(value),
+    responseSerialize: (value: StrategyEvent) => Buffer.from(StrategyEvent.encode(value).finish()),
+    responseDeserialize: (value: Buffer) => StrategyEvent.decode(value),
+  },
 } as const;
 
 export interface TradeServer extends UntypedServiceImplementation {
@@ -856,6 +1002,7 @@ export interface TradeServer extends UntypedServiceImplementation {
   isStarted: handleUnaryCall<StartRequest, StartResponse>;
   changeConfig: handleUnaryCall<ChangeConfigRequest, ChangeConfigResponse>;
   getConfig: handleUnaryCall<GetConfigRequest, GetConfigResponse>;
+  subscribeStrategiesEvents: handleServerStreamingCall<SubscribeStrategiesEventsRequest, StrategyEvent>;
 }
 
 export interface TradeClient extends Client {
@@ -931,6 +1078,15 @@ export interface TradeClient extends Client {
     options: Partial<CallOptions>,
     callback: (error: ServiceError | null, response: GetConfigResponse) => void,
   ): ClientUnaryCall;
+  subscribeStrategiesEvents(
+    request: SubscribeStrategiesEventsRequest,
+    options?: Partial<CallOptions>,
+  ): ClientReadableStream<StrategyEvent>;
+  subscribeStrategiesEvents(
+    request: SubscribeStrategiesEventsRequest,
+    metadata?: Metadata,
+    options?: Partial<CallOptions>,
+  ): ClientReadableStream<StrategyEvent>;
 }
 
 export const TradeClient = makeGenericClientConstructor(TradeService, "trade.Trade") as unknown as {
