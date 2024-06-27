@@ -59,6 +59,11 @@ func toQuotation(n float64) investapi.Quotation {
 	}
 }
 
+type IInvestCandleWithLastTrade interface {
+	IInvestCandle
+	GetLastTradeTs() *timestamppb.Timestamp
+}
+
 type IInvestCandle interface {
 	GetTime() *timestamppb.Timestamp
 	GetOpen() *investapi.Quotation
@@ -68,14 +73,29 @@ type IInvestCandle interface {
 	GetVolume() int64
 }
 
+func toOHLCWithTrade(c IInvestCandleWithLastTrade) types.OHLC {
+	candle := types.OHLC{
+		Time:        c.GetTime().AsTime(),
+		Open:        toQuant(c.GetOpen()),
+		High:        toQuant(c.GetHigh()),
+		Low:         toQuant(c.GetLow()),
+		Close:       toQuant(c.GetClose()),
+		Volume:      c.GetVolume(),
+		LastTradeTS: c.GetLastTradeTs().AsTime(),
+	}
+
+	return candle
+}
+
 func toOHLC(c IInvestCandle) types.OHLC {
 	candle := types.OHLC{
-		Time:   c.GetTime().AsTime(),
-		Open:   toQuant(c.GetOpen()),
-		High:   toQuant(c.GetHigh()),
-		Low:    toQuant(c.GetLow()),
-		Close:  toQuant(c.GetClose()),
-		Volume: c.GetVolume(),
+		Time:        c.GetTime().AsTime(),
+		Open:        toQuant(c.GetOpen()),
+		High:        toQuant(c.GetHigh()),
+		Low:         toQuant(c.GetLow()),
+		Close:       toQuant(c.GetClose()),
+		Volume:      c.GetVolume(),
+		LastTradeTS: c.GetTime().AsTime(),
 	}
 
 	return candle

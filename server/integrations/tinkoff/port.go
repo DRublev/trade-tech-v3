@@ -145,7 +145,7 @@ func (c *TinkoffBrokerPort) SubscribeCandles(ctx context.Context, ohlcCh *chan t
 					return
 				}
 
-				ohlc := toOHLC(candle)
+				ohlc := toOHLCWithTrade(candle)
 				sdkL.Tracef("Notifying about new candle. Candle time: %v", ohlc.Time)
 				*ohlcCh <- ohlc
 			}

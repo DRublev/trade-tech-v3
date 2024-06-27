@@ -17,9 +17,10 @@ type OHLC struct {
 	// Минимальная цена за интервал
 	Low Quant
 	// Цена закрытия
-	Close  Quant
-	Time   time.Time
-	Volume int64
+	Close       Quant
+	Time        time.Time
+	LastTradeTS time.Time
+	Volume      int64
 }
 
 func (o *OHLC) String() string {
