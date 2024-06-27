@@ -68,7 +68,7 @@ const rosshookScheme: ConfigScheme = {
             htmlType: 'number',
         },
         {
-            name: 'StopLossAfter',
+            name: 'StopLoss',
             label: 'Стоп-лосс',
             placeholder: 'Второй минимум - этот параметр = цена выставления стоп-лосс',
             type: ConfigFieldTypes.number,
@@ -110,7 +110,7 @@ const macdScheme: ConfigScheme = {
             htmlType: 'number',
         },
         {
-            name: 'StopLoss',
+            name: 'StopLossAfter',
             label: 'Стоп-лосс',
             placeholder: 'цена покупки - этот параметр = цена выставления стоп-лосс',
             type: ConfigFieldTypes.number,
