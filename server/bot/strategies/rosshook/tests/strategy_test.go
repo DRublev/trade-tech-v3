@@ -28,8 +28,8 @@ func (p MockProvider) GetOrCreate(instrumentID string, initialFrom time.Time, in
 	return &p.channel, nil
 }
 
-// Выставляем тейк
-func TestBuyTakeProfit(t *testing.T) {
+// Выставляем бай
+func TestBuyOrderPlaced(t *testing.T) {
 	mockProvider := MockProvider{
 		mock: getShouldBuyMock(),
 	}
