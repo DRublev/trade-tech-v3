@@ -112,7 +112,7 @@ func TestShouldCloseBuyIfNotExecuted(t *testing.T) {
 		}
 	}()
 	// Без этого, тест будет висеть дефолтный таймаут (30 секунд), пока не упадет сам
-	<-time.After(time.Second * 30)
+	<-time.After(time.Second * 15)
 	if len(closedOrderID) <= 0 {
 		t.Fatalf("Не закрыли заявку")
 	}
