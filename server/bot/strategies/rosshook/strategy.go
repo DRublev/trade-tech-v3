@@ -185,8 +185,8 @@ func (s *RossHookStrategy) watchBuySignal(c types.OHLC) {
 		s.closePendingBuys()
 	}
 
-	isLowDifTF := s.high != nil && isGreaterTF(c, *s.high)
-	isTargetGrowDiffTF := isLowDifTF && s.low != nil && isGreaterTF(c, *s.low)
+	isLowDiffTF := s.high != nil && isGreaterTF(c, *s.high)
+	isTargetGrowDiffTF := isLowDiffTF && s.low != nil && isGreaterTF(c, *s.low)
 	isLessDiffTF := isTargetGrowDiffTF && s.targetGrow != nil && isGreaterTF(c, *s.targetGrow)
 
 	if s.high == nil || s.high.High.Float() <= c.High.Float() {
@@ -196,7 +196,7 @@ func (s *RossHookStrategy) watchBuySignal(c types.OHLC) {
 		s.less = nil
 		l.Infof("Set point 1. high: %v;", s.high.High.Float())
 		return
-	} else if (s.low == nil || s.low.Low.Float() >= c.Low.Float()) && isLowDifTF {
+	} else if (s.low == nil || s.low.Low.Float() >= c.Low.Float()) && isLowDiffTF {
 		s.low = &c
 		s.targetGrow = nil
 		s.less = nil
@@ -219,7 +219,7 @@ func (s *RossHookStrategy) watchBuySignal(c types.OHLC) {
 		l.Infof("Set point 4. high: %v; low: %v; targetGrow: %v; less: %v;", s.high.High.Float(), s.low.Low.Float(), s.targetGrow.High.Float(), s.less.Low.Float())
 		return
 	} else {
-		// l.Infof("None of price l %v; h: %v; t: %v; (high: %v; low: %v; targetGrow: %v; less: %v;)", c.Low.Float(), c.High.Float(), c.LastTradeTS.Local(), high, low, targetGrow, less)
+		l.Infof("None of price l %v; h: %v; t: %v; (high: %v; low: %v; targetGrow: %v; less: %v;)", c.Low.Float(), c.High.Float(), c.LastTradeTS.Local(), s.high, s.low, s.targetGrow, s.less)
 	}
 
 	if s.high != nil && s.low != nil && s.targetGrow != nil && s.less != nil {
@@ -248,8 +248,8 @@ func (s *RossHookStrategy) watchSellSignal(c types.OHLC) {
 	if s.takeProfit == nil {
 		return
 	}
-	if c.Close.Float() > s.takeProfit.Close.Float() {
-		l.Infof("Updating take-profit high %v", c.Close.Float())
+	if c.High.Float() > s.takeProfit.High.Float() {
+		l.Infof("Updating take-profit high %v", c.High.Float())
 		// Копируем свечу. Подозрение на баг, что свеча перезаписывается следующей, поэтомуне прокидываем просто &c
 		s.takeProfit = &types.OHLC{
 			Open:  c.Open,
@@ -260,7 +260,10 @@ func (s *RossHookStrategy) watchSellSignal(c types.OHLC) {
 		}
 		return
 	}
-	if s.less != nil && s.lastBuyPendingCandle != nil && s.takeProfit.Close.Float()-float64(s.Config.SaveProfit) >= c.Close.Float() && s.takeProfit.Close.Float() > s.lastBuyPendingCandle.High.Float() {
+	if s.less != nil && 
+	s.lastBuyPendingCandle != nil && 
+	s.takeProfit.High.Float()-float64(s.Config.SaveProfit) >= c.High.Float() && 
+	s.takeProfit.High.Float() > s.lastBuyPendingCandle.High.Float() {
 		l.Infof("Price reached take-profit (take: %v; save: %v; current: %v)", s.takeProfit.Close.Float(), s.Config.SaveProfit, c.Close.Float())
 		go s.sell(types.OHLC{
 			Open:  c.Open,

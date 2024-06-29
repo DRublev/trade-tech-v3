@@ -86,7 +86,9 @@ const send = () => {
     });
 }
 
-const write = process.env.ENV == "PROD" ? (m: any) => toLoki(m) : undefined;
+const write = !globalThis.document && process?.env.ENV == "PROD" ? (m: any) => toLoki(m) : (m: any) => {
+    console.log(m)
+};
 
 const logger = pino(
     {
