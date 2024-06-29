@@ -86,17 +86,19 @@ const send = () => {
     });
 }
 
+const write = process.env.ENV == "PROD" ? (m: any) => toLoki(m) : undefined;
+
 const logger = pino(
     {
         browser: {
             serialize: false,
             asObject: true,
-            write: (m) => toLoki(m),
+            write,
         },
 
     },
     {
-        write: (m) => toLoki(m),
+        write,
     }
 );
 export const setUid = (candidate: string) => {
