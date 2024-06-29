@@ -80,7 +80,7 @@ type isWorking struct {
 
 type SpreadStrategy struct {
 	strategies.IStrategy
-	strategies.Strategy
+	strategies.Strategy[Config]
 	config Config
 	// Канал для стакана
 	obCh              *chan *types.Orderbook
