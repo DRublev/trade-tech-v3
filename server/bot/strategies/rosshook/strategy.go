@@ -2,7 +2,6 @@ package rosshook
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"main/bot/candles"
 	"main/bot/indicators"
@@ -44,10 +43,9 @@ type isWorking struct {
 
 type RossHookStrategy struct {
 	strategies.IStrategy
-	strategies.Strategy
+	strategies.Strategy[Config]
 
 	provider candles.BaseCandlesProvider
-	config   Config
 	// Канал для стакана
 	obCh              *chan *types.Orderbook
 	nextOrderCooldown *time.Timer
@@ -85,31 +83,22 @@ func (s *RossHookStrategy) Start(
 		"instrument": (*config)["InstrumentID"],
 	})
 
-	var res Config
+	err := s.SetConfig(*config)
 
-	// TODO: Вынести в сущность конфига стратегии
-	bts, err := json.Marshal(config)
 	if err != nil {
 		l.Error("Error parsing config %v", err)
 		return false, err
 	}
 
-	err = json.Unmarshal(bts, &res)
-	if err != nil {
-		l.Error("Error parsing config %v", err)
-		return false, err
-	}
-	s.config = res
+	s.vault = *strategies.NewVault(s.Config.LotSize, s.Config.Balance)
 
-	s.vault = *strategies.NewVault(s.config.LotSize, s.config.Balance)
-
-	l.Infof("Starting strategy with config: %v", s.config)
+	l.Infof("Starting strategy with config: %v", s.Config)
 
 	// Создаем или получаем канал, в который будет постаупать инфа о стакане
 	l.Tracef("Getting candles channel")
 	now := time.Now()
 
-	ch, err := s.provider.GetOrCreate(s.config.InstrumentID, now, now, false)
+	ch, err := s.provider.GetOrCreate(s.Config.InstrumentID, now, now, false)
 	if err != nil {
 		l.Errorf("Failed to get candles channel: %v", err)
 		return false, err
@@ -135,24 +124,7 @@ func (s *RossHookStrategy) Start(
 		}
 	}()
 
-	go func() {
-		l.Info("Start listening for orders")
-		for {
-			select {
-			case <-s.stopCtx.Done():
-				l.Info("Strategy stopped")
-				return
-			case state, ok := <-*orderStateChangeCh:
-				if !ok {
-					l.Warn("Orders state channel closed")
-					return
-				}
-				s.vault.OnOrderSateChange(state)
-			}
-		}
-	}()
-
-	s.nextOrderCooldown = time.NewTimer(time.Duration(0) * time.Millisecond)
+	go s.OnOrderSateChangeSubscribe(s.stopCtx, orderStateChangeCh, s.vault.OnOrderSateChange)
 
 	return true, nil
 }
@@ -259,7 +231,7 @@ func (s *RossHookStrategy) watchBuySignal(c types.OHLC) {
 
 func (s *RossHookStrategy) watchSellSignal(c types.OHLC) {
 	// Stop-loss
-	if less != nil && less.Close.Float()-s.config.StopLoss >= c.Close.Float() {
+	if less != nil && less.Close.Float()-s.Config.StopLoss >= c.Close.Float() {
 		l.Infof("Price reached stop-loss (less: %v; loss: %v; current: %v)", less.Close.Float(), s.config.StopLoss, c.Close.Float())
 		go s.sell(c)
 		return
@@ -280,8 +252,8 @@ func (s *RossHookStrategy) watchSellSignal(c types.OHLC) {
 		}
 		return
 	}
-	if less != nil && takeProfit.Close.Float()-float64(s.config.SaveProfit) >= c.Close.Float() {
-		l.Infof("Price reached take-profit (take: %v; save: %v; current: %v)", takeProfit.Close.Float(), s.config.SaveProfit, c.Close.Float())
+	if less != nil && takeProfit.Close.Float()-float64(s.Config.SaveProfit) >= c.Close.Float() {
+		l.Infof("Price reached take-profit (take: %v; save: %v; current: %v)", takeProfit.Close.Float(), s.Config.SaveProfit, c.Close.Float())
 		go s.sell(types.OHLC{
 			Open:  c.Open,
 			High:  c.High,
@@ -289,8 +261,8 @@ func (s *RossHookStrategy) watchSellSignal(c types.OHLC) {
 			Close: c.Close,
 			Time:  c.Time,
 		})
-	} else if takeProfit.Close.Float()-float64(s.config.SaveProfit) <= c.Close.Float() {
-		l.Infof("Price going up (take: %v; save: %v; current: %v)", takeProfit.Close.Float(), s.config.SaveProfit, c.Close.Float())
+	} else if takeProfit.Close.Float()-float64(s.Config.SaveProfit) <= c.Close.Float() {
+		l.Infof("Price going up (take: %v; save: %v; current: %v)", takeProfit.Close.Float(), s.Config.SaveProfit, c.Close.Float())
 	}
 }
 
@@ -320,7 +292,7 @@ func (s *RossHookStrategy) sell(c types.OHLC) {
 
 	price := c.Close.Float()
 	order := &types.PlaceOrder{
-		InstrumentID: s.config.InstrumentID,
+		InstrumentID: s.Config.InstrumentID,
 		Quantity:     int64(s.vault.HoldingShares),
 		Direction:    types.Sell,
 		Price:        types.Price(price),
@@ -354,8 +326,8 @@ func (s *RossHookStrategy) buy(c types.OHLC) {
 
 	leftBalance := s.vault.LeftBalance - s.vault.NotConfirmedBlockedMoney
 
-	canBuySharesAmount := int64(math.Abs(leftBalance / (c.Close.Float() * float64(s.config.LotSize))))
-	fmt.Printf("266 strategy lotSize %v; left balance %v; can buy %v \n", s.config.LotSize, leftBalance, canBuySharesAmount)
+	canBuySharesAmount := int64(math.Abs(leftBalance / (c.Close.Float() * float64(s.Config.LotSize))))
+	fmt.Printf("266 strategy lotSize %v; left balance %v; can buy %v \n", s.Config.LotSize, leftBalance, canBuySharesAmount)
 	if canBuySharesAmount <= 0 {
 		l.WithField("state", s.vault).Trace("Can buy 0 shares")
 		return
@@ -370,13 +342,13 @@ func (s *RossHookStrategy) buy(c types.OHLC) {
 
 	l.Trace("Set is buiyng")
 	s.isBuying.value = true
-	if canBuySharesAmount > s.config.MaxSharesToHold {
+	if canBuySharesAmount > s.Config.MaxSharesToHold {
 		l.Tracef("Can buy more shares, than config allows")
-		canBuySharesAmount = s.config.MaxSharesToHold
+		canBuySharesAmount = s.Config.MaxSharesToHold
 	}
 
 	order := &types.PlaceOrder{
-		InstrumentID: s.config.InstrumentID,
+		InstrumentID: s.Config.InstrumentID,
 		Quantity:     int64(canBuySharesAmount),
 		Direction:    types.Buy,
 		Price:        types.Price(c.Close.Float()),
@@ -400,7 +372,7 @@ func (s *RossHookStrategy) closePendingBuys() {
 	l.Infof("Pending buys: %v", len(s.vault.PlacedBuyOrders))
 	for _, order := range s.vault.PlacedBuyOrders {
 		o := &types.PlaceOrder{
-			InstrumentID: s.config.InstrumentID,
+			InstrumentID: s.Config.InstrumentID,
 			CancelOrder:  order.ID,
 		}
 		s.toPlaceOrders <- o
