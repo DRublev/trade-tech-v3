@@ -98,7 +98,6 @@ func (s *RossHookStrategy) Start(
 	s.takeProfit = nil
 	s.lastBuyPendingCandle = nil
 
-	var res Config
 	err := s.SetConfig(*config)
 	if err != nil {
 		l.Errorf("Error parsing config %v", err)
