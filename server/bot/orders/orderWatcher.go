@@ -90,7 +90,7 @@ func (ow *OrderWatcher) PairWithOrderID(idempodentID types.IdempodentID, orderID
 		l.Infof("Getting initial state of order")
 		s, err := broker.Broker.GetOrderState(orderID)
 		if err != nil {
-			l.Error("Failed getting initial state of order: %v", err)
+			l.Errorf("Failed getting initial state of order: %v", err)
 			return
 		}
 

@@ -12,17 +12,27 @@ import (
 
 type MockProvider struct {
 	candles.BaseCandlesProvider
+	mock    []types.OHLC
+	channel chan types.OHLC
 }
 
-var candlesCh = make(chan types.OHLC)
-
 func (p MockProvider) GetOrCreate(instrumentID string, initialFrom time.Time, initialTo time.Time, onlyCompletedCandles bool) (*chan types.OHLC, error) {
-	return &candlesCh, nil
+	p.channel = make(chan types.OHLC)
+	go func() {
+		for _, candle := range p.mock {
+			// Таймаут, чтобы успела отработать логи обновления стейта при выставлении заявки
+			<-time.After(0.2 * 1000 * 1000 * 1000)
+			p.channel <- candle
+		}
+	}()
+	return &p.channel, nil
 }
 
 // Выставляем тейк
 func TestBuyTakeProfit(t *testing.T) {
-	mockProvider := MockProvider{}
+	mockProvider := MockProvider{
+		mock: getShouldBuyMock(),
+	}
 
 	strategy := rosshook.New(mockProvider)
 
@@ -38,13 +48,6 @@ func TestBuyTakeProfit(t *testing.T) {
 	ordersStates := make(chan types.OrderExecutionState)
 
 	strategy.Start(&config, &placedOrders, &ordersStates)
-
-	mockedCandles := getShouldBuyMock()
-	go func() {
-		for _, candle := range mockedCandles {
-			candlesCh <- candle
-		}
-	}()
 
 	select {
 	case placedOrder, ok := <-placedOrders:
@@ -56,7 +59,7 @@ func TestBuyTakeProfit(t *testing.T) {
 			t.Fatalf("Ордер выставлен неверно %v", placedOrder)
 		}
 		return
-	case <-time.After(time.Second * 2):
+	case <-time.After(time.Second * 10):
 		t.Fatalf("Таймаут выставления заявки")
 		break
 	}
@@ -65,7 +68,9 @@ func TestBuyTakeProfit(t *testing.T) {
 }
 
 func TestShouldCloseBuyIfNotExecuted(t *testing.T) {
-	mockProvider := MockProvider{}
+	mockProvider := MockProvider{
+		mock: getShouldCloseBuyWhenNotExecutedMock(),
+	}
 
 	strategy := rosshook.New(mockProvider)
 
@@ -82,44 +87,32 @@ func TestShouldCloseBuyIfNotExecuted(t *testing.T) {
 
 	strategy.Start(&config, &placedOrders, &ordersStates)
 
-	mockedCandles := getShouldCloseBuyWhenNotExecutedMock()
-	go func() {
-		for _, candle := range mockedCandles {
-			// Таймаут, чтобы успела отработать логи обновления стейта при выставлении заявки
-			<-time.After(0.1 * 1000 * 1000 * 1000)
-
-			candlesCh <- candle
-		}
-	}()
-
 	var closedOrderID string
-	for {
-		select {
-		case placedOrder := <-placedOrders:
-			// Нам нужно проверить, что мы закрываем неисполнившиеся заявки на покупку
-			if len(placedOrder.CancelOrder) > 0 {
-				closedOrderID = string(placedOrder.CancelOrder)
-				return
-			}
-			if placedOrder.Direction == types.Buy {
-				// Эмулируем выставления заявки на покупку, но она будет висеть не исполнившаяся
-				ordersStates <- types.OrderExecutionState{
-					Status:             types.New,
-					LotsExecuted:       0,
-					LotsRequested:      int(placedOrder.Quantity),
-					ExecutedOrderPrice: float64(placedOrder.Price),
-					InstrumentID:       placedOrder.InstrumentID,
-					Direction:          placedOrder.Direction,
-					ID:                 "placedBuyOrderID",
+	go func() {
+		for {
+			select {
+			case placedOrder := <-placedOrders:
+				// Нам нужно проверить, что мы закрываем неисполнившиеся заявки на покупку
+				if len(placedOrder.CancelOrder) > 0 {
+					closedOrderID = string(placedOrder.CancelOrder)
+				}
+				if placedOrder.Direction == types.Buy {
+					// Эмулируем выставления заявки на покупку, но она будет висеть не исполнившаяся
+					ordersStates <- types.OrderExecutionState{
+						Status:             types.New,
+						LotsExecuted:       0,
+						LotsRequested:      int(placedOrder.Quantity),
+						ExecutedOrderPrice: float64(placedOrder.Price),
+						InstrumentID:       placedOrder.InstrumentID,
+						Direction:          placedOrder.Direction,
+						ID:                 "placedBuyOrderID",
+					}
 				}
 			}
-		case <-time.After(time.Second * 10):
-			t.Fatalf("Таймаут выставления заявки")
-			break
 		}
-	}
-
+	}()
 	// Без этого, тест будет висеть дефолтный таймаут (30 секунд), пока не упадет сам
+	<-time.After(time.Second * 30)
 	if len(closedOrderID) <= 0 {
 		t.Fatalf("Не закрыли заявку")
 	}
@@ -127,4 +120,3 @@ func TestShouldCloseBuyIfNotExecuted(t *testing.T) {
 
 // TODO: Написать тест на сценарий покупка-стоп лосс
 // TODO: Тест что корректно выставляется закрытие пендинг бай ордеров
-//

@@ -61,6 +61,13 @@ type RossHookStrategy struct {
 	stopCtx context.Context
 
 	vault strategies.Vault
+
+	high                 *types.OHLC
+	low                  *types.OHLC
+	targetGrow           *types.OHLC
+	less                 *types.OHLC
+	takeProfit           *types.OHLC
+	lastBuyPendingCandle *types.OHLC
 }
 
 var cancelSwitch context.CancelFunc
@@ -85,18 +92,26 @@ func (s *RossHookStrategy) Start(
 		"instrument": (*config)["InstrumentID"],
 	})
 
+	// Обнуляем, потому что при параллельном запуске тестов, значения запоминаются
+	s.high = nil
+	s.low = nil
+	s.targetGrow = nil
+	s.less = nil
+	s.takeProfit = nil
+	s.lastBuyPendingCandle = nil
+
 	var res Config
 
 	// TODO: Вынести в сущность конфига стратегии
 	bts, err := json.Marshal(config)
 	if err != nil {
-		l.Error("Error parsing config %v", err)
+		l.Errorf("Error parsing config %v", err)
 		return false, err
 	}
 
 	err = json.Unmarshal(bts, &res)
 	if err != nil {
-		l.Error("Error parsing config %v", err)
+		l.Errorf("Error parsing config %v", err)
 		return false, err
 	}
 	s.config = res
@@ -166,28 +181,14 @@ func (s *RossHookStrategy) Stop() (bool, error) {
 	return true, nil
 }
 
-var candlesHistory = []types.OHLC{}
-
-var high *types.OHLC
-var low *types.OHLC
-var targetGrow *types.OHLC
-var less *types.OHLC
-var buy float64
-var takeProfit *types.OHLC
-
 func (s *RossHookStrategy) OnCandle(c types.OHLC) {
-	candlesHistory = append(candlesHistory, c)
-
-	if s.isBuying.value || s.isSelling.value {
-		return
+	if !s.isSelling.value {
+		s.watchBuySignal(c)
 	}
-
-	s.watchBuySignal(c)
-
-	s.watchSellSignal(c)
+	if !s.isBuying.value {
+		s.watchSellSignal(c)
+	}
 }
-
-var lastBuyPendingCandle *types.OHLC
 
 func isSameTF(candidate types.OHLC, toCompare types.OHLC) bool {
 	cH, cM, _ := candidate.Time.Local().Clock()
@@ -209,55 +210,55 @@ func isGreaterTF(candidate types.OHLC, toCompare types.OHLC) bool {
 func (s *RossHookStrategy) watchBuySignal(c types.OHLC) {
 	// Закрываем висящие на заявку покупки при поступлении новой свечи - мы проебали момент
 	// Однако, если текущая цена равна цене, по которой выставляли заявку, есть шанс что еще исполнится
-	if lastBuyPendingCandle != nil && !isSameTF(c, *lastBuyPendingCandle) && c.High.Float() > lastBuyPendingCandle.High.Float() {
+	if s.lastBuyPendingCandle != nil && c.High.Float() > s.lastBuyPendingCandle.High.Float() {
 		s.closePendingBuys()
 	}
 
-	isLowDifTF := high != nil && isGreaterTF(c, *high)
-	isTargetGrowDiffTF := isLowDifTF && low != nil && isGreaterTF(c, *low)
-	isLessDiffTF := isTargetGrowDiffTF && targetGrow != nil && isGreaterTF(c, *targetGrow)
+	isLowDifTF := s.high != nil && isGreaterTF(c, *s.high)
+	isTargetGrowDiffTF := isLowDifTF && s.low != nil && isGreaterTF(c, *s.low)
+	isLessDiffTF := isTargetGrowDiffTF && s.targetGrow != nil && isGreaterTF(c, *s.targetGrow)
 
-	if high == nil || high.High.Float() <= c.High.Float() {
-		high = &c
-		low = nil
-		targetGrow = nil
-		less = nil
-		l.Infof("Set point 1. high: %v;", high.High.Float())
+	if s.high == nil || s.high.High.Float() <= c.High.Float() {
+		s.high = &c
+		s.low = nil
+		s.targetGrow = nil
+		s.less = nil
+		l.Infof("Set point 1. high: %v;", s.high.High.Float())
 		return
-	} else if (low == nil || low.Low.Float() >= c.Low.Float()) && isLowDifTF {
-		low = &c
-		targetGrow = nil
-		less = nil
-		l.Infof("Set point 2. high: %v; low: %v;", high.High.Float(), low.Low.Float())
+	} else if (s.low == nil || s.low.Low.Float() >= c.Low.Float()) && isLowDifTF {
+		s.low = &c
+		s.targetGrow = nil
+		s.less = nil
+		l.Infof("Set point 2. high: %v; low: %v;", s.high.High.Float(), s.low.Low.Float())
 		return
-	} else if (targetGrow == nil || (targetGrow.High.Float() < c.High.Float() && less == nil)) && isTargetGrowDiffTF {
-		targetGrow = &c
-		less = nil
-		takeProfit = &types.OHLC{
-			Open:  high.Open,
-			High:  high.High,
-			Low:   high.Low,
-			Close: high.Close,
-			Time:  high.Time,
+	} else if (s.targetGrow == nil || (s.targetGrow.High.Float() < c.High.Float() && s.less == nil)) && isTargetGrowDiffTF {
+		s.targetGrow = &c
+		s.less = nil
+		s.takeProfit = &types.OHLC{
+			Open:  s.high.Open,
+			High:  s.high.High,
+			Low:   s.high.Low,
+			Close: s.high.Close,
+			Time:  s.high.Time,
 		}
-		l.Infof("Set point 3. high: %v; low: %v; targetGrow: %v;", high.High.Float(), low.Low.Float(), targetGrow.High.Float())
+		l.Infof("Set point 3. high: %v; low: %v; targetGrow: %v;", s.high.High.Float(), s.low.Low.Float(), s.targetGrow.High.Float())
 		return
-	} else if (less == nil || (less.Low.Float() > c.Low.Float() && less.Low.Float() < targetGrow.High.Float())) && isLessDiffTF {
-		less = &c
-		l.Infof("Set point 4. high: %v; low: %v; targetGrow: %v; less: %v;", high.High.Float(), low.Low.Float(), targetGrow.High.Float(), less.Low.Float())
+	} else if (s.less == nil || (s.less.Low.Float() > c.Low.Float() && s.less.Low.Float() < s.targetGrow.High.Float())) && isLessDiffTF {
+		s.less = &c
+		l.Infof("Set point 4. high: %v; low: %v; targetGrow: %v; less: %v;", s.high.High.Float(), s.low.Low.Float(), s.targetGrow.High.Float(), s.less.Low.Float())
 		return
 	} else {
-		l.Infof("None of price l %v; h: %v; t: %v; (high: %v; low: %v; targetGrow: %v; less: %v;)", c.Low.Float(), c.High.Float(), c.LastTradeTS.Local(), high, low, targetGrow, less)
+		// l.Infof("None of price l %v; h: %v; t: %v; (high: %v; low: %v; targetGrow: %v; less: %v;)", c.Low.Float(), c.High.Float(), c.LastTradeTS.Local(), high, low, targetGrow, less)
 	}
 
-	if high != nil && low != nil && targetGrow != nil && less != nil {
-		if targetGrow.High.Float()+0.0001 <= c.High.Float() {
+	if s.high != nil && s.low != nil && s.targetGrow != nil && s.less != nil {
+		if s.targetGrow.High.Float()+0.0001 <= c.High.Float() {
 			go s.buy(*&types.OHLC{
-				Open:  targetGrow.Open,
-				High:  targetGrow.High,
-				Low:   targetGrow.Low,
-				Close: targetGrow.High,
-				Time:  targetGrow.Time,
+				Open:  s.targetGrow.Open,
+				High:  s.targetGrow.High,
+				Low:   s.targetGrow.Low,
+				Close: s.targetGrow.High, // Точка входа
+				Time:  s.targetGrow.Time,
 			})
 		}
 	}
@@ -265,21 +266,21 @@ func (s *RossHookStrategy) watchBuySignal(c types.OHLC) {
 
 func (s *RossHookStrategy) watchSellSignal(c types.OHLC) {
 	// Stop-loss
-	if lastBuyPendingCandle != nil && low != nil &&
-		isGreaterTF(c, *lastBuyPendingCandle) &&
-		low.Low.Float()-s.config.StopLoss >= c.Close.Float() {
-		l.Infof("Price reached stop-loss (low: %v; loss: %v; current: %v)", low.Low.Float(), s.config.StopLoss, c.Close.Float())
+	if s.lastBuyPendingCandle != nil && s.low != nil &&
+		isGreaterTF(c, *s.lastBuyPendingCandle) &&
+		s.low.Low.Float()-s.config.StopLoss >= c.Close.Float() {
+		l.Infof("Price reached stop-loss (low: %v; loss: %v; current: %v)", s.low.Low.Float(), s.config.StopLoss, c.Close.Float())
 		go s.sell(c)
 		return
 	}
 
-	if takeProfit == nil {
+	if s.takeProfit == nil {
 		return
 	}
-	if c.Close.Float() > takeProfit.Close.Float() {
+	if c.Close.Float() > s.takeProfit.Close.Float() {
 		l.Infof("Updating take-profit high %v", c.Close.Float())
 		// Копируем свечу. Подозрение на баг, что свеча перезаписывается следующей, поэтомуне прокидываем просто &c
-		takeProfit = &types.OHLC{
+		s.takeProfit = &types.OHLC{
 			Open:  c.Open,
 			High:  c.High,
 			Low:   c.Low,
@@ -288,8 +289,8 @@ func (s *RossHookStrategy) watchSellSignal(c types.OHLC) {
 		}
 		return
 	}
-	if less != nil && lastBuyPendingCandle != nil && takeProfit.Close.Float()-float64(s.config.SaveProfit) >= c.Close.Float() && takeProfit.Close.Float() > lastBuyPendingCandle.High.Float() {
-		l.Infof("Price reached take-profit (take: %v; save: %v; current: %v)", takeProfit.Close.Float(), s.config.SaveProfit, c.Close.Float())
+	if s.less != nil && s.lastBuyPendingCandle != nil && s.takeProfit.Close.Float()-float64(s.config.SaveProfit) >= c.Close.Float() && s.takeProfit.Close.Float() > s.lastBuyPendingCandle.High.Float() {
+		l.Infof("Price reached take-profit (take: %v; save: %v; current: %v)", s.takeProfit.Close.Float(), s.config.SaveProfit, c.Close.Float())
 		go s.sell(types.OHLC{
 			Open:  c.Open,
 			High:  c.High,
@@ -297,8 +298,8 @@ func (s *RossHookStrategy) watchSellSignal(c types.OHLC) {
 			Close: c.Close,
 			Time:  c.Time,
 		})
-	} else if takeProfit.Close.Float()-float64(s.config.SaveProfit) <= c.Close.Float() {
-		l.Infof("Price going up (take: %v; save: %v; current: %v)", takeProfit.Close.Float(), s.config.SaveProfit, c.Close.Float())
+	} else if s.takeProfit.Close.Float()-float64(s.config.SaveProfit) <= c.Close.Float() {
+		l.Infof("Price going up (take: %v; save: %v; current: %v)", s.takeProfit.Close.Float(), s.config.SaveProfit, c.Close.Float())
 	}
 }
 
@@ -342,12 +343,12 @@ func (s *RossHookStrategy) sell(c types.OHLC) {
 	s.isSelling.value = false
 	l.Trace("Is sell released")
 
-	high = nil
-	low = nil
-	targetGrow = nil
-	less = nil
-	lastBuyPendingCandle = nil
-	takeProfit = nil
+	s.high = nil
+	s.low = nil
+	s.targetGrow = nil
+	s.less = nil
+	s.lastBuyPendingCandle = nil
+	s.takeProfit = nil
 
 	s.toPlaceOrders <- order
 }
@@ -356,8 +357,8 @@ func (s *RossHookStrategy) buy(c types.OHLC) {
 	l.Trace("Checking for buy")
 
 	if s.isBuying.value {
-		l.Warnf("Not processed prev orderbook item for buy")
-		return
+		l.Warnf("Not processed prev candle item for buy")
+		// return
 	}
 
 	leftBalance := s.vault.LeftBalance - s.vault.NotConfirmedBlockedMoney
@@ -395,7 +396,7 @@ func (s *RossHookStrategy) buy(c types.OHLC) {
 	s.vault.PendingBuyShares += int64(canBuySharesAmount)
 	s.vault.NotConfirmedBlockedMoney += float64(canBuySharesAmount) * c.Close.Float()
 	s.vault.LastBuyPrice = c.Close.Float()
-	lastBuyPendingCandle = &c
+	s.lastBuyPendingCandle = &c
 	l.WithField("state", s.vault).Trace("State updated after place buy order")
 
 	s.isBuying.value = false

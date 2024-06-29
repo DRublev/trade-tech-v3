@@ -38,7 +38,7 @@ func Start(ctx context.Context, port int) {
 	log.Infof("Server listening at: %v", lis.Addr())
 	err = s.Serve(lis)
 	if err != nil {
-		log.Fatalf("Error listening to server ", err)
+		log.Fatalf("Error listening to server %v", err)
 	}
 
 	<-ctx.Done()

@@ -575,7 +575,7 @@ func (c *TinkoffBrokerPort) GetTradingSchedules(exchange string, from time.Time,
 	return exchanges, nil
 }
 func (c *TinkoffBrokerPort) GetOrderState(orderID types.OrderID) (types.OrderExecutionState, error) {
-	sdkL.Info("Getting state of order %v", orderID)
+	sdkL.Infof("Getting state of order %v", orderID)
 	sdk, err := c.GetSdk()
 	if err != nil {
 		sdkL.Errorf("Failed to create tradees stream: %v", err)
