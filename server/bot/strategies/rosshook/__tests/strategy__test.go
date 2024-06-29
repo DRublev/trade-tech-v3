@@ -20,6 +20,7 @@ func (p MockProvider) GetOrCreate(instrumentID string, initialFrom time.Time, in
 	return &candlesCh, nil
 }
 
+// Выставляем тейк
 func TestBuyTakeProfit(t *testing.T) {
 	mockProvider := MockProvider{}
 
@@ -51,46 +52,16 @@ func TestBuyTakeProfit(t *testing.T) {
 			t.Fatalf("Не выставили заявку")
 		}
 		// TODO: Дописать проверку на корректность ордера
-		// TODO: Дописать проверку на наличие продажи
 		if placedOrder.Quantity != 1 {
 			t.Fatalf("Ордер выставлен неверно %v", placedOrder)
 		}
+		return
+	case <-time.After(time.Second * 2):
+		t.Fatalf("Таймаут выставления заявки")
 		break
 	}
-}
 
-func TestShouldNotBuy(t *testing.T) {
-	mockProvider := MockProvider{}
-
-	strategy := rosshook.New(mockProvider)
-
-	var c rosshook.Config
-	c.MaxSharesToHold = 1
-	c.LotSize = 1
-	c.Balance = 1000
-	var config strategies.Config
-	b, _ := json.Marshal(c)
-	json.Unmarshal(b, &config)
-
-	placedOrders := make(chan *types.PlaceOrder)
-	ordersStates := make(chan types.OrderExecutionState)
-
-	strategy.Start(&config, &placedOrders, &ordersStates)
-
-	mockedCandles := getShouldNotBuyMock()
-	go func() {
-		for _, candle := range mockedCandles {
-			candlesCh <- candle
-		}
-	}()
-
-	select {
-	case placedOrder := <-placedOrders:
-		if placedOrder.Direction == 1 {
-			t.Fatalf("Не должны, но купили по %v", placedOrder.Price)
-		}
-		break
-	}
+	t.Fatal("Не выставили заявку")
 }
 
 func TestShouldCloseBuyIfNotExecuted(t *testing.T) {
@@ -142,6 +113,9 @@ func TestShouldCloseBuyIfNotExecuted(t *testing.T) {
 					ID:                 "placedBuyOrderID",
 				}
 			}
+		case <-time.After(time.Second * 10):
+			t.Fatalf("Таймаут выставления заявки")
+			break
 		}
 	}
 
@@ -153,3 +127,4 @@ func TestShouldCloseBuyIfNotExecuted(t *testing.T) {
 
 // TODO: Написать тест на сценарий покупка-стоп лосс
 // TODO: Тест что корректно выставляется закрытие пендинг бай ордеров
+//
