@@ -16,12 +16,12 @@ jobs:
 
       - name: Get dependencies
         run: |
-          cd ./.server && go get -v -t -d ./...
+          cd ./server && go get -v -t -d ./...
 
       - name: Build
         env:
           GOPROXY: "https://proxy.golang.org"
-        run: cd ./.server && go build .
+        run: cd ./server && go build .
 
       - name: Test
-        run: cd ./.server && go test -v ./...
+        run: cd ./server && go test -v ./...
