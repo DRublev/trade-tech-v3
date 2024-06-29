@@ -51,7 +51,7 @@ func (s *Strategy[T]) SetConfig(config Config) error {
 		return err
 	}
 
-	err = json.Unmarshal(bts, s.Config)
+	err = json.Unmarshal(bts, &s.Config)
 	if err != nil {
 		return err
 	}

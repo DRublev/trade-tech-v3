@@ -124,13 +124,13 @@ func (s *MacdStrategy) Start(
 	// TODO: Вынести в сущность конфига стратегии
 	bts, err := json.Marshal(config)
 	if err != nil {
-		l.Error("Error parsing config %v", err)
+		l.Errorf("Error parsing config %v", err)
 		return false, err
 	}
 
 	err = json.Unmarshal(bts, &res)
 	if err != nil {
-		l.Error("Error parsing config %v", err)
+		l.Errorf("Error parsing config %v", err)
 		return false, err
 	}
 	s.config = res
