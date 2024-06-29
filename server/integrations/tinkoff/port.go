@@ -385,6 +385,7 @@ func (c *TinkoffBrokerPort) PlaceOrder(order *types.PlaceOrder) (types.OrderID, 
 	if len(order.CancelOrder) > 0 {
 		err = c.CancelOrder(order.CancelOrder)
 		if err != nil {
+			sdkL.Warnf("Error closing order %v: %v", order.CancelOrder, err)
 			return "", errors.New("error closing order")
 		}
 	}
@@ -590,8 +591,12 @@ func (c *TinkoffBrokerPort) GetOrderState(orderID types.OrderID) (types.OrderExe
 		return types.OrderExecutionState{}, err
 	}
 	var status types.ExecutionStatus = types.Unspecified
-	if state.LotsExecuted == state.LotsRequested || (state.LotsRequested == 0 && state.LotsExecuted > 0) {
+	if state.LotsExecuted == state.LotsRequested || state.ExecutionReportStatus == 1 {
 		status = types.Fill
+	} else if state.ExecutionReportStatus == 4 {
+		status = types.New	
+	} else if state.ExecutionReportStatus == 2 {
+		status = types.ErrorPlacing
 	}
 
 	orderState := types.OrderExecutionState{

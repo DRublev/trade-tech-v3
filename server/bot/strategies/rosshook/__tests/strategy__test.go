@@ -152,3 +152,4 @@ func TestShouldCloseBuyIfNotExecuted(t *testing.T) {
 }
 
 // TODO: Написать тест на сценарий покупка-стоп лосс
+// TODO: Тест что корректно выставляется закрытие пендинг бай ордеров
