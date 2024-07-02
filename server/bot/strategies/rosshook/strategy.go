@@ -174,8 +174,18 @@ var targetGrow *types.OHLC
 var less *types.OHLC
 var buy float64
 var takeProfit *types.OHLC
+var isChanged bool
+
+
 
 func (s *RossHookStrategy) OnCandle(c types.OHLC) {
+	isChanged = false
+	defer func() {
+		if isChanged {
+			s.mapAndSendState()
+		}
+	}()
+
 	candlesHistory = append(candlesHistory, c)
 
 	if s.isBuying.value || s.isSelling.value {
@@ -206,6 +216,12 @@ func isGreaterTF(candidate types.OHLC, toCompare types.OHLC) bool {
 	return cH >= nH && cM > nM
 }
 
+func (s *RossHookStrategy) mapAndSendState() {
+
+	// map -> {}
+	// send({})
+}
+
 func (s *RossHookStrategy) watchBuySignal(c types.OHLC) {
 	// Закрываем висящие на заявку покупки при поступлении новой свечи - мы проебали момент
 	// Однако, если текущая цена равна цене, по которой выставляли заявку, есть шанс что еще исполнится
@@ -223,6 +239,8 @@ func (s *RossHookStrategy) watchBuySignal(c types.OHLC) {
 		targetGrow = nil
 		less = nil
 		l.Infof("Set point 1. high: %v;", high.High.Float())
+
+		isChanged = true
 		return
 	} else if (low == nil || low.Low.Float() >= c.Low.Float()) && isLowDifTF {
 		low = &c
