@@ -124,7 +124,7 @@ func (sp *StrategyPool) Start(key strategies.StrategyKey, instrumentID string) (
 					l.Errorf("Error placing order: %v", err)
 
 					// Если ошибка закрытия ордера, не надо уведомлять об этом стратегию, тк у нее неверно обновится стейт
-					if err.Error() != "error closing order" {
+					if err.Error() != "error closing order" || err.Error() == "order cancelled" {
 						ow.ErrNotify(*order)
 					}
 					continue
