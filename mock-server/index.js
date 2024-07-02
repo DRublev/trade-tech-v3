@@ -20,6 +20,9 @@ const accountsProto = grpc.loadPackageDefinition(accountsPackageDefinition);
 
 const server = new grpc.Server();
 
+// TODO: При поступлении запроса с заголовком x-mock в значении {hash} - отдавать {mock}. Но лишь один раз. При след запросе отдавать обычный мок
+
+
 server.addService(authProto.auth.Auth.service, {
     HasToken: (_, callback) => {
         callback(null, { HasToken: true });

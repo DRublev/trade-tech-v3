@@ -10,7 +10,7 @@ test("Проверяем, что отображается график", async (
   const app = await electron.launch();
 
   const win = await app.firstWindow();
-  await win.waitForSelector('#chart-container')
+  await win.waitForSelector('#chart-container', { timeout: 1000 })
   const chart = await win.$('#chart-container');
 
   await expect(chart).toBeTruthy();
