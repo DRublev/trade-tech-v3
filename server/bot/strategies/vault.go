@@ -78,10 +78,11 @@ func (this *Vault) updateBuyOrders(state types.OrderExecutionState) {
 	}
 	if state.Status == types.Fill || state.Status == types.ErrorPlacing {
 		filteredOrders := []types.OrderExecutionState{}
-
 		for _, order := range this.PlacedBuyOrders {
 			if order.ID != state.ID {
 				filteredOrders = append(filteredOrders, order)
+			} else {
+				l.Infof("Removing cancelled buy order from pending list: %v", state.ID)
 			}
 		}
 
@@ -103,6 +104,8 @@ func (this *Vault) updateSellOrders(state types.OrderExecutionState) {
 		for _, order := range this.PlacedSellOrders {
 			if order.ID != state.ID {
 				filteredOrders = append(filteredOrders, order)
+			} else {
+				l.Infof("Removing cancelled sell order from pending list: %v", state.ID)
 			}
 		}
 
@@ -143,6 +146,7 @@ func (this *Vault) OnOrderSateChange(state types.OrderExecutionState) {
 		this.LeftBalance += state.ExecutedOrderPrice
 		this.PendingBuyShares -= int64(state.LotsExecuted / int(this.lotSize))
 		this.NotConfirmedBlockedMoney -= state.ExecutedOrderPrice
+		l.Infof("NotConfirmedBlockedMoney %v; ExecutedOrderPrice %v", this.NotConfirmedBlockedMoney, state.ExecutedOrderPrice)
 		return
 	} else if isSellPlaceError || isSellCancel {
 		l.Info("Updating state after sell order place error")

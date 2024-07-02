@@ -388,6 +388,7 @@ func (c *TinkoffBrokerPort) PlaceOrder(order *types.PlaceOrder) (types.OrderID, 
 			sdkL.Warnf("Error closing order %v: %v", order.CancelOrder, err)
 			return "", errors.New("error closing order")
 		}
+		return "", errors.New("order cancelled")
 	}
 
 	direction := investapi.OrderDirection_ORDER_DIRECTION_BUY
@@ -437,7 +438,7 @@ func (c *TinkoffBrokerPort) PlaceOrder(order *types.PlaceOrder) (types.OrderID, 
 		return "", err
 	}
 
-	sdkL.Tracef("Order placed, id: %v", orderResp.OrderId)
+	sdkL.Infof("Order placed, id: %v", orderResp.OrderId)
 	return types.OrderID(orderResp.OrderId), err
 }
 
@@ -628,7 +629,10 @@ func (c *TinkoffBrokerPort) CancelOrder(orderID types.OrderID) error {
 
 	accID := c.getAccountId()
 
-	_, err = oc.CancelOrder(accID, string(orderID))
+	res, err := oc.CancelOrder(accID, string(orderID))
+
+	sdkL.Infof("Cancelling order %v %v", accID, string(orderID))
+	sdkL.WithField("trackingId", res.ResponseMetadata.TrackingId).Infof("Cancelling order response: %v; err: %v", res.CancelOrderResponse, err.Error())
 
 	return err
 }
