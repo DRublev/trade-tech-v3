@@ -90,7 +90,7 @@ func (ow *OrderWatcher) PairWithOrderID(idempodentID types.IdempodentID, orderID
 		l.Infof("Getting initial state of order")
 		s, err := broker.Broker.GetOrderState(orderID)
 		if err != nil {
-			l.Error("Failed getting initial state of order: %v", err)
+			l.Errorf("Failed getting initial state of order: %v", err)
 			return
 		}
 
@@ -107,14 +107,14 @@ func (ow *OrderWatcher) PairWithOrderID(idempodentID types.IdempodentID, orderID
 }
 
 func (ow *OrderWatcher) notify(state types.OrderExecutionState) {
-	idempodentID, ok := ow.idempodentsToOrdersMap[state.ID]
+	idempodentID := ow.idempodentsToOrdersMap[state.ID]
 	l := log.WithFields(log.Fields{
 		"idempodentID": idempodentID,
 		"orderID":      state.ID,
 		"instrument": state.InstrumentID,
 		"direction":    state.Direction,
 	})
-	if !ok {
+	if len(idempodentID) == 0 {
 		l.Error("Order is not watched, or no one subscribed for it")
 		return
 	}

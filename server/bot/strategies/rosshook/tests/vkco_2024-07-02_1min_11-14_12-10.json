@@ -1,0 +1,1278 @@
+[
+        {
+            "Open": {
+                "Units": 526,
+                "Nano": 0
+            },
+            "High": {
+                "Units": 526,
+                "Nano": 600000000
+            },
+            "Low": {
+                "Units": 526,
+                "Nano": 0
+            },
+            "Close": {
+                "Units": 526,
+                "Nano": 600000000
+            },
+            "Volume": "4398",
+            "Time": "2024-07-02T11:13:00Z",
+            "LastTradeTS": "2024-07-02T11:13:00Z"
+
+        },
+        {
+            "Open": {
+                "Units": 526,
+                "Nano": 200000000
+            },
+            "High": {
+                "Units": 526,
+                "Nano": 800000000
+            },
+            "Low": {
+                "Units": 526,
+                "Nano": 200000000
+            },
+            "Close": {
+                "Units": 526,
+                "Nano": 600000000
+            },
+            "Volume": "1334",
+            "Time": "2024-07-02T11:14:00Z",
+            "LastTradeTS": "2024-07-02T11:14:00Z"
+
+        },
+        {
+            "Open": {
+                "Units": 526,
+                "Nano": 800000000
+            },
+            "High": {
+                "Units": 528,
+                "Nano": 0
+            },
+            "Low": {
+                "Units": 526,
+                "Nano": 600000000
+            },
+            "Close": {
+                "Units": 527,
+                "Nano": 600000000
+            },
+            "Volume": "8774",
+            "Time": "2024-07-02T11:15:00Z",
+            "LastTradeTS": "2024-07-02T11:15:00Z"
+
+        },
+        {
+            "Open": {
+                "Units": 527,
+                "Nano": 600000000
+            },
+            "High": {
+                "Units": 528,
+                "Nano": 0
+            },
+            "Low": {
+                "Units": 527,
+                "Nano": 600000000
+            },
+            "Close": {
+                "Units": 527,
+                "Nano": 800000000
+            },
+            "Volume": "7609",
+            "Time": "2024-07-02T11:16:00Z",
+            "LastTradeTS": "2024-07-02T11:16:00Z"
+
+        },
+        {
+            "Open": {
+                "Units": 527,
+                "Nano": 800000000
+            },
+            "High": {
+                "Units": 527,
+                "Nano": 800000000
+            },
+            "Low": {
+                "Units": 527,
+                "Nano": 0
+            },
+            "Close": {
+                "Units": 527,
+                "Nano": 600000000
+            },
+            "Volume": "5931",
+            "Time": "2024-07-02T11:17:00Z",
+            "LastTradeTS": "2024-07-02T11:17:00Z"
+
+        },
+        {
+            "Open": {
+                "Units": 527,
+                "Nano": 400000000
+            },
+            "High": {
+                "Units": 527,
+                "Nano": 600000000
+            },
+            "Low": {
+                "Units": 526,
+                "Nano": 600000000
+            },
+            "Close": {
+                "Units": 527,
+                "Nano": 0
+            },
+            "Volume": "1473",
+            "Time": "2024-07-02T11:18:00Z",
+            "LastTradeTS": "2024-07-02T11:18:00Z"
+
+        },
+        {
+            "Open": {
+                "Units": 526,
+                "Nano": 800000000
+            },
+            "High": {
+                "Units": 527,
+                "Nano": 0
+            },
+            "Low": {
+                "Units": 526,
+                "Nano": 800000000
+            },
+            "Close": {
+                "Units": 526,
+                "Nano": 800000000
+            },
+            "Volume": "812",
+            "Time": "2024-07-02T11:19:00Z",
+            "LastTradeTS": "2024-07-02T11:19:00Z"
+
+        },
+        {
+            "Open": {
+                "Units": 526,
+                "Nano": 600000000
+            },
+            "High": {
+                "Units": 526,
+                "Nano": 800000000
+            },
+            "Low": {
+                "Units": 526,
+                "Nano": 0
+            },
+            "Close": {
+                "Units": 526,
+                "Nano": 0
+            },
+            "Volume": "4684",
+            "Time": "2024-07-02T11:20:00Z",
+            "LastTradeTS": "2024-07-02T11:20:00Z"
+
+        },
+        {
+            "Open": {
+                "Units": 525,
+                "Nano": 800000000
+            },
+            "High": {
+                "Units": 525,
+                "Nano": 800000000
+            },
+            "Low": {
+                "Units": 525,
+                "Nano": 400000000
+            },
+            "Close": {
+                "Units": 525,
+                "Nano": 600000000
+            },
+            "Volume": "651",
+            "Time": "2024-07-02T11:21:00Z",
+            "LastTradeTS": "2024-07-02T11:21:00Z"
+
+        },
+        {
+            "Open": {
+                "Units": 525,
+                "Nano": 800000000
+            },
+            "High": {
+                "Units": 525,
+                "Nano": 800000000
+            },
+            "Low": {
+                "Units": 525,
+                "Nano": 400000000
+            },
+            "Close": {
+                "Units": 525,
+                "Nano": 400000000
+            },
+            "Volume": "695",
+            "Time": "2024-07-02T11:22:00Z",
+            "LastTradeTS": "2024-07-02T11:22:00Z"
+
+        },
+        {
+            "Open": {
+                "Units": 525,
+                "Nano": 400000000
+            },
+            "High": {
+                "Units": 525,
+                "Nano": 600000000
+            },
+            "Low": {
+                "Units": 525,
+                "Nano": 400000000
+            },
+            "Close": {
+                "Units": 525,
+                "Nano": 400000000
+            },
+            "Volume": "559",
+            "Time": "2024-07-02T11:23:00Z",
+            "LastTradeTS": "2024-07-02T11:23:00Z"
+
+        },
+        {
+            "Open": {
+                "Units": 525,
+                "Nano": 400000000
+            },
+            "High": {
+                "Units": 525,
+                "Nano": 600000000
+            },
+            "Low": {
+                "Units": 525,
+                "Nano": 400000000
+            },
+            "Close": {
+                "Units": 525,
+                "Nano": 400000000
+            },
+            "Volume": "623",
+            "Time": "2024-07-02T11:24:00Z",
+            "LastTradeTS": "2024-07-02T11:24:00Z"
+
+        },
+        {
+            "Open": {
+                "Units": 525,
+                "Nano": 600000000
+            },
+            "High": {
+                "Units": 525,
+                "Nano": 800000000
+            },
+            "Low": {
+                "Units": 525,
+                "Nano": 400000000
+            },
+            "Close": {
+                "Units": 525,
+                "Nano": 800000000
+            },
+            "Volume": "1651",
+            "Time": "2024-07-02T11:25:00Z",
+            "LastTradeTS": "2024-07-02T11:25:00Z"
+
+        },
+        {
+            "Open": {
+                "Units": 525,
+                "Nano": 600000000
+            },
+            "High": {
+                "Units": 525,
+                "Nano": 800000000
+            },
+            "Low": {
+                "Units": 525,
+                "Nano": 600000000
+            },
+            "Close": {
+                "Units": 525,
+                "Nano": 600000000
+            },
+            "Volume": "393",
+            "Time": "2024-07-02T11:26:00Z",
+            "LastTradeTS": "2024-07-02T11:26:00Z"
+
+        },
+        {
+            "Open": {
+                "Units": 525,
+                "Nano": 600000000
+            },
+            "High": {
+                "Units": 525,
+                "Nano": 800000000
+            },
+            "Low": {
+                "Units": 525,
+                "Nano": 400000000
+            },
+            "Close": {
+                "Units": 525,
+                "Nano": 600000000
+            },
+            "Volume": "1152",
+            "Time": "2024-07-02T11:27:00Z",
+            "LastTradeTS": "2024-07-02T11:27:00Z"
+
+        },
+        {
+            "Open": {
+                "Units": 525,
+                "Nano": 600000000
+            },
+            "High": {
+                "Units": 525,
+                "Nano": 600000000
+            },
+            "Low": {
+                "Units": 525,
+                "Nano": 400000000
+            },
+            "Close": {
+                "Units": 525,
+                "Nano": 600000000
+            },
+            "Volume": "165",
+            "Time": "2024-07-02T11:28:00Z",
+            "LastTradeTS": "2024-07-02T11:28:00Z"
+
+        },
+        {
+            "Open": {
+                "Units": 525,
+                "Nano": 400000000
+            },
+            "High": {
+                "Units": 525,
+                "Nano": 600000000
+            },
+            "Low": {
+                "Units": 525,
+                "Nano": 400000000
+            },
+            "Close": {
+                "Units": 525,
+                "Nano": 600000000
+            },
+            "Volume": "54",
+            "Time": "2024-07-02T11:29:00Z",
+            "LastTradeTS": "2024-07-02T11:29:00Z"
+
+        },
+        {
+            "Open": {
+                "Units": 525,
+                "Nano": 400000000
+            },
+            "High": {
+                "Units": 526,
+                "Nano": 800000000
+            },
+            "Low": {
+                "Units": 525,
+                "Nano": 400000000
+            },
+            "Close": {
+                "Units": 526,
+                "Nano": 600000000
+            },
+            "Volume": "5822",
+            "Time": "2024-07-02T11:30:00Z",
+            "LastTradeTS": "2024-07-02T11:30:00Z"
+
+        },
+        {
+            "Open": {
+                "Units": 526,
+                "Nano": 800000000
+            },
+            "High": {
+                "Units": 527,
+                "Nano": 200000000
+            },
+            "Low": {
+                "Units": 526,
+                "Nano": 800000000
+            },
+            "Close": {
+                "Units": 527,
+                "Nano": 200000000
+            },
+            "Volume": "1561",
+            "Time": "2024-07-02T11:31:00Z",
+            "LastTradeTS": "2024-07-02T11:31:00Z"
+
+        },
+        {
+            "Open": {
+                "Units": 527,
+                "Nano": 0
+            },
+            "High": {
+                "Units": 527,
+                "Nano": 200000000
+            },
+            "Low": {
+                "Units": 527,
+                "Nano": 0
+            },
+            "Close": {
+                "Units": 527,
+                "Nano": 200000000
+            },
+            "Volume": "1127",
+            "Time": "2024-07-02T11:32:00Z",
+            "LastTradeTS": "2024-07-02T11:32:00Z"
+
+        },
+        {
+            "Open": {
+                "Units": 527,
+                "Nano": 200000000
+            },
+            "High": {
+                "Units": 527,
+                "Nano": 200000000
+            },
+            "Low": {
+                "Units": 527,
+                "Nano": 0
+            },
+            "Close": {
+                "Units": 527,
+                "Nano": 200000000
+            },
+            "Volume": "1475",
+            "Time": "2024-07-02T11:33:00Z",
+            "LastTradeTS": "2024-07-02T11:33:00Z"
+
+        },
+        {
+            "Open": {
+                "Units": 527,
+                "Nano": 200000000
+            },
+            "High": {
+                "Units": 527,
+                "Nano": 200000000
+            },
+            "Low": {
+                "Units": 526,
+                "Nano": 800000000
+            },
+            "Close": {
+                "Units": 527,
+                "Nano": 0
+            },
+            "Volume": "565",
+            "Time": "2024-07-02T11:34:00Z",
+            "LastTradeTS": "2024-07-02T11:34:00Z"
+
+        },
+        {
+            "Open": {
+                "Units": 526,
+                "Nano": 800000000
+            },
+            "High": {
+                "Units": 527,
+                "Nano": 800000000
+            },
+            "Low": {
+                "Units": 526,
+                "Nano": 800000000
+            },
+            "Close": {
+                "Units": 527,
+                "Nano": 800000000
+            },
+            "Volume": "2245",
+            "Time": "2024-07-02T11:35:00Z",
+            "LastTradeTS": "2024-07-02T11:35:00Z"
+
+        },
+        {
+            "Open": {
+                "Units": 527,
+                "Nano": 200000000
+            },
+            "High": {
+                "Units": 527,
+                "Nano": 600000000
+            },
+            "Low": {
+                "Units": 527,
+                "Nano": 200000000
+            },
+            "Close": {
+                "Units": 527,
+                "Nano": 400000000
+            },
+            "Volume": "400",
+            "Time": "2024-07-02T11:36:00Z",
+            "LastTradeTS": "2024-07-02T11:36:00Z"
+
+        },
+        {
+            "Open": {
+                "Units": 527,
+                "Nano": 200000000
+            },
+            "High": {
+                "Units": 527,
+                "Nano": 400000000
+            },
+            "Low": {
+                "Units": 526,
+                "Nano": 800000000
+            },
+            "Close": {
+                "Units": 527,
+                "Nano": 0
+            },
+            "Volume": "2536",
+            "Time": "2024-07-02T11:37:00Z",
+            "LastTradeTS": "2024-07-02T11:37:00Z"
+
+        },
+        {
+            "Open": {
+                "Units": 527,
+                "Nano": 0
+            },
+            "High": {
+                "Units": 527,
+                "Nano": 0
+            },
+            "Low": {
+                "Units": 526,
+                "Nano": 800000000
+            },
+            "Close": {
+                "Units": 526,
+                "Nano": 800000000
+            },
+            "Volume": "162",
+            "Time": "2024-07-02T11:38:00Z",
+            "LastTradeTS": "2024-07-02T11:38:00Z"
+
+        },
+        {
+            "Open": {
+                "Units": 526,
+                "Nano": 800000000
+            },
+            "High": {
+                "Units": 527,
+                "Nano": 0
+            },
+            "Low": {
+                "Units": 526,
+                "Nano": 800000000
+            },
+            "Close": {
+                "Units": 527,
+                "Nano": 0
+            },
+            "Volume": "42",
+            "Time": "2024-07-02T11:39:00Z",
+            "LastTradeTS": "2024-07-02T11:39:00Z"
+
+        },
+        {
+            "Open": {
+                "Units": 527,
+                "Nano": 0
+            },
+            "High": {
+                "Units": 527,
+                "Nano": 0
+            },
+            "Low": {
+                "Units": 526,
+                "Nano": 800000000
+            },
+            "Close": {
+                "Units": 527,
+                "Nano": 0
+            },
+            "Volume": "2275",
+            "Time": "2024-07-02T11:40:00Z",
+            "LastTradeTS": "2024-07-02T11:40:00Z"
+
+        },
+        {
+            "Open": {
+                "Units": 527,
+                "Nano": 0
+            },
+            "High": {
+                "Units": 527,
+                "Nano": 0
+            },
+            "Low": {
+                "Units": 526,
+                "Nano": 200000000
+            },
+            "Close": {
+                "Units": 526,
+                "Nano": 200000000
+            },
+            "Volume": "3310",
+            "Time": "2024-07-02T11:41:00Z",
+            "LastTradeTS": "2024-07-02T11:41:00Z"
+
+        },
+        {
+            "Open": {
+                "Units": 526,
+                "Nano": 400000000
+            },
+            "High": {
+                "Units": 527,
+                "Nano": 0
+            },
+            "Low": {
+                "Units": 526,
+                "Nano": 400000000
+            },
+            "Close": {
+                "Units": 527,
+                "Nano": 0
+            },
+            "Volume": "1049",
+            "Time": "2024-07-02T11:42:00Z",
+            "LastTradeTS": "2024-07-02T11:42:00Z"
+
+        },
+        {
+            "Open": {
+                "Units": 527,
+                "Nano": 0
+            },
+            "High": {
+                "Units": 527,
+                "Nano": 400000000
+            },
+            "Low": {
+                "Units": 526,
+                "Nano": 800000000
+            },
+            "Close": {
+                "Units": 527,
+                "Nano": 400000000
+            },
+            "Volume": "1371",
+            "Time": "2024-07-02T11:43:00Z",
+            "LastTradeTS": "2024-07-02T11:43:00Z"
+
+        },
+        {
+            "Open": {
+                "Units": 527,
+                "Nano": 0
+            },
+            "High": {
+                "Units": 527,
+                "Nano": 400000000
+            },
+            "Low": {
+                "Units": 527,
+                "Nano": 0
+            },
+            "Close": {
+                "Units": 527,
+                "Nano": 200000000
+            },
+            "Volume": "91",
+            "Time": "2024-07-02T11:44:00Z",
+            "LastTradeTS": "2024-07-02T11:44:00Z"
+
+        },
+        {
+            "Open": {
+                "Units": 527,
+                "Nano": 200000000
+            },
+            "High": {
+                "Units": 527,
+                "Nano": 200000000
+            },
+            "Low": {
+                "Units": 527,
+                "Nano": 0
+            },
+            "Close": {
+                "Units": 527,
+                "Nano": 0
+            },
+            "Volume": "422",
+            "Time": "2024-07-02T11:45:00Z",
+            "LastTradeTS": "2024-07-02T11:45:00Z"
+
+        },
+        {
+            "Open": {
+                "Units": 527,
+                "Nano": 200000000
+            },
+            "High": {
+                "Units": 527,
+                "Nano": 400000000
+            },
+            "Low": {
+                "Units": 527,
+                "Nano": 0
+            },
+            "Close": {
+                "Units": 527,
+                "Nano": 200000000
+            },
+            "Volume": "368",
+            "Time": "2024-07-02T11:46:00Z",
+            "LastTradeTS": "2024-07-02T11:46:00Z"
+
+        },
+        {
+            "Open": {
+                "Units": 527,
+                "Nano": 200000000
+            },
+            "High": {
+                "Units": 527,
+                "Nano": 400000000
+            },
+            "Low": {
+                "Units": 526,
+                "Nano": 800000000
+            },
+            "Close": {
+                "Units": 526,
+                "Nano": 800000000
+            },
+            "Volume": "2009",
+            "Time": "2024-07-02T11:47:00Z",
+            "LastTradeTS": "2024-07-02T11:47:00Z"
+
+        },
+        {
+            "Open": {
+                "Units": 527,
+                "Nano": 200000000
+            },
+            "High": {
+                "Units": 527,
+                "Nano": 200000000
+            },
+            "Low": {
+                "Units": 526,
+                "Nano": 600000000
+            },
+            "Close": {
+                "Units": 526,
+                "Nano": 600000000
+            },
+            "Volume": "291",
+            "Time": "2024-07-02T11:48:00Z",
+            "LastTradeTS": "2024-07-02T11:48:00Z"
+
+        },
+        {
+            "Open": {
+                "Units": 526,
+                "Nano": 800000000
+            },
+            "High": {
+                "Units": 526,
+                "Nano": 800000000
+            },
+            "Low": {
+                "Units": 525,
+                "Nano": 600000000
+            },
+            "Close": {
+                "Units": 525,
+                "Nano": 800000000
+            },
+            "Volume": "3778",
+            "Time": "2024-07-02T11:49:00Z",
+            "LastTradeTS": "2024-07-02T11:49:00Z"
+
+        },
+        {
+            "Open": {
+                "Units": 525,
+                "Nano": 800000000
+            },
+            "High": {
+                "Units": 526,
+                "Nano": 200000000
+            },
+            "Low": {
+                "Units": 525,
+                "Nano": 600000000
+            },
+            "Close": {
+                "Units": 525,
+                "Nano": 800000000
+            },
+            "Volume": "742",
+            "Time": "2024-07-02T11:50:00Z",
+            "LastTradeTS": "2024-07-02T11:50:00Z"
+
+        },
+        {
+            "Open": {
+                "Units": 525,
+                "Nano": 800000000
+            },
+            "High": {
+                "Units": 525,
+                "Nano": 800000000
+            },
+            "Low": {
+                "Units": 524,
+                "Nano": 0
+            },
+            "Close": {
+                "Units": 524,
+                "Nano": 800000000
+            },
+            "Volume": "29736",
+            "Time": "2024-07-02T11:51:00Z",
+            "LastTradeTS": "2024-07-02T11:51:00Z"
+
+        },
+        {
+            "Open": {
+                "Units": 525,
+                "Nano": 0
+            },
+            "High": {
+                "Units": 525,
+                "Nano": 400000000
+            },
+            "Low": {
+                "Units": 524,
+                "Nano": 400000000
+            },
+            "Close": {
+                "Units": 525,
+                "Nano": 200000000
+            },
+            "Volume": "4492",
+            "Time": "2024-07-02T11:52:00Z",
+            "LastTradeTS": "2024-07-02T11:52:00Z"
+
+        },
+        {
+            "Open": {
+                "Units": 524,
+                "Nano": 800000000
+            },
+            "High": {
+                "Units": 524,
+                "Nano": 800000000
+            },
+            "Low": {
+                "Units": 523,
+                "Nano": 200000000
+            },
+            "Close": {
+                "Units": 523,
+                "Nano": 800000000
+            },
+            "Volume": "29731",
+            "Time": "2024-07-02T11:53:00Z",
+            "LastTradeTS": "2024-07-02T11:53:00Z"
+
+        },
+        {
+            "Open": {
+                "Units": 524,
+                "Nano": 200000000
+            },
+            "High": {
+                "Units": 524,
+                "Nano": 200000000
+            },
+            "Low": {
+                "Units": 523,
+                "Nano": 400000000
+            },
+            "Close": {
+                "Units": 523,
+                "Nano": 800000000
+            },
+            "Volume": "9279",
+            "Time": "2024-07-02T11:54:00Z",
+            "LastTradeTS": "2024-07-02T11:54:00Z"
+
+        },
+        {
+            "Open": {
+                "Units": 523,
+                "Nano": 800000000
+            },
+            "High": {
+                "Units": 524,
+                "Nano": 200000000
+            },
+            "Low": {
+                "Units": 523,
+                "Nano": 800000000
+            },
+            "Close": {
+                "Units": 524,
+                "Nano": 200000000
+            },
+            "Volume": "1023",
+            "Time": "2024-07-02T11:55:00Z",
+            "LastTradeTS": "2024-07-02T11:55:00Z"
+
+        },
+        {
+            "Open": {
+                "Units": 524,
+                "Nano": 0
+            },
+            "High": {
+                "Units": 524,
+                "Nano": 200000000
+            },
+            "Low": {
+                "Units": 523,
+                "Nano": 800000000
+            },
+            "Close": {
+                "Units": 524,
+                "Nano": 200000000
+            },
+            "Volume": "583",
+            "Time": "2024-07-02T11:56:00Z",
+            "LastTradeTS": "2024-07-02T11:56:00Z"
+
+        },
+        {
+            "Open": {
+                "Units": 524,
+                "Nano": 200000000
+            },
+            "High": {
+                "Units": 524,
+                "Nano": 200000000
+            },
+            "Low": {
+                "Units": 524,
+                "Nano": 0
+            },
+            "Close": {
+                "Units": 524,
+                "Nano": 200000000
+            },
+            "Volume": "922",
+            "Time": "2024-07-02T11:57:00Z",
+            "LastTradeTS": "2024-07-02T11:57:00Z"
+
+        },
+        {
+            "Open": {
+                "Units": 524,
+                "Nano": 0
+            },
+            "High": {
+                "Units": 524,
+                "Nano": 200000000
+            },
+            "Low": {
+                "Units": 524,
+                "Nano": 0
+            },
+            "Close": {
+                "Units": 524,
+                "Nano": 200000000
+            },
+            "Volume": "488",
+            "Time": "2024-07-02T11:58:00Z",
+            "LastTradeTS": "2024-07-02T11:58:00Z"
+
+        },
+        {
+            "Open": {
+                "Units": 524,
+                "Nano": 200000000
+            },
+            "High": {
+                "Units": 524,
+                "Nano": 200000000
+            },
+            "Low": {
+                "Units": 524,
+                "Nano": 0
+            },
+            "Close": {
+                "Units": 524,
+                "Nano": 0
+            },
+            "Volume": "330",
+            "Time": "2024-07-02T11:59:00Z",
+            "LastTradeTS": "2024-07-02T11:59:00Z"
+
+        },
+        {
+            "Open": {
+                "Units": 524,
+                "Nano": 0
+            },
+            "High": {
+                "Units": 524,
+                "Nano": 200000000
+            },
+            "Low": {
+                "Units": 524,
+                "Nano": 0
+            },
+            "Close": {
+                "Units": 524,
+                "Nano": 0
+            },
+            "Volume": "622",
+            "Time": "2024-07-02T12:00:00Z",
+            "LastTradeTS": "2024-07-02T12:00:00Z"
+
+        },
+        {
+            "Open": {
+                "Units": 524,
+                "Nano": 200000000
+            },
+            "High": {
+                "Units": 524,
+                "Nano": 400000000
+            },
+            "Low": {
+                "Units": 524,
+                "Nano": 0
+            },
+            "Close": {
+                "Units": 524,
+                "Nano": 200000000
+            },
+            "Volume": "1418",
+            "Time": "2024-07-02T12:01:00Z",
+            "LastTradeTS": "2024-07-02T12:01:00Z"
+
+        },
+        {
+            "Open": {
+                "Units": 524,
+                "Nano": 0
+            },
+            "High": {
+                "Units": 524,
+                "Nano": 400000000
+            },
+            "Low": {
+                "Units": 524,
+                "Nano": 0
+            },
+            "Close": {
+                "Units": 524,
+                "Nano": 400000000
+            },
+            "Volume": "1142",
+            "Time": "2024-07-02T12:02:00Z",
+            "LastTradeTS": "2024-07-02T12:02:00Z"
+
+        },
+        {
+            "Open": {
+                "Units": 524,
+                "Nano": 200000000
+            },
+            "High": {
+                "Units": 524,
+                "Nano": 200000000
+            },
+            "Low": {
+                "Units": 524,
+                "Nano": 0
+            },
+            "Close": {
+                "Units": 524,
+                "Nano": 200000000
+            },
+            "Volume": "215",
+            "Time": "2024-07-02T12:03:00Z",
+            "LastTradeTS": "2024-07-02T12:03:00Z"
+
+        },
+        {
+            "Open": {
+                "Units": 524,
+                "Nano": 0
+            },
+            "High": {
+                "Units": 524,
+                "Nano": 200000000
+            },
+            "Low": {
+                "Units": 524,
+                "Nano": 0
+            },
+            "Close": {
+                "Units": 524,
+                "Nano": 200000000
+            },
+            "Volume": "22",
+            "Time": "2024-07-02T12:04:00Z",
+            "LastTradeTS": "2024-07-02T12:04:00Z"
+
+        },
+        {
+            "Open": {
+                "Units": 524,
+                "Nano": 400000000
+            },
+            "High": {
+                "Units": 524,
+                "Nano": 600000000
+            },
+            "Low": {
+                "Units": 524,
+                "Nano": 0
+            },
+            "Close": {
+                "Units": 524,
+                "Nano": 600000000
+            },
+            "Volume": "1560",
+            "Time": "2024-07-02T12:05:00Z",
+            "LastTradeTS": "2024-07-02T12:05:00Z"
+
+        },
+        {
+            "Open": {
+                "Units": 524,
+                "Nano": 600000000
+            },
+            "High": {
+                "Units": 524,
+                "Nano": 600000000
+            },
+            "Low": {
+                "Units": 524,
+                "Nano": 0
+            },
+            "Close": {
+                "Units": 524,
+                "Nano": 0
+            },
+            "Volume": "1046",
+            "Time": "2024-07-02T12:06:00Z",
+            "LastTradeTS": "2024-07-02T12:06:00Z"
+
+        },
+        {
+            "Open": {
+                "Units": 524,
+                "Nano": 200000000
+            },
+            "High": {
+                "Units": 524,
+                "Nano": 600000000
+            },
+            "Low": {
+                "Units": 524,
+                "Nano": 0
+            },
+            "Close": {
+                "Units": 524,
+                "Nano": 600000000
+            },
+            "Volume": "839",
+            "Time": "2024-07-02T12:07:00Z",
+            "LastTradeTS": "2024-07-02T12:07:00Z"
+
+        },
+        {
+            "Open": {
+                "Units": 524,
+                "Nano": 600000000
+            },
+            "High": {
+                "Units": 524,
+                "Nano": 600000000
+            },
+            "Low": {
+                "Units": 524,
+                "Nano": 200000000
+            },
+            "Close": {
+                "Units": 524,
+                "Nano": 200000000
+            },
+            "Volume": "106",
+            "Time": "2024-07-02T12:08:00Z",
+            "LastTradeTS": "2024-07-02T12:08:00Z"
+
+        },
+        {
+            "Open": {
+                "Units": 524,
+                "Nano": 400000000
+            },
+            "High": {
+                "Units": 524,
+                "Nano": 600000000
+            },
+            "Low": {
+                "Units": 524,
+                "Nano": 400000000
+            },
+            "Close": {
+                "Units": 524,
+                "Nano": 400000000
+            },
+            "Volume": "1056",
+            "Time": "2024-07-02T12:09:00Z",
+            "LastTradeTS": "2024-07-02T12:09:00Z"
+
+        },
+        {
+            "Open": {
+                "Units": 524,
+                "Nano": 400000000
+            },
+            "High": {
+                "Units": 524,
+                "Nano": 600000000
+            },
+            "Low": {
+                "Units": 524,
+                "Nano": 400000000
+            },
+            "Close": {
+                "Units": 524,
+                "Nano": 600000000
+            },
+            "Volume": "1432",
+            "Time": "2024-07-02T12:10:00Z",
+            "LastTradeTS": "2024-07-02T12:10:00Z"
+
+        }
+    ]

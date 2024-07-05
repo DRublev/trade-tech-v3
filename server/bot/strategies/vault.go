@@ -78,10 +78,11 @@ func (this *Vault) updateBuyOrders(state types.OrderExecutionState) {
 	}
 	if state.Status == types.Fill || state.Status == types.ErrorPlacing {
 		filteredOrders := []types.OrderExecutionState{}
-
 		for _, order := range this.PlacedBuyOrders {
 			if order.ID != state.ID {
 				filteredOrders = append(filteredOrders, order)
+			} else {
+				l.Infof("Removing cancelled buy order from pending list: %v", state.ID)
 			}
 		}
 
@@ -103,6 +104,8 @@ func (this *Vault) updateSellOrders(state types.OrderExecutionState) {
 		for _, order := range this.PlacedSellOrders {
 			if order.ID != state.ID {
 				filteredOrders = append(filteredOrders, order)
+			} else {
+				l.Infof("Removing cancelled sell order from pending list: %v", state.ID)
 			}
 		}
 
@@ -143,6 +146,7 @@ func (this *Vault) OnOrderSateChange(state types.OrderExecutionState) {
 		this.LeftBalance += state.ExecutedOrderPrice
 		this.PendingBuyShares -= int64(state.LotsExecuted / int(this.lotSize))
 		this.NotConfirmedBlockedMoney -= state.ExecutedOrderPrice
+		l.Infof("NotConfirmedBlockedMoney %v; ExecutedOrderPrice %v", this.NotConfirmedBlockedMoney, state.ExecutedOrderPrice)
 		return
 	} else if isSellPlaceError || isSellCancel {
 		l.Info("Updating state after sell order place error")
@@ -154,8 +158,12 @@ func (this *Vault) OnOrderSateChange(state types.OrderExecutionState) {
 	if isSellOk {
 		l.Trace("Updating state after sell order executed")
 		this.PendingSellShares -= int64(state.LotsExecuted / int(this.lotSize))
-		this.LeftBalance += state.ExecutedOrderPrice
 		this.HoldingShares -= int64(state.LotsExecuted / int(this.lotSize))
+
+		if state.Status != types.New {
+			this.LeftBalance += state.ExecutedOrderPrice
+		}
+
 		l.WithField("orderId", state.ID).Infof(
 			"Lots executed (cancelled %v, erroPlacing: %v) %v of %v; Executed sell price %v",
 			isBuyCancel,
@@ -168,9 +176,14 @@ func (this *Vault) OnOrderSateChange(state types.OrderExecutionState) {
 		l.Trace("Updating state after buy order executed")
 		this.HoldingShares += int64(state.LotsExecuted / int(this.lotSize))
 		this.PendingBuyShares -= int64(state.LotsExecuted / int(this.lotSize))
-		this.NotConfirmedBlockedMoney -= state.ExecutedOrderPrice
-		this.LeftBalance -= state.ExecutedOrderPrice
 		this.LastBuyPrice = state.ExecutedOrderPrice / float64(state.LotsExecuted)
+
+		if state.Status != types.New {
+		this.NotConfirmedBlockedMoney -= state.ExecutedOrderPrice
+
+			this.LeftBalance -= state.ExecutedOrderPrice
+		}
+
 		l.WithField("orderId", state.ID).Infof(
 			"Lots executed (cancelled %v, erroPlacing: %v) %v of %v; Executed buy price %v",
 			isSellCancel,

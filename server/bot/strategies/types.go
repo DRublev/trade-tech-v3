@@ -1,6 +1,8 @@
 package strategies
 
 import (
+	"context"
+	"encoding/json"
 	"main/types"
 )
 
@@ -37,7 +39,39 @@ type IStrategy interface {
 }
 
 // Strategy Контракт для стратегии
-type Strategy struct {
+type Strategy[T any] struct {
 	IStrategy
-	Key StrategyKey
+	Key    StrategyKey
+	Config T
+}
+
+func (s *Strategy[T]) SetConfig(config Config) error {
+	bts, err := json.Marshal(config)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(bts, &s.Config)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *Strategy[T]) OnOrderSateChangeSubscribe(stopCtx context.Context, orderStateChangeCh *chan types.OrderExecutionState, onOrderSateChange func(state types.OrderExecutionState)) {
+	l.Info("Start listening for orders")
+	for {
+		select {
+		case <-stopCtx.Done():
+			l.Info("Strategy stopped")
+			return
+		case state, ok := <-*orderStateChangeCh:
+			if !ok {
+				l.Warn("Orders state channel closed")
+				return
+			}
+			onOrderSateChange(state)
+		}
+	}
 }

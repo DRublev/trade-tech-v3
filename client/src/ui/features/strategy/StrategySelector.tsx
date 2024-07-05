@@ -5,10 +5,11 @@ import { Select } from '@radix-ui/themes';
 import { useStrategy } from './useStrategy';
 
 type Props = {
+    disabled: boolean;
     onChange?: (strategy: StrategyKey) => void;
 };
 
-export const StrategySelector: FC<Props> = ({ onChange }) => {
+export const StrategySelector: FC<Props> = ({ disabled, onChange }) => {
     const [strategy, setStrategy, allStrategies] = useStrategy();
     const options = Object.entries(allStrategies).map(([key, name]) => ({ value: key, name }));
 
@@ -18,7 +19,7 @@ export const StrategySelector: FC<Props> = ({ onChange }) => {
     };
 
     return <>
-        <Select.Root defaultValue={strategy} onValueChange={handleStrategyChange}>
+        <Select.Root defaultValue={strategy} onValueChange={handleStrategyChange} disabled={disabled}>
             <Select.Trigger />
             <Select.Content>
                 {options.map((option) => (

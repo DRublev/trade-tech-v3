@@ -215,7 +215,7 @@ const Chart: FC<ChartProps> = ({ containerRef }) => {
     }, [initialData])
 
     // TODO: Запилить лоадер
-    return <div id="chart-container" ref={ref}>
+    return <div id="chart-container" data-testid="chart-container" ref={ref}>
 
         {/* НЕ УДАЛЯТЬ!!! Требования либы графиков */}
         <div className="lw-attribution">

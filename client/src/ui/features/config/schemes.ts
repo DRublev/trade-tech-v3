@@ -73,7 +73,7 @@ const rosshookScheme: ConfigScheme = {
             placeholder: 'Второй минимум - этот параметр = цена выставления стоп-лосс',
             type: ConfigFieldTypes.number,
             min: 0,
-            step: 0.01, // TODO: тут стоит плясать от минимального шага цены инструмента
+            step: 0.0001, // TODO: тут стоит плясать от минимального шага цены инструмента
             htmlType: 'number',
         },
         {
@@ -82,7 +82,7 @@ const rosshookScheme: ConfigScheme = {
             placeholder: 'Просадка от максимума',
             type: ConfigFieldTypes.number,
             min: 0,
-            step: 0.01, // TODO: тут стоит плясать от минимального шага цены инструмента
+            step: 0.0001, // TODO: тут стоит плясать от минимального шага цены инструмента
             htmlType: 'number',
         },
     ]

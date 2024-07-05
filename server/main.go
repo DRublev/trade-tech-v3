@@ -28,7 +28,7 @@ func init() {
 	log.SetLevel(log.InfoLevel)
 }
 
-var envFromBuild string
+var envFromBuild string = "CI"
 var secretFromBuild string = "trade-tech-secret-for-encryption"
 
 func main() {
@@ -38,7 +38,7 @@ func main() {
 	if !ok {
 		env = envFromBuild
 	}
-	if len(env) == 0 || env != "PROD" {
+	if len(env) == 0 || env == "DEV" {
 		if err := godotenv.Load(); err != nil {
 			log.Fatal("Cannot load env!")
 		}

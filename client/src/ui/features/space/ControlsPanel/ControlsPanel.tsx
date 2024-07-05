@@ -108,7 +108,7 @@ export const ControlsPanel = () => {
             <Toolbar.ToggleGroup type="single">
                 <Flex align="center" justify="center" gap="2" p="3">
                     <Flex mr="3">
-                        <StrategySelector onChange={setSelectedStrategy} />
+                        <StrategySelector disabled={isStarted} onChange={setSelectedStrategy} />
                     </Flex>
                     <Toolbar.Button value="start" asChild onClick={handleTradeToggle} {...toolBarButtonProps}>
                         <StartIconComponent className={isStarted ? s.stopIcon : s.startIcon} />

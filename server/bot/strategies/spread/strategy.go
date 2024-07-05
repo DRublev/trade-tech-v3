@@ -80,7 +80,7 @@ type isWorking struct {
 
 type SpreadStrategy struct {
 	strategies.IStrategy
-	strategies.Strategy
+	strategies.Strategy[Config]
 	config Config
 	// Канал для стакана
 	obCh              *chan *types.Orderbook
@@ -119,13 +119,13 @@ func (s *SpreadStrategy) Start(
 
 	bts, err := json.Marshal(config)
 	if err != nil {
-		l.Error("Error parsing config %v", err)
+		l.Errorf("Error parsing config %v", err)
 		return false, err
 	}
 
 	err = json.Unmarshal(bts, &res)
 	if err != nil {
-		l.Error("Error parsing config %v", err)
+		l.Errorf("Error parsing config %v", err)
 		return false, err
 	}
 	s.config = res
