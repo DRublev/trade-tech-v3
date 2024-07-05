@@ -118,6 +118,67 @@ func TestShouldCloseBuyIfNotExecuted(t *testing.T) {
 	}
 }
 
-// TODO: Написать тест на сценарий покупка-стоп лосс
+func TestBuyAndStopLoss(t *testing.T) {
+	mockProvider := MockProvider{
+		mock: getBuyAndStopLossMock(),
+	}
+
+	strategy := rosshook.New(mockProvider)
+
+	var c rosshook.Config
+	c.MaxSharesToHold = 1
+	c.LotSize = 1
+	c.Balance = 1000
+	c.SaveProfit = 0.2
+	c.StopLoss = 0.2
+	var config strategies.Config
+	b, _ := json.Marshal(c)
+	json.Unmarshal(b, &config)
+
+	placedOrders := make(chan *types.PlaceOrder)
+	ordersStates := make(chan types.OrderExecutionState)
+
+	go strategy.Start(&config, &placedOrders, &ordersStates)
+
+	go func(t *testing.T) {
+		// Без этого, тест будет висеть дефолтный таймаут (30 секунд), пока не упадет сам
+		<-time.After(time.Second * 20)
+		t.Fatal("Таймаут")
+	}(t)
+
+	shouldBeBuyOrder := <-placedOrders
+	if shouldBeBuyOrder.Direction == types.Buy {
+		// Эмулируем выставления заявки на покупку, но она будет висеть не исполнившаяся
+		ordersStates <- types.OrderExecutionState{
+			Status:             types.New,
+			LotsExecuted:       0,
+			LotsRequested:      int(shouldBeBuyOrder.Quantity),
+			ExecutedOrderPrice: float64(shouldBeBuyOrder.Price),
+			InstrumentID:       shouldBeBuyOrder.InstrumentID,
+			Direction:          shouldBeBuyOrder.Direction,
+			ID:                 "placedBuyOrderID",
+		}
+		ordersStates <- types.OrderExecutionState{
+			Status:             types.Fill,
+			LotsExecuted:       int(shouldBeBuyOrder.Quantity),
+			LotsRequested:      int(shouldBeBuyOrder.Quantity),
+			ExecutedOrderPrice: float64(shouldBeBuyOrder.Price),
+			InstrumentID:       shouldBeBuyOrder.InstrumentID,
+			Direction:          shouldBeBuyOrder.Direction,
+			ID:                 "placedBuyOrderID",
+		}
+		// По цене targetGrow
+		if shouldBeBuyOrder.Price != 527.2 {
+			t.Fatalf("Заход по уебищной цене: %v", shouldBeBuyOrder.Price)
+		}
+	}
+
+	shouldBeTakeOrder := <-placedOrders
+	// 524.8 - цена первой свечи, которая пробила стоп
+	if shouldBeTakeOrder.Price != 524.8 {
+		t.Fatalf("Неверный стоп-лосс %v", shouldBeTakeOrder.Price)
+	}
+}
+
 // TODO: Тест что корректно выставляется закрытие пендинг бай ордеров
 // TODO: Тест, когда LotSize > 1

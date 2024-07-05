@@ -107,14 +107,14 @@ func (ow *OrderWatcher) PairWithOrderID(idempodentID types.IdempodentID, orderID
 }
 
 func (ow *OrderWatcher) notify(state types.OrderExecutionState) {
-	idempodentID, ok := ow.idempodentsToOrdersMap[state.ID]
+	idempodentID := ow.idempodentsToOrdersMap[state.ID]
 	l := log.WithFields(log.Fields{
 		"idempodentID": idempodentID,
 		"orderID":      state.ID,
 		"instrument": state.InstrumentID,
 		"direction":    state.Direction,
 	})
-	if !ok {
+	if len(idempodentID) == 0 {
 		l.Error("Order is not watched, or no one subscribed for it")
 		return
 	}

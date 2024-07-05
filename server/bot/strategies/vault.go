@@ -158,8 +158,12 @@ func (this *Vault) OnOrderSateChange(state types.OrderExecutionState) {
 	if isSellOk {
 		l.Trace("Updating state after sell order executed")
 		this.PendingSellShares -= int64(state.LotsExecuted / int(this.lotSize))
-		this.LeftBalance += state.ExecutedOrderPrice
 		this.HoldingShares -= int64(state.LotsExecuted / int(this.lotSize))
+
+		if state.Status != types.New {
+			this.LeftBalance += state.ExecutedOrderPrice
+		}
+
 		l.WithField("orderId", state.ID).Infof(
 			"Lots executed (cancelled %v, erroPlacing: %v) %v of %v; Executed sell price %v",
 			isBuyCancel,
@@ -172,9 +176,14 @@ func (this *Vault) OnOrderSateChange(state types.OrderExecutionState) {
 		l.Trace("Updating state after buy order executed")
 		this.HoldingShares += int64(state.LotsExecuted / int(this.lotSize))
 		this.PendingBuyShares -= int64(state.LotsExecuted / int(this.lotSize))
-		this.NotConfirmedBlockedMoney -= state.ExecutedOrderPrice
-		this.LeftBalance -= state.ExecutedOrderPrice
 		this.LastBuyPrice = state.ExecutedOrderPrice / float64(state.LotsExecuted)
+
+		if state.Status != types.New {
+		this.NotConfirmedBlockedMoney -= state.ExecutedOrderPrice
+
+			this.LeftBalance -= state.ExecutedOrderPrice
+		}
+
 		l.WithField("orderId", state.ID).Infof(
 			"Lots executed (cancelled %v, erroPlacing: %v) %v of %v; Executed buy price %v",
 			isSellCancel,
