@@ -9,6 +9,10 @@ import (
 // StrategyKey Идентификатор стратегии
 type StrategyKey string
 
+func (k StrategyKey) String() string {
+	return string(k)
+}
+
 // Коллекция доступных стратегий
 const (
 	Spread   StrategyKey = "spread_v0"

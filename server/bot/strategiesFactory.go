@@ -29,7 +29,10 @@ func Assemble(key strategies.StrategyKey, config *strategies.Config) (strategies
 	case strategies.Macd:
 		return macd.New(), nil
 	case strategies.RossHook:
-		return rosshook.New(candles.NewProvider()), nil
+		return rosshook.New(
+			candles.NewProvider(),
+			strategies.NewActivityPubSub().Container(key.String()),
+		), nil
 	}
 
 	// TODO: Инициализировать стратегию в зависимости от ключа

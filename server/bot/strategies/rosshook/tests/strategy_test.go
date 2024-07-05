@@ -34,7 +34,7 @@ func TestBuyOrderPlaced(t *testing.T) {
 		mock: getShouldBuyMock(),
 	}
 
-	strategy := rosshook.New(mockProvider)
+	strategy := rosshook.New(mockProvider, strategies.ActivityContainer{})
 
 	var c rosshook.Config
 	c.MaxSharesToHold = 1
@@ -72,7 +72,7 @@ func TestShouldCloseBuyIfNotExecuted(t *testing.T) {
 		mock: getShouldCloseBuyWhenNotExecutedMock(),
 	}
 
-	strategy := rosshook.New(mockProvider)
+	strategy := rosshook.New(mockProvider, strategies.ActivityContainer{})
 
 	var c rosshook.Config
 	c.MaxSharesToHold = 1
@@ -123,7 +123,7 @@ func TestBuyAndStopLoss(t *testing.T) {
 		mock: getBuyAndStopLossMock(),
 	}
 
-	strategy := rosshook.New(mockProvider)
+	strategy := rosshook.New(mockProvider, strategies.ActivityContainer{})
 
 	var c rosshook.Config
 	c.MaxSharesToHold = 1
