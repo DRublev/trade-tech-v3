@@ -36,5 +36,9 @@ func getShouldNotBuyMock() []types.OHLC {
 func getShouldCloseBuyWhenNotExecutedMock() []types.OHLC {
 	fixturePath := "./vkco_2024-06-24_1min_10-38_11-20.json"
 	return readJSON(fixturePath)
+}
+func getBuyAndStopLossMock() []types.OHLC {
+	fixturePath := "./vkco_2024-07-02_1min_11-14_12-10.json"
+	return readJSON(fixturePath)
 
 }
