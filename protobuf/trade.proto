@@ -16,7 +16,7 @@ service Trade {
 }
 
 message SubscribeStrategiesEventsRequest {
-
+    string Strategy = 1;
 }
 
 message StrategyEvent {

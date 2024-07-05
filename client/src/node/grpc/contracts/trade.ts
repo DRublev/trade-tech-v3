@@ -21,6 +21,7 @@ import { Struct } from "./google/protobuf/struct";
 export const protobufPackage = "trade";
 
 export interface SubscribeStrategiesEventsRequest {
+  Strategy: string;
 }
 
 export interface StrategyEvent {
@@ -79,11 +80,14 @@ export interface GetConfigResponse {
 }
 
 function createBaseSubscribeStrategiesEventsRequest(): SubscribeStrategiesEventsRequest {
-  return {};
+  return { Strategy: "" };
 }
 
 export const SubscribeStrategiesEventsRequest = {
-  encode(_: SubscribeStrategiesEventsRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+  encode(message: SubscribeStrategiesEventsRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.Strategy !== "") {
+      writer.uint32(10).string(message.Strategy);
+    }
     return writer;
   },
 
@@ -94,6 +98,13 @@ export const SubscribeStrategiesEventsRequest = {
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.Strategy = reader.string();
+          continue;
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -103,12 +114,15 @@ export const SubscribeStrategiesEventsRequest = {
     return message;
   },
 
-  fromJSON(_: any): SubscribeStrategiesEventsRequest {
-    return {};
+  fromJSON(object: any): SubscribeStrategiesEventsRequest {
+    return { Strategy: isSet(object.Strategy) ? globalThis.String(object.Strategy) : "" };
   },
 
-  toJSON(_: SubscribeStrategiesEventsRequest): unknown {
+  toJSON(message: SubscribeStrategiesEventsRequest): unknown {
     const obj: any = {};
+    if (message.Strategy !== "") {
+      obj.Strategy = message.Strategy;
+    }
     return obj;
   },
 
@@ -118,9 +132,10 @@ export const SubscribeStrategiesEventsRequest = {
     return SubscribeStrategiesEventsRequest.fromPartial(base ?? ({} as any));
   },
   fromPartial<I extends Exact<DeepPartial<SubscribeStrategiesEventsRequest>, I>>(
-    _: I,
+    object: I,
   ): SubscribeStrategiesEventsRequest {
     const message = createBaseSubscribeStrategiesEventsRequest();
+    message.Strategy = object.Strategy ?? "";
     return message;
   },
 };
@@ -279,7 +294,7 @@ function createBaseStartResponse(): StartResponse {
 
 export const StartResponse = {
   encode(message: StartResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-    if (message.Ok !== false) {
+    if (message.Ok === true) {
       writer.uint32(8).bool(message.Ok);
     }
     if (message.Error !== "") {
@@ -327,7 +342,7 @@ export const StartResponse = {
 
   toJSON(message: StartResponse): unknown {
     const obj: any = {};
-    if (message.Ok !== false) {
+    if (message.Ok === true) {
       obj.Ok = message.Ok;
     }
     if (message.Error !== "") {
@@ -427,7 +442,7 @@ function createBaseStopResponse(): StopResponse {
 
 export const StopResponse = {
   encode(message: StopResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-    if (message.Ok !== false) {
+    if (message.Ok === true) {
       writer.uint32(8).bool(message.Ok);
     }
     if (message.Error !== "") {
@@ -475,7 +490,7 @@ export const StopResponse = {
 
   toJSON(message: StopResponse): unknown {
     const obj: any = {};
-    if (message.Ok !== false) {
+    if (message.Ok === true) {
       obj.Ok = message.Ok;
     }
     if (message.Error !== "") {
@@ -575,7 +590,7 @@ function createBaseIsStartedResponse(): IsStartedResponse {
 
 export const IsStartedResponse = {
   encode(message: IsStartedResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-    if (message.Ok !== false) {
+    if (message.Ok === true) {
       writer.uint32(8).bool(message.Ok);
     }
     if (message.Error !== "") {
@@ -623,7 +638,7 @@ export const IsStartedResponse = {
 
   toJSON(message: IsStartedResponse): unknown {
     const obj: any = {};
-    if (message.Ok !== false) {
+    if (message.Ok === true) {
       obj.Ok = message.Ok;
     }
     if (message.Error !== "") {
@@ -738,7 +753,7 @@ function createBaseChangeConfigResponse(): ChangeConfigResponse {
 
 export const ChangeConfigResponse = {
   encode(message: ChangeConfigResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-    if (message.Ok !== false) {
+    if (message.Ok === true) {
       writer.uint32(8).bool(message.Ok);
     }
     if (message.Error !== "") {
@@ -786,7 +801,7 @@ export const ChangeConfigResponse = {
 
   toJSON(message: ChangeConfigResponse): unknown {
     const obj: any = {};
-    if (message.Ok !== false) {
+    if (message.Ok === true) {
       obj.Ok = message.Ok;
     }
     if (message.Error !== "") {
