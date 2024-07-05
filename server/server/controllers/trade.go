@@ -122,3 +122,8 @@ func (s *Server) GetConfig(ctx context.Context, in *trade.GetConfigRequest) (*tr
 	return res, nil
 
 }
+
+func (s *Server) SubscribeStrategiesEvents(in *trade.SubscribeStrategiesEventsRequest, stream trade.Trade_SubscribeStrategiesEventsServer) error {
+	
+	return nil
+}

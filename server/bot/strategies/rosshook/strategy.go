@@ -47,6 +47,8 @@ type RossHookStrategy struct {
 	strategies.Strategy
 
 	provider candles.BaseCandlesProvider
+	activityPubSub strategies.StrategyActivityPubSub
+
 	config   Config
 	// Канал для стакана
 	obCh              *chan *types.Orderbook
@@ -65,9 +67,10 @@ type RossHookStrategy struct {
 
 var cancelSwitch context.CancelFunc
 
-func New(provider candles.BaseCandlesProvider) *RossHookStrategy {
+func New(provider candles.BaseCandlesProvider, activityPubSub strategies.StrategyActivityPubSub) *RossHookStrategy {
 	inst := &RossHookStrategy{}
 	inst.provider = provider
+	inst.activityPubSub = activityPubSub
 	inst.toPlaceOrders = make(chan *types.PlaceOrder)
 	inst.stopCtx, cancelSwitch = context.WithCancel(context.Background())
 	return inst
@@ -217,6 +220,13 @@ func isGreaterTF(candidate types.OHLC, toCompare types.OHLC) bool {
 }
 
 func (s *RossHookStrategy) mapAndSendState() {
+	// p1, p2, p3, p4
+	// enterPosPrice
+	// stop-loss pos
+	// take-profit pos
+	// placedOrders???
+
+	
 
 	// map -> {}
 	// send({})
