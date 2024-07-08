@@ -2,7 +2,6 @@ package indicators
 
 import (
 	"errors"
-	"fmt"
 )
 
 // MacdIndicator Дивергенция скользящих средних
@@ -84,8 +83,4 @@ func (i *MacdIndicator) Update(price float64) {
 
 	i.values = macd
 	i.signals = i.emaSignal.Get()
-	if len(i.values) > 5 {
-		fmt.Printf("81 macd values %v %v\n", price, i.values[len(i.values)-5:])
-		fmt.Printf("82 macd signals %v %v\n", price, i.signals[len(i.signals)-5:])
-	}
 }

@@ -158,35 +158,75 @@ func (s *RossHookStrategy) Stop() (bool, error) {
 
 func (s *RossHookStrategy) mapAndSendState() {
 	if s.high != nil {
-		s.activityPubSub.Track("p1", "point", strategies.PointActivityValue[float64, time.Time]{
-			X: s.high.High.Float(),
-			Y: s.high.Time,
+		s.activityPubSub.Track("p1", "point", strategies.PointActivityValue[time.Time, float64]{
+			X:    s.high.Time.In(utc),
+			Y:    s.high.High.Float(),
+			Text: "p1",
+		})
+	} else {
+		s.activityPubSub.Track("p1", "point", strategies.PointActivityValue[time.Time, float64]{
+			DeleteFlag: true,
 		})
 	}
 	if s.low != nil {
-		s.activityPubSub.Track("p2", "point", strategies.PointActivityValue[float64, time.Time]{
-			X: s.low.Low.Float(),
-			Y: s.low.Time,
+		s.activityPubSub.Track("p2", "point", strategies.PointActivityValue[time.Time, float64]{
+			X:    s.low.Time.In(utc),
+			Y:    s.low.Low.Float(),
+			Text: "p2",
+		})
+	} else {
+		s.activityPubSub.Track("p2", "point", strategies.PointActivityValue[time.Time, float64]{
+			DeleteFlag: true,
 		})
 	}
 	if s.targetGrow != nil {
-		s.activityPubSub.Track("p3", "point", strategies.PointActivityValue[float64, time.Time]{
-			X: s.targetGrow.High.Float(),
-			Y: s.targetGrow.Time,
+		s.activityPubSub.Track("p3", "point", strategies.PointActivityValue[time.Time, float64]{
+			X:    s.targetGrow.Time.In(utc),
+			Y:    s.targetGrow.High.Float(),
+			Text: "p3",
+		})
+	} else {
+		s.activityPubSub.Track("p3", "point", strategies.PointActivityValue[time.Time, float64]{
+			DeleteFlag: true,
 		})
 	}
 	if s.less != nil {
-		s.activityPubSub.Track("p4", "point", strategies.PointActivityValue[float64, time.Time]{
-			X: s.less.Low.Float(),
-			Y: s.less.Time,
+		s.activityPubSub.Track("p4", "point", strategies.PointActivityValue[time.Time, float64]{
+			X:    s.less.Time.In(utc),
+			Y:    s.less.Low.Float(),
+			Text: "p4",
 		})
-		s.activityPubSub.Track("buyAt", "level", s.targetGrow.High.Float())
+		s.activityPubSub.Track("buyAt", "level", strategies.LevelActivityValue{
+			Level: s.targetGrow.High.Float(),
+			Text:  "buy at",
+		})
+	} else {
+		s.activityPubSub.Track("p4", "point", strategies.PointActivityValue[time.Time, float64]{
+			DeleteFlag: true,
+		})
+		s.activityPubSub.Track("buyAt", "level", strategies.LevelActivityValue{
+			DeleteFlag: true,
+		})
 	}
 	if s.lowForStopLoss != nil {
-		s.activityPubSub.Track("stopLoss", "level", s.lowForStopLoss.Low.Float()-s.Config.StopLoss)
+		s.activityPubSub.Track("stopLoss", "level", strategies.LevelActivityValue{
+			Level: s.lowForStopLoss.Low.Float() - s.Config.StopLoss,
+			Text:  "stop-loss",
+		})
+	} else {
+		s.activityPubSub.Track("stopLoss", "level", strategies.LevelActivityValue{
+			DeleteFlag: true,
+		})
 	}
 	if s.takeProfit != nil {
-		s.activityPubSub.Track("takeProfit", "level", s.takeProfit.High.Float()-float64(s.Config.SaveProfit))
+		s.activityPubSub.Track("takeProfit", "level", strategies.LevelActivityValue{
+			Level: s.takeProfit.High.Float() - float64(s.Config.SaveProfit),
+			Text:  "take-profit",
+		})
+	} else {
+		s.activityPubSub.Track("takeProfit", "level", strategies.LevelActivityValue{
+			DeleteFlag: true,
+		})
 	}
 }
 

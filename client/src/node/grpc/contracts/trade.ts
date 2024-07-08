@@ -25,8 +25,9 @@ export interface SubscribeStrategiesEventsRequest {
 }
 
 export interface StrategyEvent {
-  Type: string;
-  Value: { [key: string]: any }[];
+  ID: string;
+  Kind: string;
+  Value: { [key: string]: any } | undefined;
 }
 
 export interface StartRequest {
@@ -141,16 +142,19 @@ export const SubscribeStrategiesEventsRequest = {
 };
 
 function createBaseStrategyEvent(): StrategyEvent {
-  return { Type: "", Value: [] };
+  return { ID: "", Kind: "", Value: undefined };
 }
 
 export const StrategyEvent = {
   encode(message: StrategyEvent, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-    if (message.Type !== "") {
-      writer.uint32(10).string(message.Type);
+    if (message.ID !== "") {
+      writer.uint32(10).string(message.ID);
     }
-    for (const v of message.Value) {
-      Struct.encode(Struct.wrap(v!), writer.uint32(18).fork()).ldelim();
+    if (message.Kind !== "") {
+      writer.uint32(18).string(message.Kind);
+    }
+    if (message.Value !== undefined) {
+      Struct.encode(Struct.wrap(message.Value), writer.uint32(26).fork()).ldelim();
     }
     return writer;
   },
@@ -167,14 +171,21 @@ export const StrategyEvent = {
             break;
           }
 
-          message.Type = reader.string();
+          message.ID = reader.string();
           continue;
         case 2:
           if (tag !== 18) {
             break;
           }
 
-          message.Value.push(Struct.unwrap(Struct.decode(reader, reader.uint32())));
+          message.Kind = reader.string();
+          continue;
+        case 3:
+          if (tag !== 26) {
+            break;
+          }
+
+          message.Value = Struct.unwrap(Struct.decode(reader, reader.uint32()));
           continue;
       }
       if ((tag & 7) === 4 || tag === 0) {
@@ -187,17 +198,21 @@ export const StrategyEvent = {
 
   fromJSON(object: any): StrategyEvent {
     return {
-      Type: isSet(object.Type) ? globalThis.String(object.Type) : "",
-      Value: globalThis.Array.isArray(object?.Value) ? [...object.Value] : [],
+      ID: isSet(object.ID) ? globalThis.String(object.ID) : "",
+      Kind: isSet(object.Kind) ? globalThis.String(object.Kind) : "",
+      Value: isObject(object.Value) ? object.Value : undefined,
     };
   },
 
   toJSON(message: StrategyEvent): unknown {
     const obj: any = {};
-    if (message.Type !== "") {
-      obj.Type = message.Type;
+    if (message.ID !== "") {
+      obj.ID = message.ID;
     }
-    if (message.Value?.length) {
+    if (message.Kind !== "") {
+      obj.Kind = message.Kind;
+    }
+    if (message.Value !== undefined) {
       obj.Value = message.Value;
     }
     return obj;
@@ -208,8 +223,9 @@ export const StrategyEvent = {
   },
   fromPartial<I extends Exact<DeepPartial<StrategyEvent>, I>>(object: I): StrategyEvent {
     const message = createBaseStrategyEvent();
-    message.Type = object.Type ?? "";
-    message.Value = object.Value?.map((e) => e) || [];
+    message.ID = object.ID ?? "";
+    message.Kind = object.Kind ?? "";
+    message.Value = object.Value ?? undefined;
     return message;
   },
 };

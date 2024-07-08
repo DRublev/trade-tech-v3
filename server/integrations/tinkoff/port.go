@@ -243,7 +243,7 @@ func (c *TinkoffBrokerPort) GetShares(instrumentStatus types.InstrumentStatus) (
 func (c *TinkoffBrokerPort) SubscribeOrderbook(ctx context.Context, orderbookCh *chan *types.Orderbook, instrumentID string, depth int32) error {
 	sdkL.WithFields(log.Fields{
 		"instrument": instrumentID,
-		"depth":        depth,
+		"depth":      depth,
 	}).Infof("Subscribe for orderbook")
 
 	sdk, err := c.GetSdk()
@@ -372,7 +372,7 @@ var cachedInstruments = make(map[string]*investapi.Instrument)
 func (c *TinkoffBrokerPort) PlaceOrder(order *types.PlaceOrder) (types.OrderID, error) {
 	sdkL.WithFields(log.Fields{
 		"instrument": order.InstrumentID,
-		"direction":    order.Direction,
+		"direction":  order.Direction,
 	}).Infof("Placing order")
 
 	sdk, err := c.GetSdk()
@@ -595,7 +595,7 @@ func (c *TinkoffBrokerPort) GetOrderState(orderID types.OrderID) (types.OrderExe
 	if state.LotsExecuted == state.LotsRequested || state.ExecutionReportStatus == 1 {
 		status = types.Fill
 	} else if state.ExecutionReportStatus == 4 {
-		status = types.New	
+		status = types.New
 	} else if state.ExecutionReportStatus == 2 {
 		status = types.ErrorPlacing
 	}
@@ -632,7 +632,7 @@ func (c *TinkoffBrokerPort) CancelOrder(orderID types.OrderID) error {
 	res, err := oc.CancelOrder(accID, string(orderID))
 
 	sdkL.Infof("Cancelling order %v %v", accID, string(orderID))
-	sdkL.WithField("trackingId", res.ResponseMetadata.TrackingId).Infof("Cancelling order response: %v; err: %v", res.CancelOrderResponse, err.Error())
+	sdkL.WithField("trackingId", res.ResponseMetadata.TrackingId).Infof("Cancelling order response: %v; err: %v", res.CancelOrderResponse, err)
 
 	return err
 }

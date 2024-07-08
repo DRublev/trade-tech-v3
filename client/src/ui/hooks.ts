@@ -9,6 +9,7 @@ export const useIpcInvoke = <Req, Res>(channel: ValidChannel) => {
     return invoke;
 };
 
+// TODO: FIXME: Есть бага с тем, что мемоизирутеся коллбек и у него в области видимости не актуальные переменные (не подтягивается актуальный стейт компонента)
 export const useIpcListen = (channel: ValidChannel) => {
     const listen = useCallback((cb: any) => window.ipc ? window.ipc.on(channel, cb) : Promise.reject, [channel]);
     const removeListen = useCallback((cb: any) => window.ipc ? window.ipc.removeListener(channel, cb) : Promise.reject, [channel]);

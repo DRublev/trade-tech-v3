@@ -136,37 +136,36 @@ func (s *Server) SubscribeStrategiesEvents(in *trade.SubscribeStrategiesEventsRe
 	}
 
 	streamCtx := stream.Context()
-	go func() {
-		for {
-			select {
-			case <-streamCtx.Done():
-				activitiesChannel = nil
-				return
-			case activity, ok := <-*activitiesChannel:
-				if !ok {
-					tradeL.Info("Subscription closed")
-					return
-				}
+	for {
+		select {
+		case <-streamCtx.Done():
+			activitiesChannel = nil
+			return nil
+		case activity, ok := <-*activitiesChannel:
+			if !ok {
+				tradeL.Info("Subscription closed")
+				continue
+			}
 
-				b, err := json.Marshal(activity.Value)
-				activityStruct := &structpb.Struct{}
+			b, err := json.Marshal(activity.Value)
+			activityStruct := &structpb.Struct{}
 
-				err = protojson.Unmarshal(b, activityStruct)
-				if err != nil {
-					tradeL.Warnf("Activity conversion error %v", err)
-					continue
-				}
+			err = protojson.Unmarshal(b, activityStruct)
+			if err != nil {
+				tradeL.Warnf("Activity conversion error %v", err)
+				continue
+			}
 
-				err = stream.Send(&trade.StrategyEvent{
-					Type:  string(activity.Kind),
-					Value: []*structpb.Struct{activityStruct},
-				})
-				if err != nil {
-					tradeL.Warnf("Activity send error %v", err)
-				}
+			err = stream.Send(&trade.StrategyEvent{
+				ID:    activity.ID,
+				Kind:  string(activity.Kind),
+				Value: activityStruct,
+			})
+			if err != nil {
+				tradeL.Warnf("Activity send error %v", err)
 			}
 		}
-	}()
+	}
 
 	return nil
 }

@@ -1,11 +1,8 @@
 package strategies
 
-// Activity - любой майлстоун в логике стратегии, о котором стоит уведомить
-// Это может быть определение цены входа в позицию или определение важного для стратегии уровня
-type Activity struct {
-	Kind  ActivityKind
-	Value any
-}
+import (
+	"time"
+)
 
 // StrategyActivityPubSub Реализация IStrategyActivityPubSub
 type StrategyActivityPubSub struct {
@@ -17,7 +14,9 @@ var inst *StrategyActivityPubSub
 // NewActivityPubSub создает синглтон StrategyActivityPubSub
 func NewActivityPubSub() StrategyActivityPubSub {
 	if inst == nil {
-		inst = &StrategyActivityPubSub{}
+		inst = &StrategyActivityPubSub{
+			containers: make(map[string]IStrategyActivityPubSub),
+		}
 	}
 
 	return *inst
@@ -42,7 +41,7 @@ func (sa StrategyActivityPubSub) Subscribe(containerID string) *chan Activity {
 
 // IStrategyActivityPubSub Служит для подписки на действия (Activity) стратегий
 type IStrategyActivityPubSub interface {
-	Track(id string, kind ActivityKind, value any)
+	Track(id string, kind ActivityKind, value interface{})
 	GetNewSubscription() *chan Activity
 }
 
@@ -57,27 +56,54 @@ type ActivityContainer struct {
 func (ac ActivityContainer) GetNewSubscription() *chan Activity {
 	subscription := make(chan Activity)
 	ac.subscribers = append(ac.subscribers, &subscription)
+
+	go func() {
+		for {
+			<-time.After(time.Second * 5)
+			for _, a := range ac.activities {
+				subscription <- a
+			}
+		}
+	}()
+
 	return &subscription
 }
 
-func (ac ActivityContainer) Track(id string, kind ActivityKind, value any) {
-	ac.activities[id] = Activity{
-		Kind:  kind,
-		Value: value,
+func (ac ActivityContainer) Track(id string, kind ActivityKind, value interface{}) {
+	act := Activity{
+		ID:   id,
+		Kind: kind,
+	}
+	if point, isPoint := value.(PointActivityValue[time.Time, float64]); isPoint {
+		act.Value = point
+	}
+	if level, isLevel := value.(LevelActivityValue); isLevel {
+		act.Value = level
+	}
+	if line, isLine := value.(LineActivityValue[time.Time, float64]); isLine {
+		act.Value = line
 	}
 
-	go func() {
-		for _, subscription := range ac.subscribers {
-			if subscription != nil {
-				*subscription <- ac.activities[id]
-			}
+	ac.activities[id] = act
 
+	for _, subscription := range ac.subscribers {
+		if subscription != nil {
+			*subscription <- ac.activities[id]
 		}
-	}()
+
+	}
 }
 
 // ActivityKind вид активности: значение, уровень
 type ActivityKind string
+
+// Activity - любой майлстоун в логике стратегии, о котором стоит уведомить
+// Это может быть определение цены входа в позицию или определение важного для стратегии уровня
+type Activity struct {
+	ID    string
+	Kind  ActivityKind
+	Value any
+}
 
 // Valid Валидация
 func (candidate ActivityKind) Valid() bool {
@@ -90,11 +116,21 @@ func (candidate ActivityKind) Valid() bool {
 }
 
 type PointActivityValue[X any, Y any] struct {
-	X X
-	Y Y
+	X    X
+	Y    Y
+	Text string
+	DeleteFlag bool
 }
-type LevelActivityValue float64
+type LevelActivityValue struct {
+	Level float64
+	Text  string
+	DeleteFlag bool
+}
 type LineActivityValue[X any, Y any] struct {
-	X X
-	Y Y
+	X1   X
+	Y1   Y
+	X2   X
+	Y2   Y
+	Text string
+	DeleteFlag bool
 }

@@ -20,8 +20,9 @@ message SubscribeStrategiesEventsRequest {
 }
 
 message StrategyEvent {
-  string Type = 1;
-  repeated google.protobuf.Struct Value = 2;
+  string ID = 1;
+  string Kind = 2;
+  google.protobuf.Struct Value = 3;
 }
 
 message StartRequest {
