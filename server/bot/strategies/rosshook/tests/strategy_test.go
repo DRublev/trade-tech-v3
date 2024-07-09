@@ -28,13 +28,16 @@ func (p MockProvider) GetOrCreate(instrumentID string, initialFrom time.Time, in
 	return &p.channel, nil
 }
 
+var ac = strategies.NewActivityPubSub()
+
+
 // Выставляем бай
 func TestBuyOrderPlaced(t *testing.T) {
 	mockProvider := MockProvider{
 		mock: getShouldBuyMock(),
 	}
 
-	strategy := rosshook.New(mockProvider, strategies.ActivityContainer{})
+	strategy := rosshook.New(mockProvider, ac.Container("rosshook"))
 
 	var c rosshook.Config
 	c.MaxSharesToHold = 1
@@ -72,7 +75,7 @@ func TestShouldCloseBuyIfNotExecuted(t *testing.T) {
 		mock: getShouldCloseBuyWhenNotExecutedMock(),
 	}
 
-	strategy := rosshook.New(mockProvider, strategies.ActivityContainer{})
+	strategy := rosshook.New(mockProvider, ac.Container("rosshook"))
 
 	var c rosshook.Config
 	c.MaxSharesToHold = 1
@@ -123,7 +126,7 @@ func TestBuyAndStopLoss(t *testing.T) {
 		mock: getBuyAndStopLossMock(),
 	}
 
-	strategy := rosshook.New(mockProvider, strategies.ActivityContainer{})
+	strategy := rosshook.New(mockProvider, ac.Container("rosshook"))
 
 	var c rosshook.Config
 	c.MaxSharesToHold = 1
