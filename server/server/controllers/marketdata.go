@@ -10,7 +10,6 @@ import (
 	"os"
 	"os/signal"
 	"sync"
-	"time"
 
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -121,7 +120,7 @@ func (s *Server) SubscribeOrders(in *marketdata.SubscribeOrderRequest, stream ma
 			InstrumentID:    st.InstrumentID,
 			Strategy:        "", // TODO: Брать стратегию из единого мета
 			PricePerLot:     st.ExecutedOrderPrice / float64(st.LotsExecuted),
-			Time:            timestamppb.New(time.Now()),
+			Time:            timestamppb.New(st.ExecutionTime),
 		})
 		if err != nil {
 			mdL.Warnf("Failed sending orderState to stream: %v", err)

@@ -1,6 +1,9 @@
 package types
 
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
 
 // OperationType Тип операции (сделки, ордера) - покупка или продажа
 type OperationType byte
@@ -120,6 +123,7 @@ type OrderExecutionState struct {
 	ExecutedComission  float64
 	Direction          OperationType
 	InstrumentID       string
+	ExecutionTime      time.Time
 }
 
 func (s OrderExecutionState) String() string {

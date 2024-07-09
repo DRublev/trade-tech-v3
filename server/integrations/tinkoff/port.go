@@ -503,6 +503,7 @@ func (c *TinkoffBrokerPort) SubscribeOrders(cb func(types.OrderExecutionState)) 
 				for _, t := range tradeState.Trades {
 					lotsExecuted += int(t.Quantity)
 					executedPrice += t.Price.ToFloat() * float64(t.Quantity)
+
 				}
 
 				changeEvent := types.OrderExecutionState{
@@ -512,6 +513,7 @@ func (c *TinkoffBrokerPort) SubscribeOrders(cb func(types.OrderExecutionState)) 
 					LotsExecuted:       lotsExecuted,
 					Status:             0, // TODO: Научиться определять статус заявки
 					ExecutedOrderPrice: executedPrice,
+					ExecutionTime:      tradeState.Trades[len(tradeState.Trades)-1].DateTime.AsTime(),
 					// TODO: Научиться считать вот это все (из tradeState.Trades видимо)
 					// LotsRequested      int
 					// InitialOrderPrice  types.Money
@@ -599,7 +601,6 @@ func (c *TinkoffBrokerPort) GetOrderState(orderID types.OrderID) (types.OrderExe
 	} else if state.ExecutionReportStatus == 2 {
 		status = types.ErrorPlacing
 	}
-
 	orderState := types.OrderExecutionState{
 		ID:                 types.OrderID(state.OrderId),
 		IdempodentID:       types.IdempodentID(state.OrderRequestId),
@@ -609,6 +610,7 @@ func (c *TinkoffBrokerPort) GetOrderState(orderID types.OrderID) (types.OrderExe
 		LotsRequested:      int(state.LotsRequested),
 		Status:             status, // TODO: Научиться определять статус заявки
 		ExecutedOrderPrice: state.ExecutedOrderPrice.ToFloat(),
+		ExecutionTime:      state.Stages[len(state.Stages)-1].ExecutionTime.AsTime(),
 	}
 
 	sdkL.Infof("Got order state %v", orderState)
