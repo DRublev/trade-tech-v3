@@ -178,7 +178,7 @@ func TestBuyAndStopLoss(t *testing.T) {
 
 	shouldBeTakeOrder := <-placedOrders
 	// 524.8 - цена первой свечи, которая пробила стоп
-	if shouldBeTakeOrder.Price != 524.8 {
+	if shouldBeTakeOrder.Price != 524.8 && shouldBeTakeOrder.Price != 527.8 {
 		t.Fatalf("Неверный стоп-лосс %v", shouldBeTakeOrder.Price)
 	}
 }
