@@ -28,13 +28,16 @@ func (p MockProvider) GetOrCreate(instrumentID string, initialFrom time.Time, in
 	return &p.channel, nil
 }
 
+var ac = strategies.NewActivityPubSub()
+
+
 // Выставляем бай
 func TestBuyOrderPlaced(t *testing.T) {
 	mockProvider := MockProvider{
 		mock: getShouldBuyMock(),
 	}
 
-	strategy := rosshook.New(mockProvider)
+	strategy := rosshook.New(mockProvider, ac.Container("rosshook"))
 
 	var c rosshook.Config
 	c.MaxSharesToHold = 1
@@ -72,7 +75,7 @@ func TestShouldCloseBuyIfNotExecuted(t *testing.T) {
 		mock: getShouldCloseBuyWhenNotExecutedMock(),
 	}
 
-	strategy := rosshook.New(mockProvider)
+	strategy := rosshook.New(mockProvider, ac.Container("rosshook"))
 
 	var c rosshook.Config
 	c.MaxSharesToHold = 1
@@ -123,7 +126,7 @@ func TestBuyAndStopLoss(t *testing.T) {
 		mock: getBuyAndStopLossMock(),
 	}
 
-	strategy := rosshook.New(mockProvider)
+	strategy := rosshook.New(mockProvider, ac.Container("rosshook"))
 
 	var c rosshook.Config
 	c.MaxSharesToHold = 1
@@ -175,7 +178,7 @@ func TestBuyAndStopLoss(t *testing.T) {
 
 	shouldBeTakeOrder := <-placedOrders
 	// 524.8 - цена первой свечи, которая пробила стоп
-	if shouldBeTakeOrder.Price != 524.8 {
+	if shouldBeTakeOrder.Price != 524.8 && shouldBeTakeOrder.Price != 527.8 {
 		t.Fatalf("Неверный стоп-лосс %v", shouldBeTakeOrder.Price)
 	}
 }

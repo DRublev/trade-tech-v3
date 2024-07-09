@@ -12,6 +12,7 @@ import { setCurrentAccount } from '../../auth/authSlice';
 import { Toast } from '../../../components/Toast/Toast';
 import s from './styles.css';
 import { StrategySelector, useStrategy } from '../../strategy';
+import { useSubscribeStrategyActivities } from '../../strategy/useStrategyActivities';
 
 const toolBarButtonProps = {
     className: style.button,
@@ -22,6 +23,7 @@ const useTradeToggle = (instrumentId: string, strategy: string, logger: ReturnTy
     const startTrade = useIpcInvoke<unknown, { Ok: boolean, Error?: string }>('START_TRADE');
     const stopTrade = useIpcInvoke<unknown, { Ok: boolean, Error?: string }>('STOP_TRADE');
     const isStartedReq = useIpcInvoke<unknown, { Ok: boolean }>('IS_STARTED');
+    const subscribeActivities = useSubscribeStrategyActivities();
     const [isStarted, setIsStarted] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -30,7 +32,6 @@ const useTradeToggle = (instrumentId: string, strategy: string, logger: ReturnTy
         try {
             setError(null);
             setIsLoading(true);
-            console.log('35 ControlsPanel', strategy);
 
             logger.info("Switching trade", { isStarted, strategy });
             let res: any = {};
@@ -39,6 +40,7 @@ const useTradeToggle = (instrumentId: string, strategy: string, logger: ReturnTy
                 res = await stopTrade({ instrumentId, strategy });
             } else {
                 res = await startTrade({ instrumentId, strategy });
+                subscribeActivities();
             }
             if (res.Ok) {
                 setIsStarted(!isStarted);
@@ -56,11 +58,6 @@ const useTradeToggle = (instrumentId: string, strategy: string, logger: ReturnTy
             logger.trace("Trade switched", { isStarted });
         }
     }, [strategy, instrumentId, isStarted]);
-
-    useEffect(() => {
-        console.log('63 ControlsPanel', strategy);
-
-    }, [strategy])
 
     useEffect(() => {
         if (!instrumentId) return;

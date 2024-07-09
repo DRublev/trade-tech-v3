@@ -12,6 +12,17 @@ service Trade {
     rpc IsStarted(StartRequest) returns (StartResponse); 
     rpc ChangeConfig(ChangeConfigRequest) returns (ChangeConfigResponse);
     rpc GetConfig(GetConfigRequest) returns (GetConfigResponse);
+    rpc SubscribeStrategiesEvents(SubscribeStrategiesEventsRequest) returns (stream StrategyEvent);
+}
+
+message SubscribeStrategiesEventsRequest {
+    string Strategy = 1;
+}
+
+message StrategyEvent {
+  string ID = 1;
+  string Kind = 2;
+  google.protobuf.Struct Value = 3;
 }
 
 message StartRequest {

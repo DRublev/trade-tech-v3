@@ -1,5 +1,12 @@
 /* eslint-disable */
-import { ChannelCredentials, Client, makeGenericClientConstructor, Metadata } from "@grpc/grpc-js";
+import {
+  ChannelCredentials,
+  Client,
+  ClientReadableStream,
+  handleServerStreamingCall,
+  makeGenericClientConstructor,
+  Metadata,
+} from "@grpc/grpc-js";
 import type {
   CallOptions,
   ClientOptions,
@@ -12,6 +19,16 @@ import _m0 from "protobufjs/minimal";
 import { Struct } from "./google/protobuf/struct";
 
 export const protobufPackage = "trade";
+
+export interface SubscribeStrategiesEventsRequest {
+  Strategy: string;
+}
+
+export interface StrategyEvent {
+  ID: string;
+  Kind: string;
+  Value: { [key: string]: any } | undefined;
+}
 
 export interface StartRequest {
   Strategy: string;
@@ -62,6 +79,156 @@ export interface GetConfigRequest {
 export interface GetConfigResponse {
   Config: { [key: string]: any } | undefined;
 }
+
+function createBaseSubscribeStrategiesEventsRequest(): SubscribeStrategiesEventsRequest {
+  return { Strategy: "" };
+}
+
+export const SubscribeStrategiesEventsRequest = {
+  encode(message: SubscribeStrategiesEventsRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.Strategy !== "") {
+      writer.uint32(10).string(message.Strategy);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): SubscribeStrategiesEventsRequest {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseSubscribeStrategiesEventsRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.Strategy = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): SubscribeStrategiesEventsRequest {
+    return { Strategy: isSet(object.Strategy) ? globalThis.String(object.Strategy) : "" };
+  },
+
+  toJSON(message: SubscribeStrategiesEventsRequest): unknown {
+    const obj: any = {};
+    if (message.Strategy !== "") {
+      obj.Strategy = message.Strategy;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<SubscribeStrategiesEventsRequest>, I>>(
+    base?: I,
+  ): SubscribeStrategiesEventsRequest {
+    return SubscribeStrategiesEventsRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<SubscribeStrategiesEventsRequest>, I>>(
+    object: I,
+  ): SubscribeStrategiesEventsRequest {
+    const message = createBaseSubscribeStrategiesEventsRequest();
+    message.Strategy = object.Strategy ?? "";
+    return message;
+  },
+};
+
+function createBaseStrategyEvent(): StrategyEvent {
+  return { ID: "", Kind: "", Value: undefined };
+}
+
+export const StrategyEvent = {
+  encode(message: StrategyEvent, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.ID !== "") {
+      writer.uint32(10).string(message.ID);
+    }
+    if (message.Kind !== "") {
+      writer.uint32(18).string(message.Kind);
+    }
+    if (message.Value !== undefined) {
+      Struct.encode(Struct.wrap(message.Value), writer.uint32(26).fork()).ldelim();
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): StrategyEvent {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseStrategyEvent();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.ID = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.Kind = reader.string();
+          continue;
+        case 3:
+          if (tag !== 26) {
+            break;
+          }
+
+          message.Value = Struct.unwrap(Struct.decode(reader, reader.uint32()));
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): StrategyEvent {
+    return {
+      ID: isSet(object.ID) ? globalThis.String(object.ID) : "",
+      Kind: isSet(object.Kind) ? globalThis.String(object.Kind) : "",
+      Value: isObject(object.Value) ? object.Value : undefined,
+    };
+  },
+
+  toJSON(message: StrategyEvent): unknown {
+    const obj: any = {};
+    if (message.ID !== "") {
+      obj.ID = message.ID;
+    }
+    if (message.Kind !== "") {
+      obj.Kind = message.Kind;
+    }
+    if (message.Value !== undefined) {
+      obj.Value = message.Value;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<StrategyEvent>, I>>(base?: I): StrategyEvent {
+    return StrategyEvent.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<StrategyEvent>, I>>(object: I): StrategyEvent {
+    const message = createBaseStrategyEvent();
+    message.ID = object.ID ?? "";
+    message.Kind = object.Kind ?? "";
+    message.Value = object.Value ?? undefined;
+    return message;
+  },
+};
 
 function createBaseStartRequest(): StartRequest {
   return { Strategy: "", InstrumentId: "" };
@@ -143,7 +310,7 @@ function createBaseStartResponse(): StartResponse {
 
 export const StartResponse = {
   encode(message: StartResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-    if (message.Ok !== false) {
+    if (message.Ok === true) {
       writer.uint32(8).bool(message.Ok);
     }
     if (message.Error !== "") {
@@ -191,7 +358,7 @@ export const StartResponse = {
 
   toJSON(message: StartResponse): unknown {
     const obj: any = {};
-    if (message.Ok !== false) {
+    if (message.Ok === true) {
       obj.Ok = message.Ok;
     }
     if (message.Error !== "") {
@@ -291,7 +458,7 @@ function createBaseStopResponse(): StopResponse {
 
 export const StopResponse = {
   encode(message: StopResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-    if (message.Ok !== false) {
+    if (message.Ok === true) {
       writer.uint32(8).bool(message.Ok);
     }
     if (message.Error !== "") {
@@ -339,7 +506,7 @@ export const StopResponse = {
 
   toJSON(message: StopResponse): unknown {
     const obj: any = {};
-    if (message.Ok !== false) {
+    if (message.Ok === true) {
       obj.Ok = message.Ok;
     }
     if (message.Error !== "") {
@@ -439,7 +606,7 @@ function createBaseIsStartedResponse(): IsStartedResponse {
 
 export const IsStartedResponse = {
   encode(message: IsStartedResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-    if (message.Ok !== false) {
+    if (message.Ok === true) {
       writer.uint32(8).bool(message.Ok);
     }
     if (message.Error !== "") {
@@ -487,7 +654,7 @@ export const IsStartedResponse = {
 
   toJSON(message: IsStartedResponse): unknown {
     const obj: any = {};
-    if (message.Ok !== false) {
+    if (message.Ok === true) {
       obj.Ok = message.Ok;
     }
     if (message.Error !== "") {
@@ -602,7 +769,7 @@ function createBaseChangeConfigResponse(): ChangeConfigResponse {
 
 export const ChangeConfigResponse = {
   encode(message: ChangeConfigResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-    if (message.Ok !== false) {
+    if (message.Ok === true) {
       writer.uint32(8).bool(message.Ok);
     }
     if (message.Error !== "") {
@@ -650,7 +817,7 @@ export const ChangeConfigResponse = {
 
   toJSON(message: ChangeConfigResponse): unknown {
     const obj: any = {};
-    if (message.Ok !== false) {
+    if (message.Ok === true) {
       obj.Ok = message.Ok;
     }
     if (message.Error !== "") {
@@ -848,6 +1015,16 @@ export const TradeService = {
     responseSerialize: (value: GetConfigResponse) => Buffer.from(GetConfigResponse.encode(value).finish()),
     responseDeserialize: (value: Buffer) => GetConfigResponse.decode(value),
   },
+  subscribeStrategiesEvents: {
+    path: "/trade.Trade/SubscribeStrategiesEvents",
+    requestStream: false,
+    responseStream: true,
+    requestSerialize: (value: SubscribeStrategiesEventsRequest) =>
+      Buffer.from(SubscribeStrategiesEventsRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer) => SubscribeStrategiesEventsRequest.decode(value),
+    responseSerialize: (value: StrategyEvent) => Buffer.from(StrategyEvent.encode(value).finish()),
+    responseDeserialize: (value: Buffer) => StrategyEvent.decode(value),
+  },
 } as const;
 
 export interface TradeServer extends UntypedServiceImplementation {
@@ -856,6 +1033,7 @@ export interface TradeServer extends UntypedServiceImplementation {
   isStarted: handleUnaryCall<StartRequest, StartResponse>;
   changeConfig: handleUnaryCall<ChangeConfigRequest, ChangeConfigResponse>;
   getConfig: handleUnaryCall<GetConfigRequest, GetConfigResponse>;
+  subscribeStrategiesEvents: handleServerStreamingCall<SubscribeStrategiesEventsRequest, StrategyEvent>;
 }
 
 export interface TradeClient extends Client {
@@ -931,6 +1109,15 @@ export interface TradeClient extends Client {
     options: Partial<CallOptions>,
     callback: (error: ServiceError | null, response: GetConfigResponse) => void,
   ): ClientUnaryCall;
+  subscribeStrategiesEvents(
+    request: SubscribeStrategiesEventsRequest,
+    options?: Partial<CallOptions>,
+  ): ClientReadableStream<StrategyEvent>;
+  subscribeStrategiesEvents(
+    request: SubscribeStrategiesEventsRequest,
+    metadata?: Metadata,
+    options?: Partial<CallOptions>,
+  ): ClientReadableStream<StrategyEvent>;
 }
 
 export const TradeClient = makeGenericClientConstructor(TradeService, "trade.Trade") as unknown as {

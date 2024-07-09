@@ -1,4 +1,4 @@
-import { BrowserWindow, ipcMain, ipcRenderer } from "electron";
+import { BrowserWindow, ipcMain } from "electron";
 import { ipcEvents } from "../../ipcEvents";
 import { marketdataService } from "../grpc/marketdata";
 import { Quant } from "./types";

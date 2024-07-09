@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	bot "main/bot"
 	config "main/bot/config"
 	"main/bot/strategies"
@@ -121,4 +122,50 @@ func (s *Server) GetConfig(ctx context.Context, in *trade.GetConfigRequest) (*tr
 	tradeL.Info("GetConfig responding")
 	return res, nil
 
+}
+
+func (s *Server) SubscribeStrategiesEvents(in *trade.SubscribeStrategiesEventsRequest, stream trade.Trade_SubscribeStrategiesEventsServer) error {
+	tradeL.WithField("strategy", in.Strategy).Info("SubscribeStrategiesEvents requested")
+
+	activitiesPubSub := strategies.NewActivityPubSub()
+
+	activitiesChannel := activitiesPubSub.Subscribe(in.Strategy)
+
+	if activitiesChannel == nil {
+		return errors.New("No container for " + in.Strategy)
+	}
+
+	streamCtx := stream.Context()
+	for {
+		select {
+		case <-streamCtx.Done():
+			activitiesChannel = nil
+			return nil
+		case activity, ok := <-*activitiesChannel:
+			if !ok {
+				tradeL.Info("Subscription closed")
+				continue
+			}
+
+			b, err := json.Marshal(activity.Value)
+			activityStruct := &structpb.Struct{}
+
+			err = protojson.Unmarshal(b, activityStruct)
+			if err != nil {
+				tradeL.Warnf("Activity conversion error %v", err)
+				continue
+			}
+
+			err = stream.Send(&trade.StrategyEvent{
+				ID:    activity.ID,
+				Kind:  string(activity.Kind),
+				Value: activityStruct,
+			})
+			if err != nil {
+				tradeL.Warnf("Activity send error %v", err)
+			}
+		}
+	}
+
+	return nil
 }

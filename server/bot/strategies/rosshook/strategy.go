@@ -44,7 +44,10 @@ type RossHookStrategy struct {
 	strategies.IStrategy
 	strategies.Strategy[Config]
 
-	provider candles.BaseCandlesProvider
+	provider       candles.BaseCandlesProvider
+	activityPubSub strategies.IStrategyActivityPubSub
+
+	config Config
 	// Канал для стакана
 	obCh              *chan *types.Orderbook
 	nextOrderCooldown *time.Timer
@@ -70,9 +73,10 @@ type RossHookStrategy struct {
 
 var cancelSwitch context.CancelFunc
 
-func New(provider candles.BaseCandlesProvider) *RossHookStrategy {
+func New(provider candles.BaseCandlesProvider, activityPubSub strategies.IStrategyActivityPubSub) *RossHookStrategy {
 	inst := &RossHookStrategy{}
 	inst.provider = provider
+	inst.activityPubSub = activityPubSub
 	inst.toPlaceOrders = make(chan *types.PlaceOrder)
 	inst.stopCtx, cancelSwitch = context.WithCancel(context.Background())
 	return inst
@@ -152,7 +156,83 @@ func (s *RossHookStrategy) Stop() (bool, error) {
 	return true, nil
 }
 
+func (s *RossHookStrategy) mapAndSendState() {
+	if s.high != nil {
+		s.activityPubSub.Track("p1", "point", strategies.PointActivityValue[time.Time, float64]{
+			X:    s.high.Time.In(utc),
+			Y:    s.high.High.Float(),
+			Text: "p1",
+		})
+	} else {
+		s.activityPubSub.Track("p1", "point", strategies.PointActivityValue[time.Time, float64]{
+			DeleteFlag: true,
+		})
+	}
+	if s.low != nil {
+		s.activityPubSub.Track("p2", "point", strategies.PointActivityValue[time.Time, float64]{
+			X:    s.low.Time.In(utc),
+			Y:    s.low.Low.Float(),
+			Text: "p2",
+		})
+	} else {
+		s.activityPubSub.Track("p2", "point", strategies.PointActivityValue[time.Time, float64]{
+			DeleteFlag: true,
+		})
+	}
+	if s.targetGrow != nil {
+		s.activityPubSub.Track("p3", "point", strategies.PointActivityValue[time.Time, float64]{
+			X:    s.targetGrow.Time.In(utc),
+			Y:    s.targetGrow.High.Float(),
+			Text: "p3",
+		})
+	} else {
+		s.activityPubSub.Track("p3", "point", strategies.PointActivityValue[time.Time, float64]{
+			DeleteFlag: true,
+		})
+	}
+	if s.less != nil {
+		s.activityPubSub.Track("p4", "point", strategies.PointActivityValue[time.Time, float64]{
+			X:    s.less.Time.In(utc),
+			Y:    s.less.Low.Float(),
+			Text: "p4",
+		})
+		s.activityPubSub.Track("buyAt", "level", strategies.LevelActivityValue{
+			Level: s.targetGrow.High.Float(),
+			Text:  "buy at",
+		})
+	} else {
+		s.activityPubSub.Track("p4", "point", strategies.PointActivityValue[time.Time, float64]{
+			DeleteFlag: true,
+		})
+		s.activityPubSub.Track("buyAt", "level", strategies.LevelActivityValue{
+			DeleteFlag: true,
+		})
+	}
+	if s.lowForStopLoss != nil {
+		s.activityPubSub.Track("stopLoss", "level", strategies.LevelActivityValue{
+			Level: s.lowForStopLoss.Low.Float() - s.Config.StopLoss,
+			Text:  "stop-loss",
+		})
+	} else {
+		s.activityPubSub.Track("stopLoss", "level", strategies.LevelActivityValue{
+			DeleteFlag: true,
+		})
+	}
+	if s.takeProfit != nil {
+		s.activityPubSub.Track("takeProfit", "level", strategies.LevelActivityValue{
+			Level: s.takeProfit.High.Float() - float64(s.Config.SaveProfit),
+			Text:  "take-profit",
+		})
+	} else {
+		s.activityPubSub.Track("takeProfit", "level", strategies.LevelActivityValue{
+			DeleteFlag: true,
+		})
+	}
+}
+
 func (s *RossHookStrategy) OnCandle(c types.OHLC) {
+	defer s.mapAndSendState()
+
 	if !s.isBuying.value {
 		go s.watchBuySignal(c)
 	}
@@ -384,23 +464,9 @@ func (s *RossHookStrategy) buy(c types.OHLC) {
 	s.vault.PendingBuyShares += int64(canBuySharesAmount)
 	s.vault.NotConfirmedBlockedMoney += float64(canBuySharesAmount) * c.Close.Float()
 	s.vault.LastBuyPrice = c.Close.Float()
-	s.lastBuyPendingCandle = &types.OHLC{
-		Open:        c.Open,
-		High:        c.High,
-		Low:         c.Low,
-		Close:       c.Close,
-		Time:        c.Time,
-		LastTradeTS: c.LastTradeTS,
-	}
+	s.lastBuyPendingCandle = &c
 	l.Infof("Last buy pending candle TF: %v;", s.lastBuyPendingCandle.LastTradeTS)
-	s.lowForStopLoss = &types.OHLC{
-		Open:        s.low.Open,
-		High:        s.low.High,
-		Low:         s.low.Low,
-		Close:       s.low.Close,
-		Time:        s.low.Time,
-		LastTradeTS: s.low.LastTradeTS,
-	}
+	s.lowForStopLoss = s.low
 	l.WithField("state", s.vault).Trace("State updated after place buy order")
 
 	s.targetGrow = nil
