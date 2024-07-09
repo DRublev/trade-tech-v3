@@ -49,10 +49,14 @@ export const useSubscribeStrategyActivities = () => {
 
 };
 
-type UseMediaScope = {
+type UseBitmapScope = {
     context: CanvasRenderingContext2D;
-    mediaSize: { width: number; height: number; }
+    mediaSize: { width: number; height: number; };
+    bitmapSize: { width: number; height: number; };
+    horizontalPixelRatio: number;
+    verticalPixelRatio: number;
 }
+
 
 interface IDrawer {
     draw(activity: StrategyActivity): void;
@@ -64,7 +68,7 @@ const pointStyles = {
     dashGap: 4,
     dashStroke: 2,
     textTopMargin: 14,
-    color: 'cornflowerblue',
+    color: '#fff',
 }
 
 class PointRenderer implements ISeriesPrimitivePaneRenderer {
@@ -87,27 +91,29 @@ class PointRenderer implements ISeriesPrimitivePaneRenderer {
     }
 
     draw(target: CanvasRenderingTarget2D): void {
-        target.useMediaCoordinateSpace(this.render);
+        target.useBitmapCoordinateSpace((s) => {
+            this.render(s)
+        })
     }
 
-    update(value: PointActivity['Value']) {
-        if (value.Text != this.text) {
-            this.chartApi.requestUpdate();
-            return;
-        }
+    update(value: PointActivity['Value']): boolean {
+        if (!this.chartApi) return false;
 
         const ts = Math.floor(new Date(value.X).valueOf() / 1000) as any;
         const x = this.chartApi.chart.timeScale().timeToCoordinate(ts);
+
         this.time = ts;
 
         const y = this.chartApi.series.priceToCoordinate(value.Y);
         this.price = value.Y;
 
-        if (x != this.timeAxisCoord || y != this.priceAxisCoord) {
-            this.timeAxisCoord = x;
-            this.priceAxisCoord = y;
+        if (value.Text != this.text || x != this.timeAxisCoord || y != this.priceAxisCoord) {
+            if (!x || !y) return false;
+            this.text = value.Text;
+            this.timeAxisCoord = Math.round(x);
+            this.priceAxisCoord = Math.round(y);
 
-            this.chartApi.requestUpdate();
+            return true;
         }
     }
 
@@ -115,13 +121,14 @@ class PointRenderer implements ISeriesPrimitivePaneRenderer {
     erase() { }
 
 
-    private render(scope: UseMediaScope) {
+    private render(scope: UseBitmapScope) {
         const ctx = scope.context;
 
         // save the current state of the context to the stack
         ctx.save();
 
         try {
+
             scope.context.beginPath();
 
             scope.context.moveTo(this.timeAxisCoord - pointStyles.dashWidth, this.priceAxisCoord);
@@ -130,14 +137,12 @@ class PointRenderer implements ISeriesPrimitivePaneRenderer {
             scope.context.lineWidth = pointStyles.dashStroke;
             scope.context.strokeStyle = pointStyles.color;
 
-            scope.context.stroke();
-
-
             scope.context.font = 'bold 12px Arial';
             scope.context.fillStyle = pointStyles.color;
             scope.context.fillText(this.text, this.timeAxisCoord - 5, this.priceAxisCoord + pointStyles.textTopMargin);
 
-            scope.context.closePath();
+            scope.context.stroke();
+            scope.context.fill();
         } finally {
             // restore the saved context from the stack
             ctx.restore();
@@ -151,6 +156,7 @@ class PointsDrawer implements IDrawer, ISeriesPrimitive<Time> {
     private latestPoints = new Map<string, PointActivity>();
     private _paneViews: ISeriesPrimitivePaneView[] = [];
     private attachParams: SeriesAttachedParameter<Time, keyof SeriesOptionsMap>;
+    private idxMap: Record<string, number> = {};
 
     public hasAttached = false;
 
@@ -160,29 +166,44 @@ class PointsDrawer implements IDrawer, ISeriesPrimitive<Time> {
 
     draw(activity: PointActivity): void {
         this.latestPoints.set(activity.ID, activity);
-
         if (this.points.has(activity.ID)) {
             const renderer = this.points.get(activity.ID);
 
             if (activity.Value.DeleteFlag) {
                 renderer.erase();
                 this.points.delete(activity.ID);
+                this._paneViews = this._paneViews.splice(this.idxMap[activity.ID], 1);
+                delete this.idxMap[activity.ID];
             } else {
-                renderer.update(activity.Value);
+                const shouldRerender = renderer.update(activity.Value);
+                if (!shouldRerender) return;
+
+                const panes = [...this._paneViews];
+                panes[this.idxMap[activity.ID]] = {
+                    renderer() {
+                        return renderer;
+                    }
+                };
+                this._paneViews = panes;
             }
 
             return;
         }
 
+        if (activity.Value.DeleteFlag) return;
+
         const drawer = new PointRenderer(activity, this.attachParams);
         this.points.set(activity.ID, drawer);
 
-        this._paneViews.push({
+        this.idxMap[activity.ID] = this._paneViews.length;
+
+        drawer.update(activity.Value);
+
+        this._paneViews = this._paneViews.concat({
             renderer() {
                 return drawer;
             }
         });
-        drawer.update(activity.Value);
     }
     paneViews(): ISeriesPrimitivePaneView[] {
         return this._paneViews;
@@ -192,6 +213,7 @@ class PointsDrawer implements IDrawer, ISeriesPrimitive<Time> {
         this.attachParams = param;
 
         param.chart.timeScale().subscribeVisibleTimeRangeChange(this.handleTimeRangeChange);
+
         // TODO Еще одна подписка, где берем видимую дату / ширина канваса - паддинги-хуяддинги = ширина свечи. И от ширины свечи обновляем размеры для лейблов и точке
     }
 
@@ -223,8 +245,8 @@ class LevelsDrawer implements IDrawer {
     }
 }
 
+const pointsDrawer = new PointsDrawer();
 export const useStrategyActivitiesSeries = ({ attachPrimitive, drawPriceLine }: ChartApi) => {
-    const pointsDrawer = new PointsDrawer();
     const levelsDrawer = new LevelsDrawer(drawPriceLine);
 
     const handleActivity = (_: unknown, activity: StrategyActivity) => {
