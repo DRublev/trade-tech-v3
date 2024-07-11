@@ -329,6 +329,7 @@ func (s *RossHookStrategy) watchBuySignal(c types.OHLC) {
 	if isNewLess && isLowerThanTarget &&
 		isLessDiffTF {
 		s.less = &c
+		go s.closePendingBuys()
 		l.Infof("Set point 4. high: %v; low: %v; targetGrow: %v; less: %v;", s.high.High.Float(), s.low.Low.Float(), s.targetGrow.High.Float(), s.less.Low.Float())
 		return
 	}
