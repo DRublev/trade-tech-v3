@@ -1,6 +1,7 @@
 package strategies
 
 import (
+	"sync"
 	"time"
 )
 
@@ -48,6 +49,7 @@ type IStrategyActivityPubSub interface {
 type ActivityContainer struct {
 	IStrategyActivityPubSub
 
+	mx sync.Mutex
 	activities map[string]Activity
 
 	subscribers []*chan Activity
@@ -84,7 +86,9 @@ func (ac ActivityContainer) Track(id string, kind ActivityKind, value interface{
 		act.Value = line
 	}
 
+	ac.mx.Lock()
 	ac.activities[id] = act
+	ac.mx.Unlock()
 
 	for _, subscription := range ac.subscribers {
 		if subscription != nil {

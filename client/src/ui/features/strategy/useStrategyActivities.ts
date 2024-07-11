@@ -232,7 +232,11 @@ class LevelsDrawer implements IDrawer {
     draw(activity: LevelActivity) {
         if (activity.Value.DeleteFlag && this.erasers.has(activity.ID)) {
             this.erasers.get(activity.ID)();
+            this.erasers.delete(activity.ID);
             return;
+        }
+        if (this.erasers.has(activity.ID)) {
+            this.erasers.get(activity.ID)();
         }
         const { Level, Text } = activity.Value;
         const eraser = this.drawLineBase({

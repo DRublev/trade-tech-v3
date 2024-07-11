@@ -196,10 +196,16 @@ func (s *RossHookStrategy) mapAndSendState() {
 			Y:    s.less.Low.Float(),
 			Text: "p4",
 		})
-		s.activityPubSub.Track("buyAt", "level", strategies.LevelActivityValue{
-			Level: s.targetGrow.High.Float(),
-			Text:  "buy at",
-		})
+		if s.targetGrow != nil {
+			s.activityPubSub.Track("buyAt", "level", strategies.LevelActivityValue{
+				Level: s.targetGrow.High.Float(),
+				Text:  "buy at",
+			})
+		} else {
+			s.activityPubSub.Track("buyAt", "level", strategies.LevelActivityValue{
+				DeleteFlag: true,
+			})
+		}
 	} else {
 		s.activityPubSub.Track("p4", "point", strategies.PointActivityValue[time.Time, float64]{
 			DeleteFlag: true,
@@ -262,6 +268,25 @@ func isGreaterTF(candidate types.OHLC, toCompare types.OHLC) bool {
 	return cH >= nH && cM > nM
 }
 
+/*
+NewPoint(
+
+	pointId: string,
+	updatePredicate: (types.OHLC, Point, Point[]) => bool,
+	pointsToNilOnUpdateThis: string[],
+	onUpdate?: (self, otherPoints) => void
+
+)
+
+	points := {
+	    NewPoint(
+			"p1",
+			(candle, self, otherPoints) => self == nill || c.hight.High.float() >= self.high.High.Float(),
+			["p2", "p3", "p4", "takeProfit"],
+			(p1, otherPoints) => ActivityTracker.Track("p1", p1, otherPoints)
+		),
+	}
+*/
 func (s *RossHookStrategy) watchBuySignal(c types.OHLC) {
 	// Закрываем висящие на заявку покупки при поступлении новой свечи - мы проебали момент
 	// Однако, если текущая цена равна цене, по которой выставляли заявку, есть шанс что еще исполнится
@@ -281,36 +306,42 @@ func (s *RossHookStrategy) watchBuySignal(c types.OHLC) {
 		s.takeProfit = nil
 		l.Infof("Set point 1. high: %v;", s.high.High.Float())
 		return
-	} else if (s.low == nil || s.low.Low.Float() >= c.Low.Float()) && isLowDiffTF {
+	}
+	noLowAndLowerThanHigh := s.low == nil && s.high != nil && c.Low.Float() < s.high.Low.Float()
+	isNewLow := s.low != nil && s.low.Low.Float() >= c.Low.Float()
+	if (noLowAndLowerThanHigh || isNewLow) && isLowDiffTF {
 		s.low = &c
 		s.targetGrow = nil
 		s.less = nil
 		l.Infof("Set point 2. high: %v; low: %v;", s.high.High.Float(), s.low.Low.Float())
 		return
-	} else if (s.targetGrow == nil || (s.targetGrow.High.Float() < c.High.Float() && s.less == nil)) && isTargetGrowDiffTF {
+	}
+	isHigherThanLow := s.low != nil && c.High.Float() > s.low.High.Float()
+	isNewTargetGrow := s.targetGrow != nil && s.targetGrow.High.Float() < c.High.Float() && s.less == nil
+	if (s.targetGrow == nil || isNewTargetGrow) && isHigherThanLow && isTargetGrowDiffTF {
 		s.targetGrow = &c
 		s.less = nil
 		l.Infof("Set point 3. high: %v; low: %v; targetGrow: %v;", s.high.High.Float(), s.low.Low.Float(), s.targetGrow.High.Float())
 		return
-	} else if s.targetGrow != nil && ((s.less == nil && c.Low.Float() < s.targetGrow.High.Float()) ||
-		(s.less != nil && s.less.Low.Float() > c.Low.Float() && s.less.Low.Float() < s.targetGrow.High.Float())) &&
+	}
+	isLowerThanTarget := s.targetGrow != nil && c.High.Float() < s.targetGrow.High.Float()
+	isNewLess := s.less == nil || (s.less != nil && s.less.Low.Float() > c.Low.Float())
+	if isNewLess && isLowerThanTarget &&
 		isLessDiffTF {
 		s.less = &c
 		l.Infof("Set point 4. high: %v; low: %v; targetGrow: %v; less: %v;", s.high.High.Float(), s.low.Low.Float(), s.targetGrow.High.Float(), s.less.Low.Float())
 		return
-	} else {
-		l.Tracef("None of price l %v; h: %v; t: %v; (high: %v; low: %v; targetGrow: %v; less: %v;)", c.Low.Float(), c.High.Float(), c.LastTradeTS.Local(), s.high, s.low, s.targetGrow, s.less)
 	}
 
 	if s.high != nil && s.low != nil && s.targetGrow != nil && s.less != nil {
-		if s.targetGrow.High.Float() <= c.High.Float() {
+		if s.targetGrow.High.Float()+0.18 <= c.High.Float() {
 			s.takeProfit = &types.OHLC{
-				Open:        s.high.Open,
-				High:        s.high.High,
-				Low:         s.high.Low,
-				Close:       s.high.Close,
-				Time:        s.high.Time,
-				LastTradeTS: s.high.LastTradeTS,
+				Open:        s.targetGrow.Open,
+				High:        s.targetGrow.High,
+				Low:         s.targetGrow.Low,
+				Close:       s.targetGrow.High,
+				Time:        s.targetGrow.Time,
+				LastTradeTS: s.targetGrow.LastTradeTS,
 			}
 			go s.buy(*&types.OHLC{
 				Open:        s.targetGrow.Open,
@@ -325,9 +356,9 @@ func (s *RossHookStrategy) watchBuySignal(c types.OHLC) {
 }
 
 func (s *RossHookStrategy) watchSellSignal(c types.OHLC) {
+
 	// Stop-loss
 	if s.lastBuyPendingCandle != nil && s.lowForStopLoss != nil &&
-		isGreaterTF(c, *s.lastBuyPendingCandle) &&
 		s.lowForStopLoss.Low.Float()-s.Config.StopLoss >= c.Close.Float() {
 		l.Infof("Price reached stop-loss (low: %v; loss: %v; current: %v)", s.lowForStopLoss.Low.Float(), s.Config.StopLoss, c.Close.Float())
 		go s.sell(c)
@@ -352,12 +383,8 @@ func (s *RossHookStrategy) watchSellSignal(c types.OHLC) {
 	if s.lastBuyPendingCandle == nil {
 		return
 	}
-	if s.lastBuyPendingCandle != nil &&
-		isCompletedTF(*s.takeProfit) &&
-		// Не сразу после покупки
-		isGreaterTF(c, *s.lastBuyPendingCandle) &&
-		// Не ниже, чем цена покупки - за это отвечает стоп
-		s.lastBuyPendingCandle.Close.Float() < c.High.Float() &&
+	// Не ниже, чем цена покупки - за это отвечает стоп
+	if s.lastBuyPendingCandle != nil && s.lastBuyPendingCandle.Close.Float() < c.High.Float() &&
 		// Цена перестала расти и упала на Х - продаем
 		s.takeProfit.High.Float()-float64(s.Config.SaveProfit) >= c.High.Float() {
 		l.Infof("Price reached take-profit (take: %v; save: %v; current: %v)", s.takeProfit.Close.Float(), s.Config.SaveProfit, c.High.Float())
