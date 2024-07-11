@@ -601,6 +601,10 @@ func (c *TinkoffBrokerPort) GetOrderState(orderID types.OrderID) (types.OrderExe
 	} else if state.ExecutionReportStatus == 2 {
 		status = types.ErrorPlacing
 	}
+	exectuionTime := time.Now()
+	if len(state.Stages) > 0 {
+		exectuionTime = state.Stages[len(state.Stages)-1].ExecutionTime.AsTime()
+	}
 	orderState := types.OrderExecutionState{
 		ID:                 types.OrderID(state.OrderId),
 		IdempodentID:       types.IdempodentID(state.OrderRequestId),
@@ -610,7 +614,7 @@ func (c *TinkoffBrokerPort) GetOrderState(orderID types.OrderID) (types.OrderExe
 		LotsRequested:      int(state.LotsRequested),
 		Status:             status, // TODO: Научиться определять статус заявки
 		ExecutedOrderPrice: state.ExecutedOrderPrice.ToFloat(),
-		ExecutionTime:      state.Stages[len(state.Stages)-1].ExecutionTime.AsTime(),
+		ExecutionTime:      exectuionTime,
 	}
 
 	sdkL.Infof("Got order state %v", orderState)
@@ -634,7 +638,11 @@ func (c *TinkoffBrokerPort) CancelOrder(orderID types.OrderID) error {
 	res, err := oc.CancelOrder(accID, string(orderID))
 
 	sdkL.Infof("Cancelling order %v %v", accID, string(orderID))
-	sdkL.WithField("trackingId", res.ResponseMetadata.TrackingId).Infof("Cancelling order response: %v; err: %v", res.CancelOrderResponse, err)
+	if err != nil {
+		sdkL.Infof("Cancelling order error: %v", err)
+	} else {
+		sdkL.Infof("Cancelling order response: %v", res.CancelOrderResponse)
+	}
 
 	return err
 }
