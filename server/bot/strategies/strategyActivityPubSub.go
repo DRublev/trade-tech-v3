@@ -37,7 +37,11 @@ func (sa StrategyActivityPubSub) Container(containerID string) IStrategyActivity
 }
 
 func (sa StrategyActivityPubSub) Subscribe(containerID string) *chan Activity {
-	return sa.containers[containerID].GetNewSubscription()
+	container, ok := sa.containers[containerID]
+	if !ok {
+		return nil
+	}
+	return container.GetNewSubscription()
 }
 
 // IStrategyActivityPubSub Служит для подписки на действия (Activity) стратегий
