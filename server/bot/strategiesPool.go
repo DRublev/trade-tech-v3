@@ -57,9 +57,9 @@ func (sp *StrategyPool) IsStarted(key strategies.StrategyKey, instrumentID strin
 // Start Запуск стратегии
 func (sp *StrategyPool) Start(key strategies.StrategyKey, instrumentID string) (bool, error) {
 	l := log.WithFields(log.Fields{
-		"method":       "Start",
+		"method":     "Start",
 		"instrument": instrumentID,
-		"strategy":     key,
+		"strategy":   key,
 	})
 
 	l.Info("Starting strategy")
@@ -125,7 +125,9 @@ func (sp *StrategyPool) Start(key strategies.StrategyKey, instrumentID string) (
 
 					// Если ошибка закрытия ордера, не надо уведомлять об этом стратегию, тк у нее неверно обновится стейт
 					if err.Error() != "error closing order" || err.Error() == "order cancelled" {
-						ow.ErrNotify(*order)
+						errOrder := *order
+						errOrder.IdempodentID = order.IdempodentID
+						ow.ErrNotify(errOrder)
 					}
 					continue
 				}
@@ -144,9 +146,9 @@ func (sp *StrategyPool) Start(key strategies.StrategyKey, instrumentID string) (
 // Stop Остановить работу стратегии
 func (sp *StrategyPool) Stop(key strategies.StrategyKey, instrumentID string) (bool, error) {
 	l := log.WithFields(log.Fields{
-		"method":       "Stop",
+		"method":     "Stop",
 		"instrument": instrumentID,
-		"strategy":     key,
+		"strategy":   key,
 	})
 	l.Info("Stopping strategy")
 
@@ -179,7 +181,7 @@ func (sp *StrategyPool) Stop(key strategies.StrategyKey, instrumentID string) (b
 func (sp *StrategyPool) getConfig(key strategies.StrategyKey, instrumentID string) (*strategies.Config, error) {
 	l := log.WithFields(log.Fields{
 		"instrument": instrumentID,
-		"strategy":     key,
+		"strategy":   key,
 	})
 
 	configKey := sp.getMapKey(key, instrumentID)

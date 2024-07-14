@@ -86,9 +86,11 @@ func (ac ActivityContainer) Track(id string, kind ActivityKind, value interface{
 		act.Value = line
 	}
 
-	ac.mx.Lock()
-	ac.activities[id] = act
-	ac.mx.Unlock()
+	locked := ac.mx.TryLock()
+	if locked {
+		ac.activities[id] = act
+		ac.mx.Unlock()
+	}
 
 	for _, subscription := range ac.subscribers {
 		if subscription != nil {
