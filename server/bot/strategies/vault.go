@@ -79,7 +79,7 @@ func (this *Vault) updateBuyOrders(state types.OrderExecutionState) {
 	if state.Status == types.Fill || state.Status == types.ErrorPlacing {
 		filteredOrders := []types.OrderExecutionState{}
 		for _, order := range this.PlacedBuyOrders {
-			if order.ID != state.ID {
+			if order.ID != state.ID || order.IdempodentID != state.IdempodentID {
 				filteredOrders = append(filteredOrders, order)
 			} else {
 				l.Infof("Removing cancelled buy order from pending list: %v", state.ID)
@@ -102,7 +102,7 @@ func (this *Vault) updateSellOrders(state types.OrderExecutionState) {
 		filteredOrders := []types.OrderExecutionState{}
 
 		for _, order := range this.PlacedSellOrders {
-			if order.ID != state.ID {
+			if order.ID != state.ID || order.IdempodentID != state.IdempodentID {
 				filteredOrders = append(filteredOrders, order)
 			} else {
 				l.Infof("Removing cancelled sell order from pending list: %v", state.ID)
@@ -173,13 +173,13 @@ func (this *Vault) OnOrderSateChange(state types.OrderExecutionState) {
 			state.ExecutedOrderPrice,
 		)
 	} else if isBuyOk {
-		l.Trace("Updating state after buy order executed")
+		l.Tracef("Updating state after buy order executed, oder: %v; self state %v", state.String(), this.String())
 		this.HoldingShares += int64(state.LotsExecuted / int(this.lotSize))
 		this.PendingBuyShares -= int64(state.LotsExecuted / int(this.lotSize))
-		this.LastBuyPrice = state.ExecutedOrderPrice / float64(state.LotsExecuted)
+		this.LastBuyPrice = state.ExecutedOrderPrice
 
 		if state.Status != types.New {
-		this.NotConfirmedBlockedMoney -= state.ExecutedOrderPrice
+			this.NotConfirmedBlockedMoney -= state.ExecutedOrderPrice / float64(state.LotsExecuted) * float64(this.lotSize)
 
 			this.LeftBalance -= state.ExecutedOrderPrice
 		}

@@ -37,7 +37,11 @@ func (sa StrategyActivityPubSub) Container(containerID string) IStrategyActivity
 }
 
 func (sa StrategyActivityPubSub) Subscribe(containerID string) *chan Activity {
-	return sa.containers[containerID].GetNewSubscription()
+	container, ok := sa.containers[containerID]
+	if !ok {
+		return nil
+	}
+	return container.GetNewSubscription()
 }
 
 // IStrategyActivityPubSub Служит для подписки на действия (Activity) стратегий
@@ -86,9 +90,11 @@ func (ac ActivityContainer) Track(id string, kind ActivityKind, value interface{
 		act.Value = line
 	}
 
-	ac.mx.Lock()
-	ac.activities[id] = act
-	ac.mx.Unlock()
+	locked := ac.mx.TryLock()
+	if locked {
+		ac.activities[id] = act
+		ac.mx.Unlock()
+	}
 
 	for _, subscription := range ac.subscribers {
 		if subscription != nil {
