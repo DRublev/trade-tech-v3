@@ -3,6 +3,12 @@ import { ipcEvents } from '../../ipcEvents';
 import { tradeService } from '../grpc/trade';
 import storage from '../Storage';
 import type { StrategyEvent } from '../grpc/contracts/trade';
+import type { Quant } from './types';
+
+const nanoPrecision = 1_000_000_000;
+const quantToNumber = (q: Quant): number => {
+    return Number(q.units + (q.nano / nanoPrecision));
+}
 
 ipcMain.handle(ipcEvents.START_TRADE, async (e, req) => {
     const { instrumentId, strategy } = req;
@@ -58,6 +64,7 @@ ipcMain.handle(ipcEvents.CHANGE_STRATEGY_CONFIG, async (e, req) => {
         const shares = await storage.get('shares');
         const instrument = shares.find((share: any) => share.uid === instrumentId);
         values.LotSize = instrument.lot;
+        values.MinPriceIncrement = quantToNumber(instrument.minPriceIncrement)
     } catch (e) {
         console.error(e);
     }

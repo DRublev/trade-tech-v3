@@ -442,6 +442,7 @@ func (c *TinkoffBrokerPort) PlaceOrder(order *types.PlaceOrder) (types.OrderID, 
 	return types.OrderID(orderResp.OrderId), err
 }
 
+
 func (c *TinkoffBrokerPort) SubscribeOrders(cb func(types.OrderExecutionState)) error {
 	sdkL.Info("Subscribing for order states")
 	sdk, err := c.GetSdk()
@@ -496,14 +497,14 @@ func (c *TinkoffBrokerPort) SubscribeOrders(cb func(types.OrderExecutionState)) 
 					return
 				}
 
-				sdkL.Infof("New state of order: %v; direction: %v", tradeState.OrderId, tradeState.Direction)
+				sdkL.Infof("New state of order: %v; direction: %v; time %v", tradeState.OrderId, tradeState.Direction, tradeState.CreatedAt)
 
 				lotsExecuted := 0
 				var executedPrice float64 = 0
 				for _, t := range tradeState.Trades {
+					sdkL.Tracef("Trade of order: quantity %v; price: %v", int(t.Quantity), t.Price.ToFloat())
 					lotsExecuted += int(t.Quantity)
 					executedPrice += t.Price.ToFloat() * float64(t.Quantity)
-
 				}
 
 				changeEvent := types.OrderExecutionState{
@@ -605,6 +606,7 @@ func (c *TinkoffBrokerPort) GetOrderState(orderID types.OrderID) (types.OrderExe
 	if len(state.Stages) > 0 {
 		exectuionTime = state.Stages[len(state.Stages)-1].ExecutionTime.AsTime()
 	}
+
 	orderState := types.OrderExecutionState{
 		ID:                 types.OrderID(state.OrderId),
 		IdempodentID:       types.IdempodentID(state.OrderRequestId),
@@ -615,6 +617,7 @@ func (c *TinkoffBrokerPort) GetOrderState(orderID types.OrderID) (types.OrderExe
 		Status:             status, // TODO: Научиться определять статус заявки
 		ExecutedOrderPrice: state.ExecutedOrderPrice.ToFloat(),
 		ExecutionTime:      exectuionTime,
+		InitialOrderPrice:  state.InitialOrderPrice.ToFloat(),
 	}
 
 	sdkL.Infof("Got order state %v", orderState)

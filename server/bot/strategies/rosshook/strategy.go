@@ -27,6 +27,8 @@ type Config struct {
 	// Лотность инструмента
 	LotSize int64
 
+	MinPriceIncrement float64
+
 	// При падении ниже 2 точки минус этот парамер выставим продажу
 	StopLoss float64
 
@@ -47,7 +49,6 @@ type RossHookStrategy struct {
 	provider       candles.BaseCandlesProvider
 	activityPubSub strategies.IStrategyActivityPubSub
 
-	config Config
 	// Канал для стакана
 	obCh              *chan *types.Orderbook
 	nextOrderCooldown *time.Timer
@@ -110,7 +111,7 @@ func (s *RossHookStrategy) Start(
 
 	s.vault = *strategies.NewVault(s.Config.LotSize, s.Config.Balance)
 
-	l.Infof("Starting strategy with config: %v", s.Config)
+	l.WithField("lotSize", s.Config.LotSize).Infof("Starting strategy with config: %v", s.Config)
 
 	// Создаем или получаем канал, в который будет постаупать инфа о стакане
 	l.Tracef("Getting candles channel")
@@ -287,6 +288,7 @@ NewPoint(
 		),
 	}
 */
+
 func (s *RossHookStrategy) watchBuySignal(c types.OHLC) {
 	// Закрываем висящие на заявку покупки при поступлении новой свечи - мы проебали момент
 	// Однако, если текущая цена равна цене, по которой выставляли заявку, есть шанс что еще исполнится
@@ -335,7 +337,11 @@ func (s *RossHookStrategy) watchBuySignal(c types.OHLC) {
 	}
 
 	if s.high != nil && s.low != nil && s.targetGrow != nil && s.less != nil {
-		if s.targetGrow.High.Float()+0.18 <= c.High.Float() {
+		step := float64(0)
+		if s.Config.MinPriceIncrement > 0 {
+			step = s.Config.MinPriceIncrement
+		}
+		if s.targetGrow.High.Float()+step <= c.High.Float() {
 			s.takeProfit = &types.OHLC{
 				Open:        s.targetGrow.Open,
 				High:        s.targetGrow.High,
@@ -462,10 +468,11 @@ func (s *RossHookStrategy) buy(c types.OHLC) {
 
 	canBuySharesAmount := int64(math.Abs(leftBalance / (c.Close.Float() * float64(s.Config.LotSize))))
 	if canBuySharesAmount <= 0 {
-		l.WithField("state", s.vault).Trace("Can buy 0 shares")
+		l.WithField("state", s.vault.String()).Trace("Can buy 0 shares")
 		return
 	}
 
+	l.Infof("Lot size %v; minPriceInc %v; canBuySharesAmount %v", s.Config.LotSize, s.Config.MinPriceIncrement, canBuySharesAmount)
 	ok := s.isBuying.TryLock()
 	if !ok {
 		l.Warn("IsBuiyng mutex cannot be locked")
@@ -475,9 +482,9 @@ func (s *RossHookStrategy) buy(c types.OHLC) {
 
 	l.Trace("Set is buiyng")
 	s.isBuying.value = true
-	if canBuySharesAmount > s.Config.MaxSharesToHold {
+	if canBuySharesAmount > (s.Config.MaxSharesToHold * s.Config.LotSize) {
 		l.Tracef("Can buy more shares, than config allows")
-		canBuySharesAmount = s.Config.MaxSharesToHold
+		canBuySharesAmount = s.Config.MaxSharesToHold * s.Config.LotSize
 	}
 
 	order := &types.PlaceOrder{
@@ -489,20 +496,19 @@ func (s *RossHookStrategy) buy(c types.OHLC) {
 
 	l.Infof("Order to place: %v", order)
 
+	// TODO: Избавиться от прямого модифицирования vault. Сделать в vault методы для этого (placeOrderStateUpdate)
+	priceForAllShares := float64(s.Config.LotSize) * float64(order.Price)
 	s.vault.PendingBuyShares += int64(canBuySharesAmount)
-	s.vault.NotConfirmedBlockedMoney += float64(canBuySharesAmount) * c.Close.Float()
-	s.vault.LastBuyPrice = c.Close.Float()
+	s.vault.NotConfirmedBlockedMoney += float64(canBuySharesAmount) * priceForAllShares
+	s.vault.LastBuyPrice = priceForAllShares
 	s.lastBuyPendingCandle = &c
 	l.Infof("Last buy pending candle TF: %v;", s.lastBuyPendingCandle.LastTradeTS)
 	s.lowForStopLoss = s.low
-	l.WithField("state", s.vault).Trace("State updated after place buy order")
-
-	s.targetGrow = nil
+	l.WithField("state", s.vault.String()).Trace("State updated after place buy order")
 	s.less = nil
 
 	s.isBuying.value = false
 	l.Trace("Is buy released")
-
 	s.toPlaceOrders <- order
 }
 
@@ -511,6 +517,7 @@ func (s *RossHookStrategy) closePendingBuys() {
 	for _, order := range s.vault.PlacedBuyOrders {
 		o := &types.PlaceOrder{
 			InstrumentID: s.Config.InstrumentID,
+			IdempodentID: order.IdempodentID,
 			CancelOrder:  order.ID,
 			Direction:    1,
 			Quantity:     int64(order.LotsRequested - order.LotsExecuted),
