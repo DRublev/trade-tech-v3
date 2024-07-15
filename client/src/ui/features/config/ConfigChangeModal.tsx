@@ -14,22 +14,24 @@ import { useStrategy } from '../strategy';
 
 type Props = {
     trigger: React.ReactNode;
+    onSubmit?: (values: Record<string, any>) => void;
 };
 
-export const ConfigChangeModal: FC<Props> = ({ trigger }: Props) => {
+export const ConfigChangeModal: FC<Props> = ({ trigger, onSubmit }: Props) => {
     const [strategy] = useStrategy();
     const [instrumentId] = useCurrentInstrument();
     const { scheme, defaultValues, changeConfig } = useConfig(instrumentId, strategy);
     const [shouldClose, setShouldClose] = useState(undefined); // TODO: Костыль, надо подумать как сделать удобнее
     const logger = useLogger({ component: 'ConfigChangeModal' })
 
-    const onSubmit = async (rawValues: Record<string, any>) => {
+    const handleSubmit = async (rawValues: Record<string, any>) => {
         try {
             const [values] = mergeObjects(rawValues, defaultValues, scheme);
 
             await changeConfig(values);
+            onSubmit && onSubmit(values);
             setShouldClose(true);
-            setTimeout(() => setShouldClose(false))
+            setTimeout(() => setShouldClose(false));
         } catch (e) {
             logger.error('Error changing config ' + e);
             // TODO: Алерт, а лучше месседж в форму с разбором ошибки
@@ -44,7 +46,7 @@ export const ConfigChangeModal: FC<Props> = ({ trigger }: Props) => {
                         <Text mb="2">Инструмент для торговли</Text>
                         <InstrumentSelect />
                     </Box>
-                    <ConfigForm scheme={scheme} defaultValues={defaultValues} onSubmit={onSubmit} />
+                    <ConfigForm scheme={scheme} defaultValues={defaultValues} onSubmit={handleSubmit} />
                 </ScrollArea.Viewport>
             </ScrollArea.Root>
         </Modal>
