@@ -3,12 +3,8 @@ import { ipcEvents } from '../../ipcEvents';
 import { tradeService } from '../grpc/trade';
 import storage from '../Storage';
 import type { StrategyEvent } from '../grpc/contracts/trade';
-import type { Quant } from './types';
+import { quantToNumber } from '../../utils';
 
-const nanoPrecision = 1_000_000_000;
-const quantToNumber = (q: Quant): number => {
-    return Number(q.units + (q.nano / nanoPrecision));
-}
 
 ipcMain.handle(ipcEvents.START_TRADE, async (e, req) => {
     const { instrumentId, strategy } = req;

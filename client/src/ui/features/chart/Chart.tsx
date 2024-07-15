@@ -4,6 +4,7 @@ import React, {
     RefObject,
     useCallback,
     useEffect,
+    useMemo,
     useRef,
     useState,
 } from "react";
@@ -24,6 +25,7 @@ import { useCurrentInstrument } from "../../utils/useCurrentInstrumentId";
 import { Link } from "@radix-ui/themes";
 import type { Share } from "../../../node/grpc/contracts/shares";
 import { useStrategyActivitiesSeries } from "../strategy/useStrategyActivities";
+import { quantToNumber } from "../../../utils";
 
 type ChartProps = {
     containerRef: MutableRefObject<HTMLElement>;
@@ -85,12 +87,27 @@ const sellLineColor = "#ef6060";
 
 const legendStyle = `position: absolute; left: 12px; top: 40px; z-index: 1; font-size: 14px; font-family: sans-serif; line-height: 18px; font-weight: 300; z-index: 10;`;
 
+const usePricePrecision = (instrument: Share) => {
+    const precision = useMemo(() => {
+        if (!instrument) return 2;
+
+        const minInc = quantToNumber(instrument.minPriceIncrement);
+        const [, float] = minInc.toString().split('.');
+
+        if (!float) return 0;
+        return float.length;
+    }, [instrument]);
+
+    return precision;
+}
+
 const useChart: UseChart = (containerRef, instrument) => {
     const chartSize = useChartDimensions(containerRef);
     const chartRef = useRef();
     const chartApiRef = useRef<IChartApi>();
     const candlesApiRef = useRef<ReturnType<IChartApi["addCandlestickSeries"]>>();
     const [markers, setMarkers] = useState<SeriesMarker<Time>[]>([]);
+    const pricePrecision = usePricePrecision(instrument);
 
     const legendRef = useRef<HTMLDivElement>();
 
@@ -126,12 +143,12 @@ const useChart: UseChart = (containerRef, instrument) => {
                     candlesApiRef.current
                 ) as any;
                 const price = data.close;
-                priceFormatted = price.toFixed(2);
+                priceFormatted = price.toFixed(pricePrecision);
             }
 
             legendRef.current.innerHTML = `${instrument?.name} (${instrument?.ticker}) <strong>${priceFormatted}</strong>`;
         },
-        [instrument, candlesApiRef.current]
+        [instrument, candlesApiRef.current, pricePrecision]
     );
 
     useEffect(() => {
@@ -139,12 +156,17 @@ const useChart: UseChart = (containerRef, instrument) => {
             width: chartSize.width,
             height: chartSize.height,
             ...chartTheme,
+            localization: {
+                priceFormatter: (p: number) => p.toFixed(pricePrecision)
+            }
         });
+
         chartApiRef.current.timeScale().applyOptions({ timeVisible: true, });
         chartApiRef.current.timeScale().fitContent();
         candlesApiRef.current = chartApiRef.current.addCandlestickSeries(candleSeriesTheme);
         candlesApiRef.current.priceScale().applyOptions({
             autoScale: true,
+            ticksVisible: true,
             scaleMargins: {
                 top: 0.1,
                 bottom: 0.2,
@@ -155,6 +177,16 @@ const useChart: UseChart = (containerRef, instrument) => {
 
         // TODO: Add volume series
     }, []);
+
+    useEffect(() => {
+        if (chartApiRef.current) {
+            chartApiRef.current.applyOptions({
+                localization: {
+                    priceFormatter: (p: number) => p.toFixed(pricePrecision)
+                }
+            })
+        }
+    }, [pricePrecision]);
 
     useEffect(() => {
         legendRef.current.innerHTML = `${instrument?.name} (${instrument?.ticker})`;
