@@ -305,7 +305,9 @@ func (s *RossHookStrategy) watchBuySignal(c types.OHLC) {
 		s.low = nil
 		s.targetGrow = nil
 		s.less = nil
-		s.takeProfit = nil
+		if s.vault.HoldingShares == 0 {
+			s.takeProfit = nil
+		}
 		l.Infof("Set point 1. high: %v;", s.high.High.Float())
 		return
 	}
@@ -385,9 +387,6 @@ func (s *RossHookStrategy) watchSellSignal(c types.OHLC) {
 			Close: c.Close,
 			Time:  c.Time,
 		}
-		return
-	}
-	if s.lastBuyPendingCandle == nil {
 		return
 	}
 	// Не ниже, чем цена покупки - за это отвечает стоп
