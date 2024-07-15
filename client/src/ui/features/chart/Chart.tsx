@@ -254,7 +254,6 @@ function orderToMarkerMapper(order: OrderState): SeriesMarker<Time> {
 }
 
 
-
 const cacledOrders: Record<string, boolean> = {};
 const Chart: FC<ChartProps> = ({ containerRef }) => {
     const [instrument, _, instrumentInfo] = useCurrentInstrument();
@@ -284,10 +283,12 @@ const Chart: FC<ChartProps> = ({ containerRef }) => {
     }, [initialData]);
 
     useEffect(() => {
-        setTimeout(() => {
-            setShouldShowStartTipMessage(!instrument);
-        }, 500)
-    }, []);
+        if (shouldShowStartTipMessage) {
+            setTimeout(() => {
+                setShouldShowStartTipMessage(!instrument);
+            }, 300);
+        }
+    }, [instrument]);
 
     const handleConfigChange = () => {
         setShouldShowStartTipMessage(!instrument);
