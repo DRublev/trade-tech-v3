@@ -42,6 +42,7 @@ const useTradeToggle = (instrumentId: string, strategy: string, logger: ReturnTy
                 res = await startTrade({ instrumentId, strategy });
                 subscribeActivities();
             }
+            
             if (res.Ok) {
                 setIsStarted(!isStarted);
             } else {
@@ -74,10 +75,9 @@ export const ControlsPanel = () => {
     const logger = useLogger({ component: 'ControlsPanel' });
 
     const [instrument] = useCurrentInstrument();
-    const [strategy] = useStrategy();
-    const [selectedStrategy, setSelectedStrategy] = useState(strategy);
+    const [strategy, setStrategy] = useStrategy();
 
-    const { isStarted, isLoading, error, toggle } = useTradeToggle(instrument, selectedStrategy, logger);
+    const { isStarted, isLoading, error, toggle } = useTradeToggle(instrument, strategy, logger);
     const [showErrorToast, setShowErrorToast] = useState(false);
     const [showSuccessToast, setShowSuccessToast] = useState(false);
     const StartIconComponent = useMemo(() => {
@@ -94,7 +94,7 @@ export const ControlsPanel = () => {
 
     const handleTradeToggle = () => toggle().then(() => {
         setShowSuccessToast(true);
-    })
+    });
 
     useEffect(() => {
         setShowErrorToast(!!error);
@@ -105,7 +105,7 @@ export const ControlsPanel = () => {
             <Toolbar.ToggleGroup type="single">
                 <Flex align="center" justify="center" gap="2" p="3">
                     <Flex mr="3">
-                        <StrategySelector disabled={isStarted} onChange={setSelectedStrategy} />
+                        <StrategySelector disabled={isStarted} onChange={setStrategy} />
                     </Flex>
                     <Toolbar.Button value="start" asChild onClick={handleTradeToggle} {...toolBarButtonProps}>
                         <StartIconComponent className={isStarted ? s.stopIcon : s.startIcon} />
@@ -130,10 +130,10 @@ export const ControlsPanel = () => {
             />
             <Toast
                 type="ok"
-                open={showSuccessToast}
+                open={showSuccessToast && !error}
                 setOpen={setShowSuccessToast}
-                title={isStarted ? 'Запустили стратегию' : 'Остановили стратегию'}
-            />
+                title={isStarted ? 'Запустили стратегию' : 'Остановили стратегию'} 
+                />
         </Toolbar.Root>
     )
 }
