@@ -1,5 +1,8 @@
 .chartContainer {
     min-height: 70dvh;
+    max-height: 70dvh;
+    display: flex;
+    flex-direction: column;
 }
 
 .controlsContainer {
