@@ -293,7 +293,7 @@ func (s *RossHookStrategy) watchBuySignal(c types.OHLC) {
 	// Закрываем висящие на заявку покупки при поступлении новой свечи - мы проебали момент
 	// Однако, если текущая цена равна цене, по которой выставляли заявку, есть шанс что еще исполнится
 	if s.lastBuyPendingCandle != nil && c.High.Float() > s.lastBuyPendingCandle.High.Float() && isGreaterTF(c, *s.lastBuyPendingCandle) {
-		s.closePendingBuys()
+		go s.closePendingBuys()
 	}
 
 	isLowDiffTF := s.high != nil && isGreaterTF(c, *s.high)
@@ -512,7 +512,13 @@ func (s *RossHookStrategy) buy(c types.OHLC) {
 	s.toPlaceOrders <- order
 }
 
+var isClosing bool
+
 func (s *RossHookStrategy) closePendingBuys() {
+	if isClosing {
+		return
+	}
+	isClosing = true
 	l.Infof("Pending buys: %v", len(s.vault.PlacedBuyOrders))
 	for _, order := range s.vault.PlacedBuyOrders {
 		o := &types.PlaceOrder{
@@ -524,4 +530,5 @@ func (s *RossHookStrategy) closePendingBuys() {
 		}
 		s.toPlaceOrders <- o
 	}
+	isClosing = false
 }
