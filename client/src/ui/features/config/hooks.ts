@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useIpcInvoke, useLogger } from "../../hooks";
 import { ConfigScheme } from "./types";
 import { DEFAULT_SCHEME, schemes } from "./schemes";
@@ -8,7 +8,8 @@ import type { StrategyKey } from "../strategy/types";
 type UseConfigSchemeHook = (insrumentId: string, strategy?: StrategyKey) => ConfigScheme;
 
 const useConfigScheme: UseConfigSchemeHook = (instrumentId, strategy) => {
-    return (strategy && schemes[strategy]) || DEFAULT_SCHEME;
+    const scheme = useMemo(() => (strategy && schemes[strategy]) || DEFAULT_SCHEME, [strategy])
+    return scheme;
 };
 
 
