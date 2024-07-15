@@ -85,6 +85,19 @@ const sellLineColor = "#ef6060";
 
 const legendStyle = `position: absolute; left: 12px; top: 40px; z-index: 1; font-size: 14px; font-family: sans-serif; line-height: 18px; font-weight: 300; z-index: 10;`;
 
+/**
+ * Сделать интерфейс по типу IChartExtension
+ * Он расширяет функционал чарта (например, рисует активность стратегий или рисует свечи или ставит точки на ордерах)
+ * Собирать график тогда можно через что то типо
+ * const useChart = (..., extensions: IChartExtension[])
+ * ...
+ * useEffect(() => {
+ *  let assembled = extensions.forEach((Extension) => new Extension(chartApiRef));
+ * 
+ *  return () => assembled.forEach((ext) => ext.destroy());
+ * }, [])
+ */
+
 const useChart: UseChart = (containerRef, instrument) => {
     const chartSize = useChartDimensions(containerRef);
     const chartRef = useRef();
