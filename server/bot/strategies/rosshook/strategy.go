@@ -69,6 +69,7 @@ type RossHookStrategy struct {
 	targetGrow           *types.OHLC
 	less                 *types.OHLC
 	takeProfit           *types.OHLC
+	prevTakeProfit       *types.OHLC
 	lastBuyPendingCandle *types.OHLC
 }
 
@@ -343,7 +344,7 @@ func (s *RossHookStrategy) watchBuySignal(c types.OHLC) {
 		if s.Config.MinPriceIncrement > 0 {
 			step = s.Config.MinPriceIncrement
 		}
-		if s.targetGrow.High.Float()+step <= c.High.Float() {
+		if s.targetGrow.High.Float()+step >= c.Close.Float() {
 			s.takeProfit = &types.OHLC{
 				Open:        s.targetGrow.Open,
 				High:        s.targetGrow.High,
@@ -352,14 +353,8 @@ func (s *RossHookStrategy) watchBuySignal(c types.OHLC) {
 				Time:        s.targetGrow.Time,
 				LastTradeTS: s.targetGrow.LastTradeTS,
 			}
-			go s.buy(*&types.OHLC{
-				Open:        s.targetGrow.Open,
-				High:        s.targetGrow.High,
-				Low:         s.targetGrow.Low,
-				Close:       s.targetGrow.High, // Точка входа
-				Time:        s.targetGrow.Time,
-				LastTradeTS: s.targetGrow.LastTradeTS,
-			})
+			s.prevTakeProfit = s.takeProfit
+			go s.buy(c)
 		}
 	}
 }
@@ -374,11 +369,19 @@ func (s *RossHookStrategy) watchSellSignal(c types.OHLC) {
 		return
 	}
 
-	if s.takeProfit == nil {
+	if s.takeProfit == nil || s.prevTakeProfit == nil {
 		return
 	}
 	if c.High.Float() > s.takeProfit.High.Float() {
 		l.Infof("Updating take-profit high %v", c.High.Float())
+		s.prevTakeProfit = &types.OHLC{
+			Open:  s.takeProfit.Open,
+			High:  s.takeProfit.High,
+			Low:   s.takeProfit.Low,
+			Close: s.takeProfit.Close,
+			Time:  s.takeProfit.Time,
+			LastTradeTS: s.targetGrow.LastTradeTS,
+		}
 		// Копируем свечу. Подозрение на баг, что свеча перезаписывается следующей, поэтомуне прокидываем просто &c
 		s.takeProfit = &types.OHLC{
 			Open:  c.Open,
@@ -386,13 +389,16 @@ func (s *RossHookStrategy) watchSellSignal(c types.OHLC) {
 			Low:   c.Low,
 			Close: c.Close,
 			Time:  c.Time,
+			LastTradeTS: s.takeProfit.LastTradeTS,
 		}
 		return
 	}
 	// Не ниже, чем цена покупки - за это отвечает стоп
-	if s.lastBuyPendingCandle != nil && s.lastBuyPendingCandle.Close.Float() < c.High.Float() &&
-		// Цена перестала расти и упала на Х - продаем
-		s.takeProfit.High.Float()-float64(s.Config.SaveProfit) >= c.High.Float() {
+	isHigherThanBuyPrice := s.lastBuyPendingCandle != nil && s.lastBuyPendingCandle.Close.Float() < c.High.Float()
+	// Цена перестала расти и упала на Х - продаем
+	isGoingDown := isCompletedTF(*s.prevTakeProfit) && s.prevTakeProfit.High.Float() > s.takeProfit.High.Float()
+	isSlippageCrossed := s.takeProfit.High.Float()-float64(s.Config.SaveProfit) >= c.High.Float()
+	if isHigherThanBuyPrice && isGoingDown && isSlippageCrossed {
 		l.Infof("Price reached take-profit (take: %v; save: %v; current: %v)", s.takeProfit.Close.Float(), s.Config.SaveProfit, c.High.Float())
 		go s.sell(types.OHLC{
 			Open:  c.Open,
