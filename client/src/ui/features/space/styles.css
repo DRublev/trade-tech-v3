@@ -1,5 +1,6 @@
 .chartContainer {
     min-height: 70dvh;
+    max-height: 70dvh;
 }
 
 .controlsContainer {

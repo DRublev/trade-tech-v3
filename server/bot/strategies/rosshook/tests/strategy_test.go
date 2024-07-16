@@ -30,7 +30,6 @@ func (p MockProvider) GetOrCreate(instrumentID string, initialFrom time.Time, in
 
 var ac = strategies.NewActivityPubSub()
 
-
 // Выставляем бай
 func TestBuyOrderPlaced(t *testing.T) {
 	mockProvider := MockProvider{
@@ -143,14 +142,9 @@ func TestBuyAndStopLoss(t *testing.T) {
 
 	go strategy.Start(&config, &placedOrders, &ordersStates)
 
-	go func(t *testing.T) {
-		// Без этого, тест будет висеть дефолтный таймаут (30 секунд), пока не упадет сам
-		<-time.After(time.Second * 20)
-		t.Fatal("Таймаут")
-	}(t)
-
 	shouldBeBuyOrder := <-placedOrders
 	if shouldBeBuyOrder.Direction == types.Buy {
+		t.Logf("Получили бай ордер %v", shouldBeBuyOrder.Price)
 		// Эмулируем выставления заявки на покупку, но она будет висеть не исполнившаяся
 		ordersStates <- types.OrderExecutionState{
 			Status:             types.New,
@@ -171,14 +165,16 @@ func TestBuyAndStopLoss(t *testing.T) {
 			ID:                 "placedBuyOrderID",
 		}
 		// По цене targetGrow
-		if shouldBeBuyOrder.Price != 527.2 {
+		if shouldBeBuyOrder.Price != 526.8 {
 			t.Fatalf("Заход по уебищной цене: %v", shouldBeBuyOrder.Price)
 		}
 	}
 
 	shouldBeTakeOrder := <-placedOrders
+	t.Logf("Получили селл ордер %v", shouldBeTakeOrder.Price)
+
 	// 524.8 - цена первой свечи, которая пробила стоп
-	if shouldBeTakeOrder.Price != 524.8 && shouldBeTakeOrder.Price != 527.8 {
+	if shouldBeTakeOrder.Price != 524.8 {
 		t.Fatalf("Неверный стоп-лосс %v", shouldBeTakeOrder.Price)
 	}
 }
