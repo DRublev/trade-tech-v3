@@ -1,3 +1,14 @@
+import { Link } from "@radix-ui/themes";
+import {
+    ColorType,
+    createChart,
+    CreatePriceLineOptions,
+    IChartApi,
+    MouseEventHandler,
+    SeriesMarker,
+    Time,
+    type ISeriesPrimitive,
+} from "lightweight-charts";
 import React, {
     FC,
     MutableRefObject,
@@ -8,26 +19,15 @@ import React, {
     useRef,
     useState,
 } from "react";
-import {
-    ColorType,
-    IChartApi,
-    createChart,
-    SeriesMarker,
-    Time,
-    MouseEventHandler,
-    CreatePriceLineOptions,
-    type ISeriesPrimitive,
-} from "lightweight-charts";
-import { useChartDimensions } from "./hooks";
-import { OHLCData, OrderOperations, OrderState } from "../../../types";
-import { useCandles, useOrders } from "../space/hooks";
-import { useCurrentInstrument } from "../../utils/useCurrentInstrumentId";
-import { Link } from "@radix-ui/themes";
 import type { Share } from "../../../node/grpc/contracts/shares";
+import { OHLCData, OrderOperations, OrderState } from "../../../types";
+import { useCurrentInstrument } from "../../utils/useCurrentInstrumentId";
+import { ConfigChangeModal } from "../config";
+import { useCandles, useOrders } from "../space/hooks";
 import { useStrategyActivitiesSeries } from "../strategy/useStrategyActivities";
+import { useChartDimensions } from "./hooks";
 import { quantToNumber } from "../../../utils";
 import styles from './styles.css';
-import { ConfigChangeModal } from "../config";
 
 type ChartProps = {
     containerRef: MutableRefObject<HTMLElement>;

@@ -380,7 +380,7 @@ func (s *RossHookStrategy) watchSellSignal(c types.OHLC) {
 			Low:   s.takeProfit.Low,
 			Close: s.takeProfit.Close,
 			Time:  s.takeProfit.Time,
-			LastTradeTS: s.targetGrow.LastTradeTS,
+			LastTradeTS: s.takeProfit.LastTradeTS,
 		}
 		// Копируем свечу. Подозрение на баг, что свеча перезаписывается следующей, поэтомуне прокидываем просто &c
 		s.takeProfit = &types.OHLC{

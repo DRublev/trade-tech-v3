@@ -1,7 +1,7 @@
 {
   "name": "trade-tech-v3",
   "productName": "TradeTech",
-  "version": "1.0.3",
+  "version": "1.0.4-beta",
   "description": "Платформа торговых стратегий",
   "main": ".webpack/main",
   "scripts": {
