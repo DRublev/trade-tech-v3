@@ -1,20 +1,14 @@
 import { BrowserWindow, ipcMain } from "electron";
 import { ipcEvents } from "../../ipcEvents";
 import { marketdataService } from "../grpc/marketdata";
-import { Quant } from "./types";
 import { OHLC, OrderState } from '../grpc/contracts/marketData';
 import { OHLCData, OrderState as Order } from "../../types";
 import { UTCTimestamp } from "lightweight-charts";
 import { ClientReadableStream } from "@grpc/grpc-js";
 import { createLogger } from "../logger";
+import { quantToNumber } from "../../utils";
 
 const log = createLogger({ controller: 'marketdata' });
-
-const nanoPrecision = 1_000_000_000;
-const quantToNumber = (q: Quant): number => {
-    return Number(q.units + (q.nano / nanoPrecision));
-}
-
 
 const candleToOhlc = (candle: OHLC): OHLCData => ({
     open: quantToNumber(candle.open),

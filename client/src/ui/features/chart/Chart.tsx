@@ -15,6 +15,7 @@ import React, {
     RefObject,
     useCallback,
     useEffect,
+    useMemo,
     useRef,
     useState,
 } from "react";
@@ -25,6 +26,7 @@ import { ConfigChangeModal } from "../config";
 import { useCandles, useOrders } from "../space/hooks";
 import { useStrategyActivitiesSeries } from "../strategy/useStrategyActivities";
 import { useChartDimensions } from "./hooks";
+import { quantToNumber } from "../../../utils";
 import styles from './styles.css';
 
 type ChartProps = {
@@ -87,6 +89,21 @@ const sellLineColor = "#ef6060";
 
 const legendStyle = `position: absolute; left: 12px; top: 40px; z-index: 1; font-size: 14px; font-family: sans-serif; line-height: 18px; font-weight: 300; z-index: 10;`;
 
+
+const usePricePrecision = (instrument: Share) => {
+    const precision = useMemo(() => {
+        if (!instrument) return 2;
+
+        const minInc = quantToNumber(instrument.minPriceIncrement);
+        const [, float] = minInc.toString().split('.');
+
+        if (!float) return 0;
+        return float.length;
+    }, [instrument]);
+
+    return precision;
+}
+
 /**
  * Сделать интерфейс по типу IChartExtension
  * Он расширяет функционал чарта (например, рисует активность стратегий или рисует свечи или ставит точки на ордерах)
@@ -100,12 +117,14 @@ const legendStyle = `position: absolute; left: 12px; top: 40px; z-index: 1; font
  * }, [])
  */
 
+
 const useChart: UseChart = (containerRef, instrument) => {
     const chartSize = useChartDimensions(containerRef);
     const chartRef = useRef();
     const chartApiRef = useRef<IChartApi>();
     const candlesApiRef = useRef<ReturnType<IChartApi["addCandlestickSeries"]>>();
     const [markers, setMarkers] = useState<SeriesMarker<Time>[]>([]);
+    const pricePrecision = usePricePrecision(instrument);
 
     const legendRef = useRef<HTMLDivElement>();
 
@@ -142,19 +161,22 @@ const useChart: UseChart = (containerRef, instrument) => {
                     candlesApiRef.current
                 ) as any;
                 const price = data.close;
-                priceFormatted = price.toFixed(2);
+                priceFormatted = price.toFixed(pricePrecision);
             }
 
             legendRef.current.innerHTML = `${instrument?.name} (${instrument?.ticker}) <strong>${priceFormatted}</strong>`;
         },
-        [instrument, candlesApiRef.current]
+        [instrument, candlesApiRef.current, pricePrecision]
     );
+
 
     const setCandlesSeries = () => {
         if (!instrument || candlesApiRef.current) return;
+
         candlesApiRef.current = chartApiRef.current.addCandlestickSeries(candleSeriesTheme);
         candlesApiRef.current.priceScale().applyOptions({
             autoScale: true,
+            ticksVisible: true,
             scaleMargins: {
                 top: 0.1,
                 bottom: 0.2,
@@ -184,13 +206,22 @@ const useChart: UseChart = (containerRef, instrument) => {
     }, []);
 
     useEffect(() => {
+        if (chartApiRef.current) {
+            chartApiRef.current.applyOptions({
+                localization: {
+                    priceFormatter: (p: number) => p.toFixed(pricePrecision)
+                }
+            })
+        }
+    }, [pricePrecision]);
+
+    useEffect(() => {
         if (instrument) {
             legendRef.current.innerHTML = `${instrument?.name} (${instrument?.ticker})`;
         }
 
         initChart();
         setCandlesSeries();
-
 
         chartApiRef.current && chartApiRef.current.subscribeCrosshairMove(updateLegend);
         return () => {
