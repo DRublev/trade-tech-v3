@@ -73,17 +73,17 @@ func (this *Vault) updateBuyOrders(state types.OrderExecutionState) {
 	}
 	if state.Status == types.New {
 		this.PlacedBuyOrders = append(this.PlacedBuyOrders, state)
-		l.Infof("Adding new buy order to placed list")
+		l.Infof("Adding new buy order to placed list (ID: %v)", state.ID)
 		return
 	}
 	if state.Status == types.Fill || state.Status == types.ErrorPlacing {
 		filteredOrders := []types.OrderExecutionState{}
 		for _, order := range this.PlacedBuyOrders {
-			if order.ID != state.ID || order.IdempodentID != state.IdempodentID {
-				filteredOrders = append(filteredOrders, order)
-			} else {
+			if order.ID == state.ID || order.IdempodentID == state.IdempodentID {
 				l.Infof("Removing cancelled buy order from pending list: %v", state.ID)
+				continue
 			}
+			filteredOrders = append(filteredOrders, order)
 		}
 
 		this.PlacedBuyOrders = filteredOrders
@@ -102,11 +102,11 @@ func (this *Vault) updateSellOrders(state types.OrderExecutionState) {
 		filteredOrders := []types.OrderExecutionState{}
 
 		for _, order := range this.PlacedSellOrders {
-			if order.ID != state.ID || order.IdempodentID != state.IdempodentID {
-				filteredOrders = append(filteredOrders, order)
-			} else {
+			if order.ID == state.ID || order.IdempodentID == state.IdempodentID {
 				l.Infof("Removing cancelled sell order from pending list: %v", state.ID)
+				continue
 			}
+			filteredOrders = append(filteredOrders, order)
 		}
 
 		this.PlacedSellOrders = filteredOrders
