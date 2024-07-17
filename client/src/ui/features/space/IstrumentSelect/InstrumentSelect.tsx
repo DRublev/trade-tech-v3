@@ -11,15 +11,12 @@ import {
 } from "@radix-ui/themes";
 import React, { useMemo, useState, type FC } from "react";
 
-import { Quatation, Share } from "../../../../node/grpc/contracts/shares";
+import { Share } from "../../../../node/grpc/contracts/shares";
 import { useTodaysSchedules, useSharesFromStore } from "../hooks";
 import s from "./styles.css";
-import { useCurrentInstrument } from "../../..//utils/useCurrentInstrumentId";
+import { useCurrentInstrument } from "../../../utils/useCurrentInstrumentId";
+import { quantToNumber } from "../../../../utils";
 
-const nanoPrecision = 1_000_000_000;
-const quantToNumber = (q: Quatation | undefined): number => {
-    return q ? Number(q.units + q.nano / nanoPrecision) : 0;
-};
 
 const isContainsWithIgnoreCase = (value: string, term: string): boolean => {
     return value.toLocaleLowerCase().includes(term.toLocaleLowerCase());
