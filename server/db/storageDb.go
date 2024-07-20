@@ -51,7 +51,7 @@ func (d *DB) Prune(storageName []string) error {
 // Append Добавить данные в конец стореджа
 func (d *DB) Append(storageName []string, content []byte) error {
 	storageFile, err := d.getStoragePath(storageName)
-	if err != nil {
+	if err != nil && !os.IsNotExist(err) {
 		log.Errorf("Failed to get storage path %v: %v", storageName, err)
 		return err
 	}
@@ -100,6 +100,17 @@ func (d *DB) Get(storageName []string) ([]byte, error) {
 	result = []byte(line)
 
 	return result, nil
+}
+
+func (d *DB) CreateStore(storageName []string) error {
+	storageDir, err := d.getStoragePath(storageName)
+	if err!= nil {
+        log.Errorf("Failed to get storage dir %v: %v", storageName, err)
+        return err
+    }
+	err = os.MkdirAll(storageDir, 0700)
+	
+	return err
 }
 
 func getLastLineWithSeek(fileHandle *os.File) string {

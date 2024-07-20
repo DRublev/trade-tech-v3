@@ -67,32 +67,37 @@ const runGoServer = () => {
   });
 
   return new Promise((resolve) => {
-    if (process.env.ENV === 'PROD' || app.isPackaged) {
-      let scriptPath = 'src/launchGoServer.js';
-      if (app.isPackaged) {
-        scriptPath = process.resourcesPath + '/launchGoServer.js'
-      }
-      scriptPath = scriptPath
-        .split('/')
-        .reduce((p, part, i) => i !== 0 ? p.concat('/', part.includes(' ') ? `'${part}'` : part) : part, '')
-        .trim();
-
-      const serverProcess = utilityProcess.fork(scriptPath, [app.isPackaged ? '--packaged' : '']);
-      serverProcess.once('spawn', () => {
-        logger.info('go server starting');
-      });
-      serverProcess.on('message', m => {
-        if (m === 'OK') {
-          return resolve(true);
+    try {
+      if (process.env.ENV === 'PROD' || app.isPackaged) {
+        let scriptPath = 'src/launchGoServer.js';
+        if (app.isPackaged) {
+          scriptPath = process.resourcesPath + '/launchGoServer.js'
         }
-      });
+        scriptPath = scriptPath
+          .split('/')
+          .reduce((p, part, i) => i !== 0 ? p.concat('/', part.includes(' ') ? `'${part}'` : part) : part, '')
+          .trim();
 
-      serverProcess.on('exit', (code) => {
-        logger.info(`go server exited with code ${code}`);
-      });
+        const serverProcess = utilityProcess.fork(scriptPath, [app.isPackaged ? '--packaged' : '']);
+        serverProcess.once('spawn', () => {
+          logger.info('go server starting');
+        });
+        serverProcess.on('message', m => {
+          if (m === 'OK') {
+            return resolve(true);
+          }
+        });
+
+        serverProcess.on('exit', (code) => {
+          logger.info(`go server exited with code ${code}`);
+        });
+      }
+
+      return resolve(true);
+    } catch (e) {
+      logger.error('Failed to start go server ' + e);
+      return resolve(false);
     }
-
-    return resolve(true);
   });
 };
 

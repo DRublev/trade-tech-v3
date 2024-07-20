@@ -17,6 +17,8 @@ var authL = log.WithFields(log.Fields{
 
 var dbInstance = db.DB{}
 
+var authStore = []string{"auth"}
+
 func (s *Server) SetToken(ctx context.Context, in *auth.SetTokenRequest) (*auth.SetTokenResponse, error) {
 	authL.Info("SetToken requested")
 
@@ -32,16 +34,18 @@ func (s *Server) SetToken(ctx context.Context, in *auth.SetTokenRequest) (*auth.
 		return &auth.SetTokenResponse{}, errors.New("cannot encrypt token")
 	}
 
-	authL.Trace("Saving token to storage")
-	err = dbInstance.Append([]string{"auth"}, []byte(encrypted))
+	err = dbInstance.CreateStore(authStore)
 
-	authL.Info("SetToken responding")
+	authL.Trace("Saving token to storage")
+	err = dbInstance.Append(authStore, []byte(encrypted))
+
+	authL.Infof("SetToken responding. Err: %v", err)
 	return &auth.SetTokenResponse{}, err
 }
 
 func (s *Server) PruneTokens(ctx context.Context, in *auth.PruneTokensRequest) (*auth.PruneTokensResponse, error) {
 	authL.Trace("Prune tokens")
-	err := dbInstance.Prune([]string{"auth"})
+	err := dbInstance.Prune(authStore)
 
 	authL.Info("PruneToken responding")
 	return &auth.PruneTokensResponse{}, err
@@ -50,7 +54,7 @@ func (s *Server) PruneTokens(ctx context.Context, in *auth.PruneTokensRequest) (
 func (s *Server) HasToken(ctx context.Context, in *auth.HasTokenRequest) (*auth.HasTokenResponse, error) {
 	authL.Info("HasToken requesting")
 
-	encrypted, err := dbInstance.Get([]string{"auth"})
+	encrypted, err := dbInstance.Get(authStore)
 	if err != nil && !os.IsNotExist(err) {
 		authL.Errorf("Failed getting token from storage: %v", err)
 		return &auth.HasTokenResponse{HasToken: false}, err
