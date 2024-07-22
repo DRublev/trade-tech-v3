@@ -1,14 +1,14 @@
 {
   "name": "trade-tech-v3",
   "productName": "TradeTech",
-  "version": "1.0.4",
+  "version": "1.0.4-beta.1",
   "description": "Платформа торговых стратегий",
   "main": ".webpack/main",
   "scripts": {
     "start": "electron-forge start",
     "package": "electron-forge package",
     "make": "electron-forge make",
-    "publish": "electron-forge publish",
+    "publish": "electron-forge publish --interactive",
     "lint": "eslint --ext .ts,.tsx .",
     "tests": "TESTS=1 npx playwright test",
     "start-mock-server": "cd ../mock-server && npm run start",
