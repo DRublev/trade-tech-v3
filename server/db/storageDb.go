@@ -15,7 +15,7 @@ import (
 type DB struct{}
 
 func (d *DB) getStoragePath(storageName []string) (string, error) {
-	wd, err := os.Getwd()
+	wd, err := os.UserHomeDir()
 	if err != nil {
 		return "", errors.New("Not ok getting info about caller")
 	}
@@ -23,8 +23,8 @@ func (d *DB) getStoragePath(storageName []string) (string, error) {
 	// if !ok {
 	// 	return "", errors.New("Not ok getting info about caller")
 	// }
-	dir := path.Join(path.Dir(wd), "trade-tech")
-	rootDir := filepath.Dir(dir)
+	dir := path.Join([]string{wd, "trade-tech"}...)
+	rootDir := dir
 	paths := append([]string{rootDir, "storage"}, storageName...)
 	p := path.Join(paths...)
 	p = path.Clean(p)
@@ -58,6 +58,7 @@ func (d *DB) Append(storageName []string, content []byte) error {
 
 	if _, err := os.Stat(storageFile); err != nil {
 		dir, _ := d.getStoragePath(storageName[:len(storageName)-1])
+		dir = filepath.Dir(dir)
 		os.MkdirAll(dir, 0700)
 	}
 
@@ -103,13 +104,27 @@ func (d *DB) Get(storageName []string) ([]byte, error) {
 }
 
 func (d *DB) CreateStore(storageName []string) error {
-	storageDir, err := d.getStoragePath(storageName)
-	if err!= nil {
-        log.Errorf("Failed to get storage dir %v: %v", storageName, err)
-        return err
+	storageFile, err := d.getStoragePath(storageName)
+	if err != nil {
+		log.Errorf("Failed to get storage dir %v: %v", storageName, err)
+		return err
+	}
+	if _, err := os.Stat(storageFile); err == nil {
+        log.Infof("Storage %v already exists", storageName)
+        return nil
     }
+	storageDir := filepath.Dir(storageFile)
 	err = os.MkdirAll(storageDir, 0700)
-	
+
+	file, err := os.OpenFile(storageFile, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0660)
+	if err != nil {
+		log.Errorf("Failed to open file %v: %v", storageFile, err)
+
+		return err
+	}
+	defer file.Close()
+
+
 	return err
 }
 

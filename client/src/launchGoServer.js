@@ -28,7 +28,7 @@ const launch = () => {
             .trim();
     }
 
-    killPreviousServerInstance().then(() => {
+    killPreviousServerInstance().catch(process.parentPort.postMessage).finally(() => {
         const cmd = `${serverPath} --port ${PORT}`
         console.log('Launching server by path: ', cmd);
         try {
@@ -41,7 +41,7 @@ const launch = () => {
         } catch (e) {
             process.parentPort.postMessage(JSON.stringify(e));
         }
-    }).catch(process.parentPort.postMessage)
+    })
 };
 
 module.exports = launch();
