@@ -31,6 +31,8 @@ func init() {
 var envFromBuild string = "CI"
 var secretFromBuild string = "trade-tech-secret-for-encryption"
 
+var version = "24.07.1"
+
 func main() {
 	flag.Parse()
 
@@ -50,6 +52,7 @@ func main() {
 			loki.WithName("trade-tech"),
 			loki.WithLabel("app", "server"),
 			loki.WithLabel("uid", uid),
+			loki.WithLabel("version", version),
 			loki.WithLevel(log.TraceLevel),
 			loki.WithLabelsEnabled(loki.LevelLabel, loki.FieldsLabel, loki.MessageLabel),
 		)
