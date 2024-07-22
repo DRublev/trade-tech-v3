@@ -115,7 +115,8 @@ registerMediaProtocol();
 const platform = os.platform() + '_' + os.arch();
 const version = app.getVersion();
 const server = 'http://87.242.100.16:5000';
-const url = `${server}/update/${platform}/${version}`;
+const channel = 'beta';
+const url = `${server}/update/channel/${channel}/${platform}/${version}`;
 
 autoUpdater.setFeedURL({
   url,
