@@ -19,13 +19,8 @@ func (d *DB) getStoragePath(storageName []string) (string, error) {
 	if err != nil {
 		return "", errors.New("Not ok getting info about caller")
 	}
-	// _, base, _, ok := runtime.Caller(0)
-	// if !ok {
-	// 	return "", errors.New("Not ok getting info about caller")
-	// }
-	dir := path.Join([]string{wd, "trade-tech"}...)
-	rootDir := dir
-	paths := append([]string{rootDir, "storage"}, storageName...)
+
+	paths := append([]string{wd, "trade-tech", "storage", }, storageName...)
 	p := path.Join(paths...)
 	p = path.Clean(p)
 	return p, nil
