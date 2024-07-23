@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 
+	"main/identity"
 	server "main/server"
 
 	"github.com/joho/godotenv"
@@ -46,7 +47,7 @@ func main() {
 		}
 	}
 	if env == "PROD" {
-		uid := getId()
+		uid := identity.GetId()
 		hook := loki.NewHook(
 			*logsAddress,
 			loki.WithName("trade-tech"),

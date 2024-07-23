@@ -1,6 +1,7 @@
 package types
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 )
@@ -141,4 +142,12 @@ func (s OrderExecutionState) String() string {
 		s.InitialComission,
 		s.ExecutedComission,
 	)
+}
+
+func (s OrderExecutionState) Stringify() string {
+	b, err := json.Marshal(s)
+	if err != nil {
+		return ""
+	}
+	return string(b)
 }
