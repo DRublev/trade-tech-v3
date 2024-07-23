@@ -103,7 +103,7 @@ func (sc *StatsCollector) processProfitMetric(state types.OrderExecutionState) {
 		delete(deals, string(latestBuy.ID))
 		dealsMX.Unlock()
 
-		lastFilledBuys = lastFilledBuys[1:len(lastFilledBuys)-1]
+		lastFilledBuys = lastFilledBuys[1 : len(lastFilledBuys)-1]
 	}
 
 }

@@ -12,7 +12,7 @@ type MetricsService struct {
 
 func NewMetricsService() *MetricsService {
 	return &MetricsService{
-		address: "http://localhost:2112",
+		address: "http://87.242.100.16:2112",
 	}
 }
 
