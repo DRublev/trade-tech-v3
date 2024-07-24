@@ -4,6 +4,7 @@ import { getShares } from './node/ipcHandlers/instruments';
 import logger from './logger';
 import { createUpdateYml } from './createUpdateYml';
 import { registerMediaProtocol } from './mediaProtocol';
+import { ping } from './node/services/ping';
 
 import './node/ipcHandlers';
 
@@ -170,7 +171,7 @@ app.on('ready', async () => {
 
   runGoServer().then(hasLaunched => {
     if (!hasLaunched) return;
-
+    ping();
     createWindow();
     fetchSharesList();
   });
