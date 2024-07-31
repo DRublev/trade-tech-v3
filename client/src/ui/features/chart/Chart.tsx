@@ -293,7 +293,7 @@ const Chart: FC<ChartProps> = ({ containerRef }) => {
     const [instrument, _, instrumentInfo] = useCurrentInstrument();
     const [ref, api] = useChart(containerRef, instrumentInfo);
     const { initialData, isLoading } = useCandles(api.updatePriceSeries, instrument);
-    const [shouldShowStartTipMessage, setShouldShowStartTipMessage] = useState(false);
+    const [shouldShowStartTipMessage, setShouldShowStartTipMessage] = useState(!instrument);
     const destroyStrategiesView = useStrategyActivitiesSeries(api);
 
     // TODO: Вынести в фичу ордеров
