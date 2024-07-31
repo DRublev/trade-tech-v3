@@ -31,7 +31,10 @@ func Assemble(key strategies.StrategyKey, config *strategies.Config) (strategies
 			strategies.NewActivityPubSub().Container(key.String()),
 		), nil
 	case strategies.Macd:
-		return macd.New(), nil
+		return macd.New(
+			candles.NewProvider(),
+			strategies.NewActivityPubSub().Container(key.String()),
+		), nil
 	case strategies.RossHook:
 		return rosshook.New(
 			candles.NewProvider(),
