@@ -8,6 +8,7 @@ import (
 	"main/bot/orders"
 	"main/bot/strategies"
 	"main/types"
+	"main/utils"
 	"sync"
 
 	"github.com/google/uuid"
@@ -25,6 +26,7 @@ type StrategyPool struct {
 	IStrategyPool
 	configRepository *config.ConfigRepository
 	strategies       StrategiesMap
+	statCollectors   map[string]*strategies.StatsCollector
 }
 
 var oncePool sync.Once
@@ -37,7 +39,9 @@ func NewPool() *StrategyPool {
 	}
 
 	oncePool.Do(func() {
-		pool = &StrategyPool{}
+		pool = &StrategyPool{
+			statCollectors: make(map[string]*strategies.StatsCollector),
+		}
 		pool.configRepository = config.New()
 		pool.strategies = StrategiesMap{
 			value: make(map[string]strategies.IStrategy),
@@ -54,6 +58,8 @@ func (sp *StrategyPool) IsStarted(key strategies.StrategyKey, instrumentID strin
 	return exists, nil
 }
 
+// TODO: Кажется тут подойдет паттерн билдер
+// https://refactoring.guru/ru/design-patterns/builder/go/example
 // Start Запуск стратегии
 func (sp *StrategyPool) Start(key strategies.StrategyKey, instrumentID string) (bool, error) {
 	l := log.WithFields(log.Fields{
@@ -93,14 +99,27 @@ func (sp *StrategyPool) Start(key strategies.StrategyKey, instrumentID string) (
 	ordersToPlaceCh := make(chan *types.PlaceOrder)
 	ordersStateCh := make(chan types.OrderExecutionState)
 
+	ordersPubSub := utils.NewPubSub[types.OrderExecutionState]()
+	collector := strategies.NewStatsCollector(ordersPubSub.Subscribe(), key, instrumentID)
+	sp.statCollectors[sp.getMapKey(key, instrumentID)] = collector
 	okCh := make(chan bool, 1)
 	go func() {
 		l.Trace("Starting strategy")
-		ok, err := strategy.Start(config, &ordersToPlaceCh, &ordersStateCh)
+		sub := ordersPubSub.Subscribe()
+		collector.Start()
+
+		// TODO: Вынести Vault как зависимость, передавать здесь
+		ok, err := strategy.Start(config, &ordersToPlaceCh, sub)
 		if err != nil {
 			l.Errorf("Error starting strategy in pool %v", err)
 		}
 		okCh <- ok
+	}()
+
+	go func() {
+		for state := range ordersStateCh {
+			ordersPubSub.Emit(state)
+		}
 	}()
 
 	go func() {
@@ -170,6 +189,12 @@ func (sp *StrategyPool) Stop(key strategies.StrategyKey, instrumentID string) (b
 	l.Trace("Trying to call Stop of a strategy instance")
 	ok, err := strategy.Stop()
 	l.Trace("Called Stop of a strategy instance")
+
+	collector, exists := sp.statCollectors[sp.getMapKey(key, instrumentID)]
+	if exists {
+		collector.Stop()
+		delete(sp.statCollectors, mapKey)
+	}
 
 	sp.strategies.RLock()
 	delete(sp.strategies.value, mapKey)

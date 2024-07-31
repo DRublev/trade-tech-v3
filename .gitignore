@@ -30,3 +30,4 @@ storage
 node_modules
 .vscode/
 .vscode/*
+.vscode/settings.json

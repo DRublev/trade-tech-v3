@@ -13,7 +13,7 @@ export type SpaceInfo = {
 export const initialState: SpaceInfo = {
     shares: [],
     currentInstrument: null,
-    strategy: 'spread_v0',
+    strategy: <any>localStorage.getItem('strategy') || 'spread_v0',
     initiallySetCurrentInstrument: false,
 };
 
@@ -30,6 +30,7 @@ const spaceSlice = createSlice({
         },
         setStrategy: (state, action) => {
             state.strategy = action.payload;
+            localStorage.setItem('strategy', state.strategy);
         },
         setInitiallySetCurrentInstrument: (state, action) => {
             state.initiallySetCurrentInstrument = action.payload;
