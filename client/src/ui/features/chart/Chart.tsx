@@ -64,7 +64,7 @@ const chartTheme: Parameters<typeof createChart>[1] = {
         textColor: "#fff",
         background: {
             type: ColorType.Solid,
-            color: "transparent",
+            color: 'transparent' //'#2f3438',
         },
     },
     grid: {
@@ -73,15 +73,18 @@ const chartTheme: Parameters<typeof createChart>[1] = {
     },
 };
 
+const down = "#ee7d4c";
+const up = '#77afa1';
+
 const candleSeriesTheme = {
-    upColor: '#b5d2c1c7',
-    wickUpColor: "#b5d2c1c7",
-    downColor: '#ff7f7fc7',
-    wickDownColor: "#ff7f7fc7",
+    upColor: up,
+    wickUpColor: up,
+    downColor: down,
+    wickDownColor: down,
 
     borderVisible: true,
-    borderUpColor: "#b5d2c1",
-    borderDownColor: "#ff7f7f",
+    borderUpColor: up,
+    borderDownColor: down,
 };
 
 const buyLineColor = "#9ce0b8";

@@ -362,7 +362,6 @@ func (s *RossHookStrategy) watchBuySignal(c types.OHLC) {
 }
 
 func (s *RossHookStrategy) watchSellSignal(c types.OHLC) {
-
 	// Stop-loss
 	if s.lastBuyPendingCandle != nil && s.lowForStopLoss != nil &&
 		s.lowForStopLoss.Low.Float()-s.Config.StopLoss >= c.Close.Float() {

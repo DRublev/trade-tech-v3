@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 
+	"main/configuration"
 	"main/identity"
 	server "main/server"
 
@@ -15,8 +16,9 @@ import (
 )
 
 var (
-	port        = flag.Int("port", 50051, "The server port")
-	logsAddress = flag.String("logsAddress", "http://87.242.100.16:3100", "The server port")
+	port         = flag.Int("port", 50051, "The server port")
+	logsAddress  = flag.String("logsAddress", "http://87.242.100.16:3100", "The server port")
+	yamlConfPath = flag.String("conf", "./configuration/config.yaml", "Path for config")
 )
 
 func init() {
@@ -64,6 +66,9 @@ func main() {
 	if len(secretFromBuild) > 0 {
 		os.Setenv("SECRET", secretFromBuild)
 	}
+
+	conf := configuration.Configuration{}
+	conf.Load(*yamlConfPath)
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()

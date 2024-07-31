@@ -14,7 +14,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const ENDPOINT = "invest-public-api.tinkoff.ru:443"
 
 // TODO: Пора разделять методы по файлам
 

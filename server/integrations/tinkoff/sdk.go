@@ -3,6 +3,7 @@ package tinkoff
 import (
 	"context"
 	"errors"
+	"main/configuration"
 	"main/db"
 	"main/utils"
 	"os"
@@ -19,6 +20,8 @@ var dbInstance = db.DB{}
 var sdkL = log.WithFields(log.Fields{
 	"broker": "Tinkoff",
 })
+
+var endpoint string
 
 func initialize(ctx context.Context, config investgo.Config, l investgo.Logger) *investgo.Client {
 	once.Do(func() {
@@ -55,8 +58,11 @@ func (c *TinkoffBrokerPort) NewSdk(accountID *string) (*investgo.Client, error) 
 		return nil, err
 	}
 
+	conf := configuration.Configuration{}
+	endpoint = conf.Get().TinkoffEndpoint
+
 	config := &investgo.Config{
-		EndPoint: ENDPOINT,
+		EndPoint: endpoint,
 		Token:    token,
 		// TODO: Для прод енвы кидать другое название
 		AppName: "trade-tech-dev",
