@@ -158,6 +158,8 @@ func (s *RossHookStrategy) Stop() (bool, error) {
 	return true, nil
 }
 
+// TODO: Заюзать паттерн Observer
+// https://refactoringguru.cn/ru/design-patterns/observer/go/example
 func (s *RossHookStrategy) mapAndSendState() {
 	if s.high != nil {
 		s.activityPubSub.Track("p1", "point", strategies.PointActivityValue[time.Time, float64]{

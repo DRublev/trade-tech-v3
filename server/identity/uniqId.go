@@ -1,4 +1,4 @@
-package main
+package identity
 
 import (
 	"main/db"
@@ -10,7 +10,7 @@ import (
 var storeFile = "uniqId"
 var dbInstance = &db.DB{}
 
-func getId() string {
+func GetId() string {
 	uid, err := dbInstance.Get([]string{storeFile})
 	if os.IsNotExist(err) {
 		id, err := uuid.NewV4()
