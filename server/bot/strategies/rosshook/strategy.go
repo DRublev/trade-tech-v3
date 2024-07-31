@@ -368,14 +368,7 @@ func (s *RossHookStrategy) watchSellSignal(c types.OHLC) {
 	}
 	if c.High.Float() > s.takeProfit.High.Float() {
 		l.Infof("Updating take-profit high %v", c.High.Float())
-		s.prevTakeProfit = &types.OHLC{
-			Open:        s.takeProfit.Open,
-			High:        s.takeProfit.High,
-			Low:         s.takeProfit.Low,
-			Close:       s.takeProfit.Close,
-			Time:        s.takeProfit.Time,
-			LastTradeTS: s.takeProfit.LastTradeTS,
-		}
+		s.prevTakeProfit = s.takeProfit
 		// Копируем свечу. Подозрение на баг, что свеча перезаписывается следующей, поэтомуне прокидываем просто &c
 		s.takeProfit = &types.OHLC{
 			Open:        c.Open,
