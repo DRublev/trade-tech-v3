@@ -130,6 +130,7 @@ func (ow *OrderWatcher) notify(state types.OrderExecutionState) {
 
 func (ow *OrderWatcher) ErrNotify(order types.PlaceOrder) {
 	orderErr := &types.OrderExecutionState{
+		IdempodentID: order.IdempodentID,
 		LotsExecuted:       int(order.Quantity),
 		ExecutedOrderPrice: float64(order.Price),
 		InstrumentID:       order.InstrumentID,
