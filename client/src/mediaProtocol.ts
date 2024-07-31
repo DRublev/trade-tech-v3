@@ -1,6 +1,9 @@
 import { app, net, protocol } from "electron";
 import path from "path";
 
+/**
+ * Регистрируем кастомный протокол, чтобы ходить за статикой в папку ресурсов, вместо прямого урла к файлу
+ */
 export const registerMediaProtocol = () => {
     protocol.registerSchemesAsPrivileged([{
         scheme: 'trademedia',
