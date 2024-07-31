@@ -3,7 +3,6 @@ package rosshook
 import (
 	"context"
 	"main/bot/candles"
-	"main/bot/indicators"
 	"main/bot/strategies"
 	"main/types"
 	"math"
@@ -49,13 +48,8 @@ type RossHookStrategy struct {
 	provider       candles.BaseCandlesProvider
 	activityPubSub strategies.IStrategyActivityPubSub
 
-	// Канал для стакана
-	obCh              *chan *types.Orderbook
-	nextOrderCooldown *time.Timer
 	isBuying          isWorking
 	isSelling         isWorking
-
-	macd indicators.MacdIndicator
 
 	toPlaceOrders chan *types.PlaceOrder
 
@@ -79,7 +73,6 @@ func New(provider candles.BaseCandlesProvider, activityPubSub strategies.IStrate
 	inst := &RossHookStrategy{}
 	inst.provider = provider
 	inst.activityPubSub = activityPubSub
-	inst.toPlaceOrders = make(chan *types.PlaceOrder)
 	inst.stopCtx, cancelSwitch = context.WithCancel(context.Background())
 	return inst
 }
@@ -376,20 +369,20 @@ func (s *RossHookStrategy) watchSellSignal(c types.OHLC) {
 	if c.High.Float() > s.takeProfit.High.Float() {
 		l.Infof("Updating take-profit high %v", c.High.Float())
 		s.prevTakeProfit = &types.OHLC{
-			Open:  s.takeProfit.Open,
-			High:  s.takeProfit.High,
-			Low:   s.takeProfit.Low,
-			Close: s.takeProfit.Close,
-			Time:  s.takeProfit.Time,
+			Open:        s.takeProfit.Open,
+			High:        s.takeProfit.High,
+			Low:         s.takeProfit.Low,
+			Close:       s.takeProfit.Close,
+			Time:        s.takeProfit.Time,
 			LastTradeTS: s.takeProfit.LastTradeTS,
 		}
 		// Копируем свечу. Подозрение на баг, что свеча перезаписывается следующей, поэтомуне прокидываем просто &c
 		s.takeProfit = &types.OHLC{
-			Open:  c.Open,
-			High:  c.High,
-			Low:   c.Low,
-			Close: c.Close,
-			Time:  c.Time,
+			Open:        c.Open,
+			High:        c.High,
+			Low:         c.Low,
+			Close:       c.Close,
+			Time:        c.Time,
 			LastTradeTS: s.takeProfit.LastTradeTS,
 		}
 		return
@@ -419,7 +412,7 @@ func (s *RossHookStrategy) sell(c types.OHLC) {
 		return
 	}
 
-	if s.vault.HoldingShares-s.vault.PendingSellShares == 0 {
+	if s.vault.HoldingShares-s.vault.PendingSellShares <= 0 {
 		l.WithField("state", s.vault.String()).Info("Nothing to sell")
 		return
 	}
@@ -446,7 +439,7 @@ func (s *RossHookStrategy) sell(c types.OHLC) {
 
 	l.Trace("Updating state")
 	s.vault.PendingSellShares += s.vault.HoldingShares
-	l.WithField("state", s.vault).Trace("State updated after place sell order")
+	l.WithField("state", s.vault.String()).Trace("State updated after place sell order")
 
 	s.isSelling.value = false
 	l.Trace("Is sell released")

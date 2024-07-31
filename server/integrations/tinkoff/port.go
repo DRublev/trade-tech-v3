@@ -188,6 +188,7 @@ func (c *TinkoffBrokerPort) GetShares(instrumentStatus types.InstrumentStatus) (
 	etfsRes, err := instrumentService.Etfs(investapi.InstrumentStatus(instrumentStatus))
 	if err != nil {
 		sdkL.Errorf("Failed getting etf: %v", err)
+		return []types.Share{}, err
 	}
 
 	shares := []types.Share{}
