@@ -5,6 +5,7 @@ import (
 	"errors"
 	"main/bot/broker"
 	"main/bot/candles"
+	"main/bot/orderbook"
 	"main/bot/strategies"
 	"main/bot/strategies/macd"
 	"main/bot/strategies/rosshook"
@@ -25,7 +26,10 @@ func Assemble(key strategies.StrategyKey, config *strategies.Config) (strategies
 
 	switch key {
 	case strategies.Spread:
-		return spread.New(), nil
+		return spread.New(
+			orderbook.NewProvider(),
+			strategies.NewActivityPubSub().Container(key.String()),
+		), nil
 	case strategies.Macd:
 		return macd.New(), nil
 	case strategies.RossHook:

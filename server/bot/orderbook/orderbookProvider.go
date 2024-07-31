@@ -16,8 +16,14 @@ type orderbookChannels struct {
 	value map[string]*chan *types.Orderbook
 }
 
+type BaseOrderbookProvider interface {
+	GetOrCreate(instrumentID string) (*chan *types.Orderbook, error)
+}
+
 // Provider Провайдер для стакана
 type Provider struct {
+	BaseOrderbookProvider
+	
 	channels orderbookChannels
 }
 
