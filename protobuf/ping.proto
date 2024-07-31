@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package ping;
+
+option go_package = "contracts.ping";
+
+service Ping {
+    rpc Ping(PingRequest) returns (PingResponse);
+}
+
+message PingRequest {}
+message PingResponse {}

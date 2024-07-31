@@ -6,6 +6,7 @@ import (
 	accounts "main/server/contracts/contracts.accounts"
 	auth "main/server/contracts/contracts.auth"
 	marketdata "main/server/contracts/contracts.marketdata"
+	ping "main/server/contracts/contracts.ping"
 	shares "main/server/contracts/contracts.shares"
 	trade "main/server/contracts/contracts.trade"
 	"main/server/controllers"
@@ -34,6 +35,7 @@ func Start(ctx context.Context, port int) {
 	marketdata.RegisterMarketDataServer(s, srv)
 	shares.RegisterSharesServer(s, srv)
 	trade.RegisterTradeServer(s, srv)
+	ping.RegisterPingServer(s, srv)
 
 	log.Infof("Server listening at: %v", lis.Addr())
 	err = s.Serve(lis)
