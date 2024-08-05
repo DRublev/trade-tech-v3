@@ -13,8 +13,8 @@ const config: ForgeConfig = {
   packagerConfig: {
     asar: true,
     extraResource: [
-      '../server/resources/app/go-binaries/server.so',
-      '../server/resources/app/go-binaries/server.dll',
+      '../server/resources/app/go-binaries/app-binary-macos.so',
+      '../server/resources/app/go-binaries/app-binary-windows.dll',
       './src/static',
     ],
   },

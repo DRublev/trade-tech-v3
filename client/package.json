@@ -12,8 +12,8 @@
     "lint": "eslint --ext .ts,.tsx .",
     "tests": "TESTS=1 npx playwright test",
     "start-mock-server": "cd ../mock-server && npm run start",
-    "build-go-unix": "../server/build.sh",
-    "build-go-win": "sh ../server/build.sh",
+    "build-go-unix": "../server/buildSo.sh",
+    "build-go-win": "sh ../server/buildSo.sh",
     "gen-deps-graph": "depcruise src --output-type mermaid"
   },
   "engines": {

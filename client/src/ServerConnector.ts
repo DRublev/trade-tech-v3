@@ -2,9 +2,9 @@ import type { Logger } from "pino";
 import * as ffi from 'ffi-rs'
 import path from "path";
 
-const LIB_MAME = 'server';
-const UNIX_SERVER_FILENAME = `${LIB_MAME}.so`;
-const WIN_SERVER_FILENAME = `${LIB_MAME}.dll`;
+const LIB_MAME = 'app-binary';
+const UNIX_SERVER_FILENAME = `${LIB_MAME}-macos.so`;
+const WIN_SERVER_FILENAME = `${LIB_MAME}-windows.dll`;
 const libFilename = process.platform == 'win32' ? WIN_SERVER_FILENAME : UNIX_SERVER_FILENAME;
 
 export class ServerConnector {
