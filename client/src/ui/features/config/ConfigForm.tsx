@@ -39,6 +39,9 @@ export const ConfigForm: FC<Props> = ({ scheme, defaultValues = {}, onSubmit }: 
                                     defaultValue={defaultValues[f.name]}
                                 />
                             </Form.Control>
+                            <Form.Message match="rangeOverflow" className={s.validationMessage}>
+                                Разрешенный диапазон {f.min || 0} - {f.max}
+                            </Form.Message>
                         </Form.Field>
                     ))}
                 </Flex>

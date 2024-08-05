@@ -12,6 +12,7 @@ const spreadScheme: ConfigScheme = {
             placeholder: 'рублей',
             type: ConfigFieldTypes.number,
             min: 0,
+            max: 5000,
             htmlType: 'number',
         },
         {
@@ -55,6 +56,7 @@ const rosshookScheme: ConfigScheme = {
             placeholder: 'рублей',
             type: ConfigFieldTypes.number,
             min: 0,
+            max: 5000,
             htmlType: 'number',
         },
         {
@@ -97,6 +99,7 @@ const macdScheme: ConfigScheme = {
             placeholder: 'рублей',
             type: ConfigFieldTypes.number,
             min: 0,
+            max: 5000,
             htmlType: 'number',
         },
         {

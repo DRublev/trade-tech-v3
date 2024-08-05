@@ -2,8 +2,6 @@ package macd
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"main/bot/candles"
 	"main/bot/indicators"
 	"main/bot/strategies"
@@ -24,55 +22,20 @@ type Config struct {
 	InstrumentID string
 
 	// Каким количчеством акций торговать? Макс
-	MaxSharesToHold int32
+	MaxSharesToHold int64
 
 	// Лотность инструмента
-	LotSize int32
+	LotSize int64
 
 	// Если цена пошла ниже чем цена покупки - StopLossAfter, продать по лучшей цене
 	// Нужно чтобы  выходить из позиции, когда акция пошла вниз
 	StopLossAfter float64
 }
 
-type State struct {
-	// Оставшееся количество денег
-	leftBalance float64
-
-	// Сумма, которая должна списаться при выставлении ордера на покупку
-	// Инкрементим когда хотим выставить бай ордер
-	// Декрементим когда закрываем бай ордер
-	notConfirmedBlockedMoney float64
-
-	// Количество акций, купленных на данный момент
-	holdingShares int32
-
-	// Количество акций, на которое выставлены ордера на покупку
-	pendingBuyShares int32
-
-	// Количество акций, на которое выставлены ордера на продажу
-	pendingSellShares int32
-
-	lastBuyPrice float64
-
-	// Храним пару последних значений индикаторов
-	// Чтобы отслеживать их пересечения
-	latestSignals []float64
-	latestMacd    []float64
-
-	placedOrders []types.OrderExecutionState
-}
-
-func (s *State) String() string {
-	return fmt.Sprintf(
-		"Holding %v\nLeft balance %v; Blocked money %v\nPending buy %v, sell %v\nLast buy price %v",
-		s.holdingShares,
-		s.leftBalance,
-		s.notConfirmedBlockedMoney,
-		s.pendingBuyShares,
-		s.pendingSellShares,
-		s.lastBuyPrice,
-	)
-}
+// Храним пару последних значений индикаторов
+// Чтобы отслеживать их пересечения
+var latestSignals = []float64{}
+var latestMacd = []float64{}
 
 type isWorking struct {
 	sync.RWMutex
@@ -82,13 +45,13 @@ type isWorking struct {
 type MacdStrategy struct {
 	strategies.IStrategy
 	strategies.Strategy[Config]
-	config Config
-	// Канал для стакана
-	obCh              *chan *types.Orderbook
-	state             strategies.StrategyState[State]
-	nextOrderCooldown *time.Timer
-	isBuying          isWorking
-	isSelling         isWorking
+
+	provider       candles.BaseCandlesProvider
+	activityPubSub strategies.IStrategyActivityPubSub
+	vault          strategies.Vault
+
+	isBuying  isWorking
+	isSelling isWorking
 
 	macd indicators.MacdIndicator
 
@@ -99,9 +62,10 @@ type MacdStrategy struct {
 
 var cancelSwitch context.CancelFunc
 
-func New() *MacdStrategy {
+func New(provider candles.BaseCandlesProvider, activityPubSub strategies.IStrategyActivityPubSub) *MacdStrategy {
 	inst := &MacdStrategy{}
-	inst.toPlaceOrders = make(chan *types.PlaceOrder)
+	inst.provider = provider
+	inst.activityPubSub = activityPubSub
 	inst.stopCtx, cancelSwitch = context.WithCancel(context.Background())
 	inst.macd = *indicators.NewMacd(21, 16, 9)
 	return inst
@@ -119,43 +83,33 @@ func (s *MacdStrategy) Start(
 		"instrument": (*config)["InstrumentID"],
 	})
 
-	var res Config
-
-	// TODO: Вынести в сущность конфига стратегии
-	bts, err := json.Marshal(config)
+	err := s.SetConfig(*config)
 	if err != nil {
 		l.Errorf("Error parsing config %v", err)
 		return false, err
 	}
 
-	err = json.Unmarshal(bts, &res)
-	if err != nil {
-		l.Errorf("Error parsing config %v", err)
-		return false, err
-	}
-	s.config = res
-
-	l.Infof("Starting strategy with config: %v", s.config)
+	l.WithField("lotSize", s.Config.LotSize).Infof("Starting strategy with config: %v", s.Config)
 
 	// Создаем или получаем канал, в который будет постаупать инфа о стакане
 	l.Tracef("Getting candles channel")
-	candlesProvider := candles.NewProvider()
 	now := time.Now()
 
-	ch, err := candlesProvider.GetOrCreate(s.config.InstrumentID, now.Add(-time.Duration(time.Minute)*5*21), now, true)
+	ch, err := s.provider.GetOrCreate(s.Config.InstrumentID, now.Add(-time.Duration(time.Minute)*5*21), now, true)
 	if err != nil {
 		l.Errorf("Failed to get candles channel: %v", err)
 		return false, err
 	}
 
-	go func(c *chan types.OHLC) {
+	s.toPlaceOrders = *ordersToPlaceCh
+	go func() {
 		l.Info("Start listening latest candles")
 		for {
 			select {
 			case <-s.stopCtx.Done():
 				l.Info("Strategy stopped")
 				return
-			case candle, ok := <-*c:
+			case candle, ok := <-*ch:
 				l.Trace("New candle")
 				if !ok {
 					l.Trace("Candles channel closed")
@@ -165,42 +119,9 @@ func (s *MacdStrategy) Start(
 				go s.onCandle(candle)
 			}
 		}
-	}(ch)
+	}()
 
-	go func(source *chan *types.PlaceOrder, target *chan *types.PlaceOrder) {
-		l.Info("Start listening for new place order requests")
-		for {
-			select {
-			case <-s.stopCtx.Done():
-				l.Info("Strategy stopped")
-				return
-			case orderToPlace, ok := <-*source:
-				if !ok {
-					l.Warn("Place orders channel closed")
-					return
-				}
-				*target <- orderToPlace
-			}
-		}
-	}(&s.toPlaceOrders, ordersToPlaceCh)
-
-	l.Trace("Setting state to empty")
-	// Заполняем изначальное состояние
-	s.state = strategies.StrategyState[State]{}
-	err = s.state.Set(State{
-		holdingShares:            0,
-		pendingBuyShares:         0,
-		pendingSellShares:        0,
-		leftBalance:              float64(s.config.Balance),
-		notConfirmedBlockedMoney: 0,
-		lastBuyPrice:             0,
-	})
-	if err != nil {
-		l.Errorf("Failed to set strategy initial state: %v", err)
-		return false, err
-	}
-
-	s.nextOrderCooldown = time.NewTimer(time.Duration(0) * time.Millisecond)
+	go s.OnOrderSateChangeSubscribe(s.stopCtx, orderStateChangeCh, s.vault.OnOrderSateChange)
 
 	return true, nil
 }
@@ -227,14 +148,10 @@ func (s *MacdStrategy) onCandle(c types.OHLC) {
 		return
 	}
 
-	state := *s.state.Get()
+	latestMacd = allMacd[len(allMacd)-minPeriod:]
+	latestSignals = allSignals[len(allSignals)-minPeriod:]
 
-	state.latestMacd = allMacd[len(allMacd)-minPeriod:]
-	state.latestSignals = allSignals[len(allSignals)-minPeriod:]
-
-	l.Tracef("Updating signal with new values: signal %v; macd: %v", state.latestSignals, state.latestMacd)
-
-	s.state.Set(state)
+	l.Tracef("Updating signal with new values: signal %v; macd: %v", latestSignals, latestMacd)
 
 	wg.Add(1)
 	go s.buy(wg, c)
@@ -253,13 +170,12 @@ func (s *MacdStrategy) buy(wg *sync.WaitGroup, c types.OHLC) {
 		return
 	}
 
-	state := *s.state.Get()
-	lastIdx := len(state.latestMacd) - 1
-	isNowOver := state.latestMacd[lastIdx] >= state.latestSignals[lastIdx]
+	lastIdx := len(latestMacd) - 1
+	isNowOver := latestMacd[lastIdx] >= latestSignals[lastIdx]
 
 	isPrevUnder := false
-	for i := len(state.latestMacd) - 1; i >= 0; i-- {
-		if state.latestMacd[i] < state.latestSignals[i] {
+	for i := len(latestMacd) - 1; i >= 0; i-- {
+		if latestMacd[i] < latestSignals[i] {
 			isPrevUnder = true
 			break
 		}
@@ -268,16 +184,15 @@ func (s *MacdStrategy) buy(wg *sync.WaitGroup, c types.OHLC) {
 	signalEntryPoint := isNowOver && isPrevUnder
 
 	if !signalEntryPoint {
-		l.Infof("Not a good entry: macd %v, signal %v", state.latestMacd, state.latestSignals)
+		l.Infof("Not a good entry: macd %v, signal %v", latestMacd, latestSignals)
 		return
 	}
-	l.Infof("Good entry for buy: %v macd, %v signal, %v close price", state.latestMacd, state.latestSignals, c.Close.Float())
-	leftBalance := state.leftBalance - state.notConfirmedBlockedMoney
+	l.Infof("Good entry for buy: %v macd, %v signal, %v close price", latestMacd, latestSignals, c.Close.Float())
+	leftBalance := s.vault.LeftBalance - s.vault.NotConfirmedBlockedMoney
 
-	canBuySharesAmount := int32(math.Abs(leftBalance / (c.Close.Float() * float64(s.config.LotSize))))
-	fmt.Printf("266 strategy lotSize %v; left balance %v; can buy %v \n", s.config.LotSize, leftBalance, canBuySharesAmount)
+	canBuySharesAmount := int64(math.Abs(leftBalance / (c.Close.Float() * float64(s.Config.LotSize))))
 	if canBuySharesAmount <= 0 {
-		l.WithField("state", state).Trace("Can buy 0 shares")
+		l.WithField("state", s.vault.String()).Trace("Can buy 0 shares")
 		return
 	}
 
@@ -290,13 +205,13 @@ func (s *MacdStrategy) buy(wg *sync.WaitGroup, c types.OHLC) {
 
 	l.Trace("Set is buiyng")
 	s.isBuying.value = true
-	if canBuySharesAmount > s.config.MaxSharesToHold {
+	if canBuySharesAmount > s.Config.MaxSharesToHold {
 		l.Tracef("Can buy more shares, than config allows")
-		canBuySharesAmount = s.config.MaxSharesToHold
+		canBuySharesAmount = s.Config.MaxSharesToHold
 	}
 
 	order := &types.PlaceOrder{
-		InstrumentID: s.config.InstrumentID,
+		InstrumentID: s.Config.InstrumentID,
 		Quantity:     int64(canBuySharesAmount),
 		Direction:    types.Buy,
 		Price:        types.Price(c.Close.Float()),
@@ -304,11 +219,11 @@ func (s *MacdStrategy) buy(wg *sync.WaitGroup, c types.OHLC) {
 
 	l.Infof("Order to place: %v", order)
 
-	state.pendingBuyShares += canBuySharesAmount
-	state.notConfirmedBlockedMoney += float64(canBuySharesAmount) * c.Close.Float()
-	state.lastBuyPrice = c.Close.Float()
-	s.state.Set(state)
-	l.WithField("state", s.state.Get()).Trace("State updated after place buy order")
+	priceForAllShares := float64(s.Config.LotSize) * float64(order.Price)
+	s.vault.PendingBuyShares += int64(canBuySharesAmount)
+	s.vault.NotConfirmedBlockedMoney += float64(canBuySharesAmount) * priceForAllShares
+	s.vault.LastBuyPrice = priceForAllShares
+	l.WithField("state", s.vault.String()).Trace("State updated after place buy order")
 
 	s.isBuying.value = false
 	l.Trace("Is buy released")
@@ -325,30 +240,29 @@ func (s *MacdStrategy) sell(wg *sync.WaitGroup, c types.OHLC) {
 		return
 	}
 
-	state := *s.state.Get()
-
-	if state.holdingShares-state.pendingSellShares == 0 {
-		l.WithField("state", state).Trace("Nothing to sell")
+	if s.vault.HoldingShares-s.vault.PendingSellShares == 0 {
+		l.WithField("state", s.vault.String()).Trace("Nothing to sell")
 		return
 	}
 
-	lastIdx := len(state.latestMacd) - 1
+	lastIdx := len(latestMacd) - 1
 
-	isNowUnder := state.latestMacd[lastIdx] <= state.latestSignals[lastIdx]
+	isNowUnder := latestMacd[lastIdx] <= latestSignals[lastIdx]
 	isPrevOver := false
-	for i := len(state.latestMacd); i >= 0; i-- {
-		if state.latestMacd[i] >= state.latestSignals[i] {
+	for i := len(latestMacd); i >= 0; i-- {
+		if latestMacd[i] >= latestSignals[i] {
 			isPrevOver = true
 			break
 		}
 	}
 
-	hasStopLossBroken := state.lastBuyPrice-s.config.StopLossAfter >= c.Close.Float()
+	lastBuyPrice := s.vault.LastBuyPrice / float64(s.Config.LotSize)
+	hasStopLossBroken := lastBuyPrice-s.Config.StopLossAfter >= c.Close.Float()
 
 	shouldSell := (isNowUnder && isPrevOver) || hasStopLossBroken
 
 	if !shouldSell {
-		l.Infof("Not a good exit: macd %v, signal %v", state.latestMacd, state.latestSignals)
+		l.Infof("Not a good exit: macd %v, signal %v", latestMacd, latestSignals)
 		return
 	}
 
@@ -365,106 +279,20 @@ func (s *MacdStrategy) sell(wg *sync.WaitGroup, c types.OHLC) {
 
 	price := c.Close.Float()
 	order := &types.PlaceOrder{
-		InstrumentID: s.config.InstrumentID,
-		Quantity:     int64(state.holdingShares),
+		InstrumentID: s.Config.InstrumentID,
+		Quantity:     int64(s.vault.HoldingShares),
 		Direction:    types.Sell,
 		Price:        types.Price(price),
 	}
 	l.Infof("Order to place: %v", order)
 
 	l.Trace("Updating state")
-	state.pendingSellShares += state.holdingShares
-	s.state.Set(state)
-	l.WithField("state", s.state.Get()).Trace("State updated after place sell order")
+	s.vault.PendingSellShares += s.vault.HoldingShares
+	l.WithField("state", s.vault.String()).Trace("State updated after place sell order")
 
 	s.isSelling.value = false
 	l.Trace("Is sell released")
 
 	s.toPlaceOrders <- order
 
-}
-
-func (s *MacdStrategy) onOrderSateChange(state types.OrderExecutionState) {
-	l.Infof("Order state changed %v", state)
-
-	if state.Status == types.ErrorPlacing {
-		l.Error("Order placing error. State restored")
-	}
-
-	newState := *s.state.Get()
-	defer l.WithField("state", s.state.Get()).Info("State updated")
-
-	if state.Status == types.New {
-		newState.placedOrders = append(newState.placedOrders, state)
-		s.state.Set(newState)
-		l.Infof("Adding new order to placed list")
-		return
-	}
-	if state.Status == types.Fill {
-		filteredOrders := []types.OrderExecutionState{}
-
-		for _, order := range newState.placedOrders {
-			if order.ID != state.ID {
-				filteredOrders = append(filteredOrders, order)
-			}
-		}
-
-		newState.placedOrders = filteredOrders
-	}
-
-	if state.Status != types.PartiallyFill &&
-		state.Status != types.Fill &&
-		state.Status != types.ErrorPlacing &&
-		state.Status != types.Cancelled {
-		l.Warnf("Not processed order state change: %v", state)
-		return
-	}
-
-	isBuyPlaceError := state.Direction == types.Buy && state.Status == types.ErrorPlacing
-	isSellPlaceError := state.Direction == types.Sell && state.Status == types.ErrorPlacing
-	isBuyCancel := state.Direction == types.Buy && state.Status == types.Cancelled
-	isSellCancel := state.Direction == types.Sell && state.Status == types.Cancelled
-	isSellOk := state.Direction == types.Sell && !isSellPlaceError && !isSellCancel
-	isBuyOk := state.Direction == types.Buy && !isBuyPlaceError && !isBuyCancel
-
-	if isBuyPlaceError {
-		l.Trace("Updating state after buy order place error")
-		newState.leftBalance += state.ExecutedOrderPrice
-		newState.pendingBuyShares -= int32(state.LotsExecuted / int(s.config.LotSize))
-		newState.notConfirmedBlockedMoney -= state.ExecutedOrderPrice
-	} else if isSellPlaceError {
-		newState.pendingSellShares -= int32(state.LotsExecuted / int(s.config.LotSize))
-	}
-
-	if isSellOk || isBuyCancel {
-		l.Trace("Updating state after sell order executed")
-		newState.pendingSellShares -= int32(state.LotsExecuted / int(s.config.LotSize))
-		newState.leftBalance += state.ExecutedOrderPrice
-		newState.holdingShares -= int32(state.LotsExecuted / int(s.config.LotSize))
-		l.WithField("orderId", state.ID).Infof(
-			"Lots executed (cancelled %v, erroPlacing: %v) %v of %v; Executed sell price %v",
-			isBuyCancel,
-			isBuyPlaceError,
-			state.LotsExecuted,
-			state.LotsRequested,
-			state.ExecutedOrderPrice,
-		)
-	} else if isBuyOk || isSellPlaceError || isSellCancel {
-		l.Trace("Updating state after buy order executed")
-		newState.holdingShares += int32(state.LotsExecuted / int(s.config.LotSize))
-		newState.pendingBuyShares -= int32(state.LotsExecuted / int(s.config.LotSize))
-		newState.notConfirmedBlockedMoney -= state.ExecutedOrderPrice
-		newState.leftBalance -= state.ExecutedOrderPrice
-		l.WithField("orderId", state.ID).Infof(
-			"Lots executed (cancelled %v, erroPlacing: %v) %v of %v; Executed buy price %v",
-			isSellCancel,
-			isSellPlaceError,
-			state.LotsExecuted,
-			state.LotsRequested,
-			state.ExecutedOrderPrice,
-		)
-	} else {
-		l.Warnf("Order state change not handled: %v", state)
-	}
-	s.state.Set(newState)
 }
