@@ -75,7 +75,7 @@ func (s *Strategy[T]) OnOrderSateChangeSubscribe(stopCtx context.Context, orderS
 				l.Warn("Orders state channel closed")
 				return
 			}
-			onOrderSateChange(state)
+			go onOrderSateChange(state)
 		}
 	}
 }

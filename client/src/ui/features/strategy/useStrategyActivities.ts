@@ -205,6 +205,13 @@ class PointsDrawer implements IDrawer, ISeriesPrimitive<Time> {
             }
         });
     }
+
+    updateAllViews() {
+        this.points.forEach((pr, id) => {
+            pr.update(this.latestPoints.get(id).Value);
+        })
+    }
+
     paneViews(): ISeriesPrimitivePaneView[] {
         return this._paneViews;
     }

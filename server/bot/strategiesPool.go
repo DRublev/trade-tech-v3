@@ -100,7 +100,7 @@ func (sp *StrategyPool) Start(key strategies.StrategyKey, instrumentID string) (
 	ordersStateCh := make(chan types.OrderExecutionState)
 
 	ordersPubSub := utils.NewPubSub[types.OrderExecutionState]()
-	collector := strategies.NewStatsCollector(ordersPubSub.Subscribe(), key, instrumentID)
+	collector := strategies.NewStatsCollector(*log.WithField("source", "collector"), ordersPubSub.Subscribe(), key, instrumentID)
 	sp.statCollectors[sp.getMapKey(key, instrumentID)] = collector
 	okCh := make(chan bool, 1)
 	go func() {
