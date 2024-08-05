@@ -289,7 +289,7 @@ func (s *RossHookStrategy) watchBuySignal(c types.OHLC) {
 	// Закрываем висящие на заявку покупки при поступлении новой свечи - мы проебали момент
 	// Однако, если текущая цена равна цене, по которой выставляли заявку, есть шанс что еще исполнится
 	if s.lastBuyPendingCandle != nil && c.High.Float() > s.lastBuyPendingCandle.High.Float() && isGreaterTF(c, *s.lastBuyPendingCandle) {
-		go s.closePendingBuys()
+		// go s.closePendingBuys()
 	}
 
 	isLowDiffTF := s.high != nil && isGreaterTF(c, *s.high)
@@ -329,7 +329,7 @@ func (s *RossHookStrategy) watchBuySignal(c types.OHLC) {
 	if isNewLess && isLowerThanTarget &&
 		isLessDiffTF {
 		s.less = &c
-		go s.closePendingBuys()
+		// go s.closePendingBuys()
 		l.Infof("Set point 4. high: %v; low: %v; targetGrow: %v; less: %v;", s.high.High.Float(), s.low.Low.Float(), s.targetGrow.High.Float(), s.less.Low.Float())
 		return
 	}

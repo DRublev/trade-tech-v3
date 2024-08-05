@@ -18,11 +18,11 @@ type StatsCollector struct {
 	logger     *log.Entry
 }
 
-func NewStatsCollector(source *chan types.OrderExecutionState, strategy StrategyKey, instrument string) *StatsCollector {
+func NewStatsCollector(logger log.Entry, source *chan types.OrderExecutionState, strategy StrategyKey, instrument string) *StatsCollector {
 	sc := &StatsCollector{
 		source:     source,
 		stopCh:     make(chan struct{}),
-		logger:     log.WithField("metrics", strategy).WithField("instrument", instrument),
+		logger:     logger.WithField("metrics", strategy).WithField("instrument", instrument),
 		strategy:   strategy.String(),
 		instrument: instrument,
 		uid:        identity.GetId(),
@@ -115,7 +115,7 @@ func (sc *StatsCollector) processTurnoverMetric(state types.OrderExecutionState)
 	if state.Status != types.Fill {
 		return
 	}
-
+	sc.logger.Infof("Turnover: %v", state.ExecutedOrderPrice*float64(state.LotsExecuted))
 	turnoverMX.Lock()
 	turnover += state.ExecutedOrderPrice * float64(state.LotsExecuted)
 	turnoverMX.Unlock()

@@ -94,6 +94,8 @@ func (ac ActivityContainer) Track(id string, kind ActivityKind, value interface{
 	if locked {
 		ac.activities[id] = act
 		ac.mx.Unlock()
+	} else {
+		return
 	}
 
 	for _, subscription := range ac.subscribers {
