@@ -19,7 +19,7 @@ import (
 var (
 	port         = flag.Int("port", 50051, "The server port")
 	logsAddress  = flag.String("logsAddress", "http://87.242.100.16:3100", "The server port")
-	yamlConfPath = flag.String("conf", "./configuration/config.yaml", "Path for config")
+	yamlConfPath = flag.String("conf", "./config.yaml", "Path for config")
 )
 
 func init() {
@@ -35,7 +35,7 @@ func init() {
 var envFromBuild string = "CI"
 var secretFromBuild string = "trade-tech-secret-for-encryption"
 
-var version = "24.07.1"
+var version = "24.08.1"
 
 func prepareFlagsAndEnv() {
 	flag.Parse()

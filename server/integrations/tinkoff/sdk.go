@@ -58,7 +58,9 @@ func (c *TinkoffBrokerPort) NewSdk(accountID *string) (*investgo.Client, error) 
 		return nil, err
 	}
 
-	conf := configuration.Configuration{}
+	conf := configuration.Configuration{
+		TinkoffEndpoint: "invest-public-api.tinkoff.ru:443",
+	}
 	endpoint = conf.Get().TinkoffEndpoint
 
 	config := &investgo.Config{

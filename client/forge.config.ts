@@ -21,6 +21,7 @@ const config: ForgeConfig = {
         '../server/resources/app/go-binaries/app-binary-macos.so',
         '../server/resources/app/go-binaries/app-binary-macos.h',
       ] : [],
+      '../server/configuration/config.yaml',
       './src/static',
     ],
   },
