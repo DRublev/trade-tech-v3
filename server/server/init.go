@@ -16,17 +16,16 @@ import (
 	"google.golang.org/grpc"
 )
 
-func Start(ctx context.Context, port int) {
+func Start(ctx context.Context, port int) error {
 	s := grpc.NewServer()
-	defer s.Stop()
 
 	log.Info("Starting server")
 
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
+		return err
 	}
-	defer lis.Close()
 
 	srv := &controllers.Server{}
 
@@ -41,7 +40,14 @@ func Start(ctx context.Context, port int) {
 	err = s.Serve(lis)
 	if err != nil {
 		log.Fatalf("Error listening to server %v", err)
+		return err
 	}
 
-	<-ctx.Done()
+	go func() {
+		<-ctx.Done()
+		s.Stop()
+		lis.Close()
+	}()
+
+	return nil
 }

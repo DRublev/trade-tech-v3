@@ -1,5 +1,6 @@
 package main
 
+import "C"
 import (
 	"context"
 	"flag"
@@ -18,7 +19,7 @@ import (
 var (
 	port         = flag.Int("port", 50051, "The server port")
 	logsAddress  = flag.String("logsAddress", "http://87.242.100.16:3100", "The server port")
-	yamlConfPath = flag.String("conf", "./configuration/config.yaml", "Path for config")
+	yamlConfPath = flag.String("conf", "./config.yaml", "Path for config")
 )
 
 func init() {
@@ -34,20 +35,22 @@ func init() {
 var envFromBuild string = "CI"
 var secretFromBuild string = "trade-tech-secret-for-encryption"
 
-var version = "24.07.1"
+var version = "24.08.1"
 
-func main() {
+func prepareFlagsAndEnv() {
 	flag.Parse()
 
 	env, ok := os.LookupEnv("ENV")
 	if !ok {
 		env = envFromBuild
 	}
+
 	if len(env) == 0 || env == "DEV" {
 		if err := godotenv.Load(); err != nil {
 			log.Fatal("Cannot load env!")
 		}
 	}
+
 	if env == "PROD" {
 		uid := identity.GetId()
 		hook := loki.NewHook(
@@ -67,14 +70,43 @@ func main() {
 		os.Setenv("SECRET", secretFromBuild)
 	}
 
-	conf := configuration.Configuration{}
+	conf := configuration.Configuration{
+		TinkoffEndpoint: "invest-public-api.tinkoff.ru:443",
+	}
 	conf.Load(*yamlConfPath)
+}
+
+func main() {
+	prepareFlagsAndEnv()
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
-	go server.Start(ctx, *port)
+
+	go LaunchServer()
 
 	<-ctx.Done()
-
 	os.Exit(1)
+
+}
+
+//export LaunchServer
+func LaunchServer() int {
+	prepareFlagsAndEnv()
+
+	go func() {
+		ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
+		defer cancel()
+		err := server.Start(ctx, *port)
+
+		if err != nil {
+			log.Fatalf("Error starting server: %v", err)
+			os.Exit(1)
+			return
+		}
+		<-ctx.Done()
+
+		os.Exit(1)
+	}()
+
+	return *port
 }

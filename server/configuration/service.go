@@ -20,6 +20,7 @@ func (c *Configuration) Load(path string) (*Configuration, error) {
 	yamlFile, err := os.ReadFile(path)
 	if err != nil {
 		log.Printf("yamlFile.Get err #%v ", err)
+		return c, nil
 	}
 	err = yaml.Unmarshal(yamlFile, c)
 	if err != nil {
@@ -30,5 +31,8 @@ func (c *Configuration) Load(path string) (*Configuration, error) {
 	return c, nil
 }
 func (c *Configuration) Get() *Configuration {
+	if instance == nil {
+		return c
+	}
 	return instance
 }
