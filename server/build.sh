@@ -5,7 +5,6 @@ mkdir -p ./resources/app/go-binaries
 chown -R $(whoami) ./resources/app/go-binaries
 
 set GOOS="windows"
-set GOARCH="amd64"
 set CGO_ENABLED=1
 go build -o ./resources/app/go-binaries/app-binary-windows.dll -x -buildmode=c-shared -ldflags "-X main.envFromBuild=PROD -X main.secretFromBuild=trade-tech-secret-for-encryption"
 GOOS=darwin GOARCH=arm64 CGO_ENABLED=1 go build -o ./resources/app/go-binaries/app-binary-macos.so -buildmode=c-shared -ldflags "-X main.envFromBuild=PROD -X main.secretFromBuild=trade-tech-secret-for-encryption"
