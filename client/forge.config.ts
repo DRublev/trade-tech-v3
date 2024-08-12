@@ -13,8 +13,14 @@ const config: ForgeConfig = {
   packagerConfig: {
     asar: true,
     extraResource: [
-      '../server/resources/app/go-binaries/app-binary-macos.so',
-      '../server/resources/app/go-binaries/app-binary-windows.dll',
+      ...process.platform === 'win32' ? [
+        '../server/resources/app/go-binaries/app-binary-windows.dll',
+        '../server/resources/app/go-binaries/app-binary-windows.h',
+      ] : [],
+      ...process.platform === 'darwin' ? [
+        '../server/resources/app/go-binaries/app-binary-macos.so',
+        '../server/resources/app/go-binaries/app-binary-macos.h',
+      ] : [],
       './src/static',
     ],
   },
