@@ -28,11 +28,8 @@ jobs:
           cache: "npm"
           cache-dependency-path: client/package-lock.json
 
-      - name: Install dependencies
-        run: cd client && npm install
-
       - name: Make binaries
-        run: cd client && run build-go-unix
+        run: cd client && npm run build-go-unix
       - name: Upload binaries to artifacts 
         uses: actions/upload-artifact@master
         with:
@@ -45,13 +42,6 @@ jobs:
     steps:
       - name: Check out Git repository
         uses: actions/checkout@v4
-
-      - name: Set up go
-        uses: actions/setup-go@v5
-        with:
-          cache-dependency-path: |
-            server/go.sum
-          go-version-file: "server/go.mod"
 
       - name: Set up Node.js
         uses: actions/setup-node@v1
@@ -82,14 +72,6 @@ jobs:
     steps:
       - name: Check out Git repository
         uses: actions/checkout@v4
-
-      - name: Set up go
-        uses: actions/setup-go@v5
-        with:
-          go-version: ">=1.17.0"
-          cache-dependency-path: |
-            server/go.sum
-          go-version-file: "server/go.mod"
 
       - name: Set up Node.js
         uses: actions/setup-node@v1
